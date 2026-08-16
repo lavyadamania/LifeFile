@@ -8,7 +8,7 @@ import useAuthStore from '../store/useAuthStore';
 import { loginUser } from '../lib/api';
 
 const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: z.string().min(1, "Username / Email is required"),
   password: z.string().min(1, "Password is required"),
   role: z.enum(['patient', 'doctor', 'hospital', 'admin']),
 });
@@ -99,8 +99,8 @@ export default function Login() {
               <label className="block text-sm font-medium text-slate-700">Email address</label>
               <div className="mt-1">
                 <input
-                  type="email"
-                  placeholder="lavya@scos.com"
+                  type="text"
+                  placeholder="lavya@admin"
                   {...register('email')}
                   className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors"
                 />

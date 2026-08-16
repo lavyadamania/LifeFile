@@ -8,7 +8,7 @@ import { registerUser } from '../lib/api';
 
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
+  email: z.string().min(3, "Email / Username is required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   role: z.enum(['patient', 'doctor', 'hospital']),
   address: z.string().optional(),
@@ -105,7 +105,7 @@ export default function Register() {
             <div>
               <label className="block text-sm font-medium text-slate-700">Email address</label>
               <div className="mt-1">
-                <input type="email" {...register('email')} className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors" />
+                <input type="text" {...register('email')} placeholder="e.g. hospital@name or user@example.com" className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors" />
                 {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
               </div>
             </div>
