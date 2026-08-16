@@ -62,6 +62,11 @@ export const getPatientProfile = () => api.get('/patients/me');
 export const updatePatientProfile = (data: any) => api.put('/patients/me', data);
 export const searchPatients = (q: string) => api.get('/patients/search', { params: { q } });
 
+// Medical Records (Patient uploaded)
+export const createMedicalRecord = (data: any) => api.post('/patients/records', data);
+export const getMedicalRecords = () => api.get('/patients/records');
+export const verifyMedicalRecordPassword = (id: string, password: string) => api.post(`/patients/records/${id}/verify`, { password });
+
 // Queue
 export const addToQueue = (data: { patientId: string; patientName?: string; doctorId?: string }) => api.post('/queue/add', data);
 

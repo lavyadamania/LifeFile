@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { ArrowLeft, Activity, FileText, Plus, Trash2, Save, Lock, Search, UserPlus, X, Check, Paperclip, ChevronDown, ChevronUp, Pill, Image, Building2, Stethoscope } from 'lucide-react';
+import { ArrowLeft, Activity, FileText, Plus, Trash2, Save, Lock, Search, UserPlus, X, Check, Paperclip, ChevronDown, ChevronUp, Pill, Image, Building2, Stethoscope, BrainCircuit } from 'lucide-react';
+import nlp from 'compromise';
 import PrescriptionPreview from '../../components/PrescriptionPreview';
 import type { PrescriptionTemplate } from '../../components/PrescriptionPreview';
 import { createPrescription, searchPatients, registerUser, createWalkinAppointment, getDoctors, updateDoctor, getPatientPrescriptions, uploadAttachment, getAppointments, updateAppointmentStatus } from '../../lib/api';
@@ -38,6 +39,7 @@ export default function DoctorConsultation() {
 
   // Doctor profile state (fetched from DB for this logged-in doctor)
   const [doctorProfile, setDoctorProfile] = useState<any>(null);
+  const [nlpText, setNlpText] = useState('');
 
   // Patient search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -86,7 +88,7 @@ export default function DoctorConsultation() {
     }
   }, [user]);
 
-  const { register, control, handleSubmit, reset } = useForm<ConsultationForm>({
+  const { register, control, handleSubmit, reset, setValue } = useForm<ConsultationForm>({
     defaultValues: {
       diagnosis: '',
       notes: '',
@@ -94,10 +96,81 @@ export default function DoctorConsultation() {
     }
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, replace } = useFieldArray({
     control,
     name: "medications"
   });
+
+  const handleNlpProcess = () => {
+    if (!nlpText.trim()) return;
+    
+    // 1. Diagnosis extraction
+    let extractedDiagnosis = '';
+    const diagMatch = nlpText.match(/(?:presents with|diagnosed with|has|suffering from)\s+([a-zA-Z\s]+?)(?=\.|and|,)/i);
+    if (diagMatch) {
+      extractedDiagnosis = diagMatch[1].trim();
+      setValue('diagnosis', extractedDiagnosis.charAt(0).toUpperCase() + extractedDiagnosis.slice(1));
+    }
+
+    // 2. Medication extraction
+    const meds: MedicationForm[] = [];
+    const sentences = nlp(nlpText).sentences().out('array') as string[];
+    
+    sentences.forEach(s => {
+      const lower = s.toLowerCase();
+      if (lower.includes('prescribe') || lower.includes('give') || lower.includes('take') || lower.includes('start') || lower.includes('put on')) {
+        
+        const dosageMatch = lower.match(/\b(\d+(?:\.\d+)?\s*(?:mg|ml|g|mcg|tablet|pill|drop|puff)s?)\b/i);
+        const dosage = dosageMatch ? dosageMatch[1] : '';
+        
+        const durationMatch = lower.match(/\b(for\s+\d+\s*(?:day|week|month)s?)\b/i) || lower.match(/\b(\d+\s*(?:day|week|month)s?)\b/i);
+        const duration = durationMatch ? durationMatch[1].replace('for ', '') : '';
+        
+        let freq = '';
+        if (lower.includes('twice') || lower.includes('bid') || lower.includes('b.i.d')) freq = 'Twice daily';
+        else if (lower.includes('thrice') || lower.includes('three times') || lower.includes('tid')) freq = 'Three times daily';
+        else if (lower.includes('once') || lower.includes('daily') || lower.includes('od')) freq = 'Once daily';
+        else if (lower.includes('four times')) freq = 'Four times daily';
+        else if (lower.includes('as needed') || lower.includes('prn')) freq = 'As needed (PRN)';
+
+        // Find drug name: look for capitalized words
+        let drugName = '';
+        const words = s.split(' ');
+        for (let i = 0; i < words.length; i++) {
+           const w = words[i].replace(/[^a-zA-Z]/g, '');
+           if (w.length > 2 && w[0] === w[0].toUpperCase() && !['Prescribe', 'Give', 'Take', 'For', 'Start', 'Put', 'On'].includes(w)) {
+             drugName = w;
+             break;
+           }
+        }
+        
+        if (!drugName && dosageMatch) {
+           // Get word before dosage as fallback
+           const idx = s.indexOf(dosageMatch[0]);
+           const beforeStr = s.substring(0, idx).trim();
+           const beforeWords = beforeStr.split(' ');
+           drugName = beforeWords[beforeWords.length - 1].replace(/[^a-zA-Z]/g, '');
+        }
+
+        if (drugName || dosage) {
+          meds.push({ 
+            name: drugName || 'Extracted Drug', 
+            dosage, 
+            frequency: freq, 
+            duration 
+          });
+        }
+      }
+    });
+
+    if (meds.length > 0) {
+      replace(meds);
+    }
+    
+    // 3. Put original text in notes
+    setValue('notes', nlpText);
+    setNlpText('');
+  };
 
   // Debounced patient search
   useEffect(() => {
@@ -621,6 +694,30 @@ export default function DoctorConsultation() {
           <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col h-full overflow-hidden">
             
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              
+              {/* Smart NLP Auto-Fill */}
+              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-2xl border border-indigo-100 shadow-sm p-6 space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <BrainCircuit className="w-5 h-5 text-indigo-600" />
+                  <h3 className="font-bold text-slate-800">Smart NLP Auto-Fill</h3>
+                </div>
+                <textarea 
+                  value={nlpText}
+                  onChange={e => setNlpText(e.target.value)}
+                  placeholder="Paste or type raw clinical notes here (e.g. 'Patient presents with acute bronchitis. Prescribe Amoxicillin 500mg twice daily for 7 days.')"
+                  className="w-full px-4 py-3 bg-white border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none resize-none text-sm shadow-inner"
+                  rows={3}
+                />
+                <button 
+                  type="button"
+                  onClick={handleNlpProcess}
+                  disabled={!nlpText.trim()}
+                  className="px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 flex items-center gap-2 text-sm transition-all shadow-md disabled:opacity-50"
+                >
+                  <BrainCircuit className="w-4 h-4" /> Extract & Auto-Fill
+                </button>
+              </div>
+
               {/* Diagnosis & Notes */}
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
                 <div>

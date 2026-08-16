@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const Patient = require('../models/Patient');
+const MedicalRecord = require('../models/MedicalRecord');
 const { auth } = require('../middleware/auth');
 
 // GET /api/patients/me
@@ -95,6 +96,78 @@ router.put('/me/hospital', auth, async (req, res) => {
       .populate('grantedDoctors')
       .populate('currentHospital', 'name address phone');
     res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Medical Records ---
+
+// POST /api/patients/records
+router.post('/records', auth, async (req, res) => {
+  try {
+    const { title, type, fileUrl, password } = req.body;
+    const patient = await Patient.findOne({ userId: req.user._id });
+    if (!patient) return res.status(404).json({ error: 'Patient not found' });
+
+    const isPasswordProtected = !!password;
+    const record = await MedicalRecord.create({
+      patientId: patient._id,
+      title,
+      type,
+      fileUrl,
+      isPasswordProtected,
+      password: isPasswordProtected ? password : null
+    });
+
+    // Don't send back password hash
+    const recordObj = record.toObject();
+    delete recordObj.password;
+    if (isPasswordProtected) delete recordObj.fileUrl; // Hide URL if protected
+
+    res.status(201).json(recordObj);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/patients/records
+router.get('/records', auth, async (req, res) => {
+  try {
+    const patient = await Patient.findOne({ userId: req.user._id });
+    if (!patient) return res.status(404).json({ error: 'Patient not found' });
+
+    const records = await MedicalRecord.find({ patientId: patient._id }).sort({ createdAt: -1 });
+    
+    // Strip fileUrl if password protected
+    const safeRecords = records.map(r => {
+      const obj = r.toObject();
+      delete obj.password;
+      if (obj.isPasswordProtected) delete obj.fileUrl;
+      return obj;
+    });
+
+    res.json(safeRecords);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/patients/records/:id/verify
+router.post('/records/:id/verify', auth, async (req, res) => {
+  try {
+    const { password } = req.body;
+    const record = await MedicalRecord.findById(req.params.id);
+    if (!record) return res.status(404).json({ error: 'Record not found' });
+
+    if (!record.isPasswordProtected) {
+      return res.json({ fileUrl: record.fileUrl });
+    }
+
+    const isValid = await record.comparePassword(password);
+    if (!isValid) return res.status(401).json({ error: 'Invalid password' });
+
+    res.json({ fileUrl: record.fileUrl });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

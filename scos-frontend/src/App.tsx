@@ -25,6 +25,8 @@ import MedicalTimeline from './pages/patient/MedicalTimeline';
 import SearchHospitals from './pages/patient/SearchHospitals';
 import HospitalDetail from './pages/patient/HospitalDetail';
 import HospitalRecords from './pages/patient/HospitalRecords';
+import AIPredictor from './pages/patient/AIPredictor';
+import SymptomTriage from './pages/patient/SymptomTriage';
 
 // Doctor Pages
 import DoctorProfile from './pages/doctor/DoctorProfile';
@@ -77,6 +79,8 @@ function App() {
                 <Route path="/patient/hospitals" element={<SearchHospitals />} />
                 <Route path="/patient/hospital/:id" element={<HospitalDetail />} />
                 <Route path="/patient/hospital/:id/records" element={<HospitalRecords />} />
+                <Route path="/patient/ai-predictor" element={<AIPredictor />} />
+                <Route path="/patient/ai-triage" element={<SymptomTriage />} />
                 <Route path="/patient/settings" element={<PatientProfile />} />
                 <Route path="/patient/history" element={<Navigate to="/patient/timeline" replace />} />
               </Route>

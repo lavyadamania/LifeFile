@@ -1,7 +1,8 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Activity, Calendar, Clock, Settings, LogOut, User, Building2 } from 'lucide-react';
+import { Activity, Calendar, Clock, Settings, LogOut, User, Building2, BrainCircuit, HeartPulse } from 'lucide-react';
 import useAuthStore from '../store/useAuthStore';
 import NotificationPanel from '../components/NotificationPanel';
+import PatientAIAssistant from '../components/PatientAIAssistant';
 
 export default function PatientLayout() {
   const { user, logout } = useAuthStore();
@@ -9,6 +10,8 @@ export default function PatientLayout() {
 
   const navigation = [
     { name: 'Dashboard', href: '/patient', icon: Activity },
+    { name: 'AI Risk Predictor', href: '/patient/ai-predictor', icon: HeartPulse },
+    { name: 'AI Symptom Triage', href: '/patient/ai-triage', icon: BrainCircuit },
     { name: 'Hospitals', href: '/patient/hospitals', icon: Building2 },
     { name: 'My Appointments', href: '/patient/appointments', icon: Calendar },
     { name: 'Medical Timeline', href: '/patient/timeline', icon: Clock },
@@ -86,6 +89,8 @@ export default function PatientLayout() {
           <Outlet />
         </main>
       </div>
+
+      <PatientAIAssistant />
     </div>
   );
 }
