@@ -10,9 +10,13 @@ router.get('/', auth, requireRole('admin'), async (req, res) => {
   try {
     const totalPatients = await User.countDocuments({ role: 'patient' });
     const activeDoctors = await Doctor.countDocuments({ status: 'Active' });
+    
+    const today = new Date().toISOString().split('T')[0];
     const todayAppointments = await Appointment.countDocuments({
+      date: today,
       status: { $in: ['Confirmed', 'Pending'] }
     });
+    
     const activeClinics = await Clinic.countDocuments({ status: 'active' });
 
     res.json({

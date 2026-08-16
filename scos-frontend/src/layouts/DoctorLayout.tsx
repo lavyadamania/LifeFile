@@ -3,12 +3,19 @@ import { useState, useEffect } from 'react';
 import { LayoutDashboard, Users, FileText, Calendar, PlusCircle, Search, LogOut, Stethoscope, UserCircle, Building } from 'lucide-react';
 import useAuthStore from '../store/useAuthStore';
 import useDoctorStore from '../store/useDoctorStore';
+import useStreamingStore from '../services/streaming';
 import { getDoctorProfile } from '../lib/api';
 import NotificationPanel from '../components/NotificationPanel';
 
 export default function DoctorLayout() {
   const { user, logout } = useAuthStore();
+  const { disconnect } = useStreamingStore();
   const { activeHospitalId, setActiveHospitalId, hospitals, setHospitals } = useDoctorStore();
+
+  const handleLogout = () => {
+    disconnect();
+    logout();
+  };
   const location = useLocation();
 
   useEffect(() => {
@@ -74,7 +81,7 @@ export default function DoctorLayout() {
               Dr. {user?.name || 'Doctor User'}
             </span>
             <button
-              onClick={logout}
+              onClick={handleLogout}
               className="p-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-800 transition-colors"
               title="Logout"
             >

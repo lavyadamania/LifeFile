@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const Appointment = require('../models/Appointment');
-const { auth } = require('../middleware/auth');
+const { auth, requireRole } = require('../middleware/auth');
 const { produceEvent } = require('../services/kafka');
 
 // GET /api/appointments
@@ -114,15 +114,27 @@ router.delete('/:id', auth, async (req, res) => {
 });
 
 // POST /api/appointments/walkin — doctor creates walk-in appointment on behalf of patient
-router.post('/walkin', auth, async (req, res) => {
+router.post('/walkin', auth, requireRole('doctor', 'admin', 'hospital'), async (req, res) => {
   try {
-    const { patientId, doctorId, doctorName, date, time, spec } = req.body;
+    const { patientId, date, time, spec } = req.body;
     if (!patientId) return res.status(400).json({ error: 'patientId is required' });
+
+    let finalDoctorId = req.user._id;
+    let finalDoctorName = req.user.name;
+
+    if (req.user.role === 'doctor') {
+      const Doctor = require('../models/Doctor');
+      const docProfile = await Doctor.findOne({ userId: req.user._id });
+      if (docProfile) {
+        finalDoctorId = docProfile._id;
+        finalDoctorName = docProfile.name;
+      }
+    }
 
     const appointment = await Appointment.create({
       patientId,
-      doctorId: doctorId || req.user._id,
-      doctorName: doctorName || req.user.name,
+      doctorId: finalDoctorId,
+      doctorName: finalDoctorName,
       spec: spec || '',
       date: date || new Date().toISOString().split('T')[0],
       time: time || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
@@ -149,7 +161,7 @@ router.get('/missed', auth, async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
     let filter = {
-      date: { $lt: today },
+      date: { $lte: today },
       status: { $in: ['Confirmed', 'Pending'] },
     };
 
@@ -172,7 +184,25 @@ router.get('/missed', auth, async (req, res) => {
     const missed = await Appointment.find(filter)
       .populate('patientId', 'name email')
       .sort({ date: -1 });
-    res.json(missed);
+
+    // Filter out today's appointments that haven't passed yet
+    const nowMins = new Date().getHours() * 60 + new Date().getMinutes();
+    const filteredMissed = missed.filter(apt => {
+      if (apt.date < today) return true;
+      
+      const [timeStr, meridian] = (apt.time || '').split(' ');
+      const [hStr, mStr] = (timeStr || '00:00').split(':');
+      let h = parseInt(hStr, 10) || 0;
+      let m = parseInt(mStr, 10) || 0;
+      
+      if (meridian === 'PM' && h !== 12) h += 12;
+      if (meridian === 'AM' && h === 12) h = 0;
+      
+      const totalMins = h * 60 + m;
+      return totalMins < nowMins;
+    });
+
+    res.json(filteredMissed);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
