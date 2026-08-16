@@ -338,28 +338,29 @@ export default function DoctorConsultation() {
         hospitalName: appointmentHospitalName || undefined,
       });
 
-      // Auto-mark today's appointment as Completed
+      // Auto-mark ALL of today's pending appointments for this patient as Completed
+      // This handles: early arrivals, walk-ins, and scheduled appointments
       try {
         const today = new Date().toISOString().split('T')[0];
         const apptRes = await getAppointments();
         
-        const match = apptRes.data.find((a: any) => {
+        const matches = apptRes.data.filter((a: any) => {
           const aPatientId = (a.patientId?._id || a.patientId || '').toString();
           const targetId = (targetPatientId || '').toString();
-          
-          // Match patient ID AND (date is today OR date string is "Today")
           const patientMatch = aPatientId === targetId;
           const dateMatch = a.date === today || a.date === 'Today';
           const statusMatch = ['Confirmed', 'Pending'].includes(a.status);
-          
           return patientMatch && dateMatch && statusMatch;
         });
 
-        if (match) {
-          await updateAppointmentStatus(match._id, { status: 'Completed' });
-          console.log('✅ Appointment auto-marked as Completed:', match._id);
+        if (matches.length > 0) {
+          // Complete all matching appointments (handles early walk-in + scheduled same day)
+          await Promise.all(
+            matches.map((m: any) => updateAppointmentStatus(m._id, { status: 'Completed' }))
+          );
+          console.log(`✅ ${matches.length} appointment(s) auto-marked as Completed for patient:`, targetPatientId);
         } else {
-          console.log('⚠️ No matching appointment found to complete for patient:', targetPatientId);
+          console.log('⚠️ No active appointments found today for patient:', targetPatientId);
         }
       } catch (err) {
         console.error('❌ Error auto-completing appointment:', err);

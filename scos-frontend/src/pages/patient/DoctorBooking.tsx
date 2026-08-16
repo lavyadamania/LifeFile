@@ -82,7 +82,10 @@ export default function DoctorBooking() {
       const m = current % 60;
       const ampm = h >= 12 ? 'PM' : 'AM';
       const displayH = h % 12 || 12;
-      slots.push(`${displayH.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} ${ampm}`);
+      slots.push({
+        display: `${displayH.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} ${ampm}`,
+        totalMins: current,
+      });
       current += 30; // 30 min intervals
     }
     return slots;
@@ -118,7 +121,16 @@ export default function DoctorBooking() {
     }
 
     if (!daySchedule || !daySchedule.isAvailable) return [];
-    return generateTimeSlots(daySchedule.startTime, daySchedule.endTime);
+    const allSlots = generateTimeSlots(daySchedule.startTime, daySchedule.endTime);
+
+    // Filter out past time slots if the selected date is TODAY
+    const now = new Date();
+    const isToday = selectedDateObj.toDateString() === now.toDateString();
+    if (isToday) {
+      const currentMins = now.getHours() * 60 + now.getMinutes();
+      return allSlots.filter(slot => slot.totalMins > currentMins).map(s => s.display);
+    }
+    return allSlots.map(s => s.display);
   };
 
   if (!doctor) return <div className="p-12 text-center text-slate-500 font-medium">Loading booking page...</div>;
