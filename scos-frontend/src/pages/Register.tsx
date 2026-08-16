@@ -61,7 +61,7 @@ export default function Register() {
           </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900 tracking-tight">
-          Join SCOS
+          Join LifeFile
         </h2>
         <p className="mt-2 text-center text-sm text-slate-600">
           Already have an account? <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">Sign in here</Link>

@@ -33,7 +33,7 @@ const doctorSchema = new mongoose.Schema({
   }],
   signatureImage: { type: String, default: '' },
   prescriptionTemplate: {
-    clinicName:    { type: String, default: 'Smart Clinic OS' },
+    clinicName:    { type: String, default: 'LifeFile' },
     clinicAddress: { type: String, default: '123 Health Ave, Medical District, NY 10001' },
     clinicPhone:   { type: String, default: '(555) 123-4567' },
   },

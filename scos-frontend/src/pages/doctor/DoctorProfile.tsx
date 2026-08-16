@@ -142,7 +142,7 @@ export default function DoctorProfile() {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-1">Headline / Specialization</label>
-            <input {...register('specialization')} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. Senior Cardiologist at SCOS" />
+            <input {...register('specialization')} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. Senior Cardiologist at LifeFile" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>

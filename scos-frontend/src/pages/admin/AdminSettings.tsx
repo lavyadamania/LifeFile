@@ -39,7 +39,7 @@ export default function AdminSettings() {
     smsAlerts: false,
     auditRetention: '90',
     sessionTimeout: '30',
-    clinicName: 'Smart Clinic OS',
+    clinicName: 'LifeFile',
     timezone: 'Asia/Kolkata',
   });
 

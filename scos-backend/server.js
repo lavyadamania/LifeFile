@@ -55,7 +55,7 @@ mongoose.connect(process.env.MONGO_URI)
     initKafka(io);
 
     server.listen(PORT, () => {
-      console.log(`🚀 SCOS Backend running on http://localhost:${PORT}`);
+      console.log(`🚀 LifeFile Backend running on http://localhost:${PORT}`);
       console.log(`📡 Socket.io ready for real-time events`);
     });
   })

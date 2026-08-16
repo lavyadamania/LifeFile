@@ -1,6 +1,6 @@
-# LifeFile (Smart Clinic OS) - Project Context
+# LifeFile (LifeFile) - Project Context
 
-This document provides a 100% accurate, real, and detailed technical overview of the **LifeFile** (also referred to as **Smart Clinic OS / SCOS**) project. This is designed to be fed directly into ChatGPT or any other LLM to provide complete context of the current state of the codebase.
+This document provides a 100% accurate, real, and detailed technical overview of the **LifeFile** (also referred to as **LifeFile / LifeFile**) project. This is designed to be fed directly into ChatGPT or any other LLM to provide complete context of the current state of the codebase.
 
 ---
 

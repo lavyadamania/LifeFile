@@ -17,7 +17,7 @@ export default function BaseLayout() {
               <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm">
                 <Stethoscope className="w-6 h-6 text-white" />
               </div>
-              <span className="text-xl font-bold text-slate-800 tracking-tight">Smart Clinic OS</span>
+              <span className="text-xl font-bold text-slate-800 tracking-tight">LifeFile</span>
             </div>
 
             {/* Nav actions */}
@@ -57,7 +57,7 @@ export default function BaseLayout() {
       <footer className="bg-white border-t border-slate-200 py-6 mt-auto">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p className="text-sm text-slate-500 font-medium">
-            &copy; {new Date().getFullYear()} Smart Clinic OS. All rights reserved.
+            &copy; {new Date().getFullYear()} LifeFile. All rights reserved.
           </p>
         </div>
       </footer>

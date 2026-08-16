@@ -1,7 +1,7 @@
 {
   "name": "scos-backend",
   "version": "1.0.0",
-  "description": "Smart Clinic OS - Express + MongoDB Backend",
+  "description": "LifeFile - Express + MongoDB Backend",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

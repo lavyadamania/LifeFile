@@ -885,7 +885,7 @@ export default function DoctorConsultation() {
           notes={formData.notes}
           medications={formData.medications.filter((m: MedicationForm) => m.name.trim() !== '')}
           attachments={attachments}
-          clinicName={doctorProfile?.prescriptionTemplate?.clinicName || 'Smart Clinic OS'}
+          clinicName={doctorProfile?.prescriptionTemplate?.clinicName || 'LifeFile'}
           clinicAddress={doctorProfile?.prescriptionTemplate?.clinicAddress || '123 Health Ave, Medical District, NY 10001'}
           clinicPhone={doctorProfile?.prescriptionTemplate?.clinicPhone || '(555) 123-4567'}
         />

@@ -65,7 +65,7 @@ export default function PrescriptionPreview({
   medications = defaultMedications,
   attachments = [],
   isDoctorView = false,
-  clinicName = 'Smart Clinic OS',
+  clinicName = 'LifeFile',
   clinicAddress = '123 Health Ave, Medical District, NY 10001',
   clinicPhone = '(555) 123-4567',
 }: PrescriptionPreviewProps) {
