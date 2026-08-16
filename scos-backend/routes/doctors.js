@@ -114,7 +114,21 @@ const sigStorage = multer.diskStorage({
     cb(null, `sig-${req.user._id}-${Date.now()}${ext}`);
   },
 });
-const sigUpload = multer({ storage: sigStorage, limits: { fileSize: 2 * 1024 * 1024 } });
+
+const sigFileFilter = (req, file, cb) => {
+  const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+  if (allowedMimeTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only images are allowed for signatures.'), false);
+  }
+};
+
+const sigUpload = multer({ 
+  storage: sigStorage, 
+  limits: { fileSize: 2 * 1024 * 1024 },
+  fileFilter: sigFileFilter
+});
 
 router.post('/upload-signature', auth, sigUpload.single('signature'), async (req, res) => {
   try {

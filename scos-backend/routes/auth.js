@@ -15,6 +15,11 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
+    // Prevent privilege escalation to admin via direct API hit
+    if (!['patient', 'doctor', 'hospital'].includes(role)) {
+      return res.status(403).json({ error: 'Invalid or unauthorized role for registration' });
+    }
+
     const exists = await User.findOne({ email: email.toLowerCase() });
     if (exists) return res.status(400).json({ error: 'Email already registered' });
 

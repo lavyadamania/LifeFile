@@ -17,7 +17,21 @@ const attStorage = multer.diskStorage({
     cb(null, `att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`);
   },
 });
-const attUpload = multer({ storage: attStorage, limits: { fileSize: 10 * 1024 * 1024 } });
+
+const attFileFilter = (req, file, cb) => {
+  const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+  if (allowedMimeTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only PDF and images are allowed.'), false);
+  }
+};
+
+const attUpload = multer({ 
+  storage: attStorage, 
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: attFileFilter
+});
 
 // POST /api/prescriptions/upload-attachment — upload X-ray, lab report, MRI
 router.post('/upload-attachment', auth, attUpload.single('attachment'), async (req, res) => {
