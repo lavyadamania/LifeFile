@@ -1,0 +1,13 @@
+{
+  "name": "lifefile-root",
+  "version": "1.0.0",
+  "scripts": {
+    "dev:backend": "npm run dev --prefix scos-backend",
+    "dev:frontend": "npm run dev --prefix scos-frontend",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "start": "npm start --prefix scos-backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
