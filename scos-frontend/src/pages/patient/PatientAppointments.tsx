@@ -25,6 +25,10 @@ export default function PatientAppointments() {
   const fetchAppointments = () => {
     getAppointments().then(res => {
       const all = res.data;
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0];
+      const nowMins = today.getHours() * 60 + today.getMinutes();
+
       setUpcoming(all.filter((a: any) => ['Confirmed', 'Pending', 'Rescheduled'].includes(a.status)));
       setPast(all.filter((a: any) => ['Completed', 'Cancelled', 'Missed', 'Postponed'].includes(a.status)));
     }).catch(() => {});
@@ -149,7 +153,11 @@ export default function PatientAppointments() {
                   <h3 className="text-lg font-bold text-slate-800">{apt.doctorName}</h3>
                   <p className="text-blue-600 font-medium text-sm">{apt.spec}</p>
                   <div className="flex flex-wrap gap-3 mt-2 text-sm text-slate-600">
-                    <span className="flex items-center gap-1"><CalendarDays className="w-4 h-4 text-slate-400" /> {apt.date}</span>
+                    {/* BUG 12 FIX: Format date nicely */}
+                   <span className="flex items-center gap-1">
+                     <CalendarDays className="w-4 h-4 text-slate-400" />
+                     {apt.date ? new Date(apt.date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                   </span>
                     <span className="flex items-center gap-1"><Clock className="w-4 h-4 text-slate-400" /> {apt.time}</span>
                     {apt.hospitalName && (
                       <span className="flex items-center gap-1 text-indigo-600 font-medium bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
@@ -174,6 +182,21 @@ export default function PatientAppointments() {
                   }`}>{apt.status}</span>
                 </div>
               </div>
+
+              {/* BUG 7 FIX: Warn if today's appointment time has already passed */}
+              {tab === 'upcoming' && apt.date === new Date().toISOString().split('T')[0] && (() => {
+                const [time, meridian] = (apt.time || '').split(' ');
+                const [h, m] = (time || '00:00').split(':').map(Number);
+                let totalMins = h * 60 + (m || 0);
+                if (meridian === 'PM' && h !== 12) totalMins += 720;
+                if (meridian === 'AM' && h === 12) totalMins -= 720;
+                const nowMins = new Date().getHours() * 60 + new Date().getMinutes();
+                return totalMins < nowMins ? (
+                  <div className="mt-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700 font-medium">
+                    ⚠️ This appointment time has passed. Consider cancelling or rescheduling.
+                  </div>
+                ) : null;
+              })()}
 
               {/* Actions for upcoming */}
               {tab === 'upcoming' && (
@@ -232,7 +255,7 @@ export default function PatientAppointments() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
             <h2 className="text-lg font-bold text-slate-800">Reschedule Appointment</h2>
             <p className="text-sm text-slate-600">Pick a new date and time for <strong>{rescheduleTarget.doctorName}</strong>.</p>
-            <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+            <input type="date" value={newDate} min={new Date().toISOString().split('T')[0]} onChange={e => setNewDate(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
             <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
             <div className="flex gap-3">
               <button onClick={() => setRescheduleTarget(null)} className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200">Cancel</button>

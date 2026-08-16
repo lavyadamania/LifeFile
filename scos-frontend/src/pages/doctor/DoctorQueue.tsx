@@ -3,13 +3,15 @@ import { Users, UserPlus, Activity, ArrowRight, CheckCircle2, Building2 } from '
 import { useNavigate } from 'react-router-dom';
 import useStreamingStore from '../../services/streaming';
 import useDoctorStore from '../../store/useDoctorStore';
-import { getAppointments, addToQueue } from '../../lib/api';
-import { useState } from 'react';
+import useAuthStore from '../../store/useAuthStore';
+import { getAppointments, addToQueue, getDoctors } from '../../lib/api';
+import { useState, useEffect } from 'react';
 
 export default function DoctorQueue() {
   const navigate = useNavigate();
-  const { isConnected, connect, disconnect, callNext, queueList, currentServingId, events } = useStreamingStore();
+  const { isConnected, connect, disconnect, callNext, queueList, currentServingId, currentServingName, events } = useStreamingStore();
   const { activeHospitalId } = useDoctorStore();
+  const { user } = useAuthStore();
 
   useEffect(() => {
     connect();
@@ -17,10 +19,20 @@ export default function DoctorQueue() {
   }, [connect, disconnect]);
 
   const handleCallNext = () => {
-    callNext('DOC-1');
+    // BUG 3 FIX: Use real doctor profile ID, not hardcoded 'DOC-1'
+    callNext(doctorProfileId || user?.id || 'DOC-1');
   };
 
   const [isStartingQueue, setIsStartingQueue] = useState(false);
+  const [doctorProfileId, setDoctorProfileId] = useState<string>('');
+
+  // BUG 3 FIX: Load the real doctor profile ID on mount
+  useEffect(() => {
+    getDoctors().then(res => {
+      const myProfile = res.data.find((d: any) => d.userId === user?.id || d.name === user?.name);
+      if (myProfile) setDoctorProfileId(myProfile._id);
+    }).catch(() => {});
+  }, [user]);
 
   const handleStartQueue = async () => {
     setIsStartingQueue(true);
@@ -32,12 +44,18 @@ export default function DoctorQueue() {
       const dateStr = String(today.getDate()).padStart(2, '0');
       const todayStr = `${year}-${monthStr}-${dateStr}`;
 
-      const todaysAppts = res.data.filter((appt: any) => appt.date === todayStr && appt.status === 'Confirmed');
+      // BUG 2 FIX: Load both Confirmed AND Pending appointments
+      const todaysAppts = res.data.filter((appt: any) =>
+        appt.date === todayStr && ['Confirmed', 'Pending'].includes(appt.status)
+      );
       
       for (const appt of todaysAppts) {
-        // avoid adding if already in queue
-        if (!queueList.find(p => p.id === appt.patientId._id)) {
-          await addToQueue({ patientId: appt.patientId._id, patientName: appt.patientId.name, doctorId: appt.doctorId, hospitalId: appt.hospitalId || undefined, hospitalName: appt.hospitalName || undefined });
+        // BUG 9 FIX: Guard against unpopulated patientId
+        const pid = appt.patientId?._id || appt.patientId;
+        const pname = appt.patientId?.name || appt.patientName || 'Unknown Patient';
+        if (!pid) continue;
+        if (!queueList.find(p => p.id === pid)) {
+          await addToQueue({ patientId: pid, patientName: pname, doctorId: appt.doctorId, hospitalId: appt.hospitalId || undefined, hospitalName: appt.hospitalName || undefined });
         }
       }
     } catch (err) {
@@ -70,8 +88,9 @@ export default function DoctorQueue() {
           )}
         </div>
         <div className="flex gap-2">
-           <span className="px-2 py-1 bg-slate-800 rounded text-xs">scos.queue.updates</span>
-           <span className="px-2 py-1 bg-slate-800 rounded text-xs">scos.appointments</span>
+           {/* BUG 10 FIX: Updated topic names */}
+           <span className="px-2 py-1 bg-slate-800 rounded text-xs">lifefile.queue.updates</span>
+           <span className="px-2 py-1 bg-slate-800 rounded text-xs">lifefile.appointments</span>
         </div>
       </div>
 
@@ -92,17 +111,29 @@ export default function DoctorQueue() {
                 <div className="w-24 h-24 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-sm">
                    <span className="text-3xl font-bold">P</span>
                 </div>
-                <h1 className="text-3xl font-extrabold text-slate-800 mb-2">Patient {currentServingId}</h1>
+                 {/* BUG 8 FIX: Show patient name instead of raw MongoDB ID */}
+                 <h1 className="text-3xl font-extrabold text-slate-800 mb-2">{currentServingName || `Patient ${currentServingId?.slice(-6)}`}</h1>
                 <p className="text-slate-500 mb-8">Active consultation</p>
                 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <button 
+                   <button 
                     onClick={handleStartConsultation}
                     className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-sm"
                   >
                     Start Consultation <ArrowRight className="w-5 h-5" />
                   </button>
-                  <button className="flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors">
+                  {/* BUG 6 FIX: Complete Consult button now has onClick */}
+                  <button
+                    onClick={() => {
+                      const token = JSON.parse(localStorage.getItem('scos-auth-storage') || '{}')?.state?.token;
+                      fetch('http://localhost:5000/api/queue/complete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                        body: JSON.stringify({ doctorId: doctorProfileId || user?.id, patientId: currentServingId }),
+                      }).catch(console.error);
+                    }}
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors"
+                  >
                     <CheckCircle2 className="w-5 h-5" />
                     Complete Consult
                   </button>
