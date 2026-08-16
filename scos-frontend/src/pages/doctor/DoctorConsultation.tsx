@@ -3,9 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { ArrowLeft, Activity, FileText, Plus, Trash2, Save, Lock, Search, UserPlus, X, Check, Paperclip, ChevronDown, ChevronUp, Pill, Image, Building2, Stethoscope, BrainCircuit } from 'lucide-react';
 import nlp from 'compromise';
+import ReactMarkdown from 'react-markdown';
 import PrescriptionPreview from '../../components/PrescriptionPreview';
 import type { PrescriptionTemplate } from '../../components/PrescriptionPreview';
-import { createPrescription, searchPatients, registerUser, createWalkinAppointment, getDoctors, updateDoctor, getPatientPrescriptions, uploadAttachment, getAppointments, updateAppointmentStatus } from '../../lib/api';
+import { createPrescription, searchPatients, registerUser, createWalkinAppointment, getDoctors, updateDoctor, getPatientPrescriptions, uploadAttachment, getAppointments, updateAppointmentStatus, getPatientAISummary } from '../../lib/api';
 import useAccessStore from '../../store/useAccessStore';
 import useAuthStore from '../../store/useAuthStore';
 
@@ -64,6 +65,10 @@ export default function DoctorConsultation() {
   const [patientHistory, setPatientHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [expandedRx, setExpandedRx] = useState<Set<string>>(new Set());
+
+  // AI Summary
+  const [aiSummary, setAiSummary] = useState('');
+  const [loadingAi, setLoadingAi] = useState(false);
 
   // Attachments for current prescription
   const [attachments, setAttachments] = useState<{filename: string; url: string; type: string}[]>([]);
@@ -218,6 +223,12 @@ export default function DoctorConsultation() {
       .then(res => setPatientHistory(res.data))
       .catch(() => setPatientHistory([]))
       .finally(() => setLoadingHistory(false));
+
+    setLoadingAi(true);
+    getPatientAISummary(patient._id)
+      .then(res => setAiSummary(res.data.summary))
+      .catch(() => setAiSummary('Failed to load AI summary.'))
+      .finally(() => setLoadingAi(false));
   };
 
   // Auto-populate patient details if it's an active consultation from the queue
@@ -597,6 +608,29 @@ export default function DoctorConsultation() {
           </div>
 
           <div className="p-6 flex-1 overflow-y-auto">
+            
+            {/* AI Summary Widget */}
+            {(!isNewPrescription || selectedPatient) && (
+              <div className="mb-6 bg-gradient-to-r from-teal-50 to-emerald-50 rounded-xl border border-teal-100 p-4 shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <BrainCircuit className="w-5 h-5 text-teal-600" />
+                  <h3 className="font-bold text-slate-800">AI Medical Summary</h3>
+                </div>
+                {loadingAi ? (
+                  <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <div className="w-4 h-4 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+                    Generating AI summary...
+                  </div>
+                ) : aiSummary ? (
+                  <div className="text-sm text-slate-700 prose prose-sm max-w-none prose-p:leading-relaxed prose-li:my-0.5">
+                     <ReactMarkdown>{aiSummary}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500 italic">No AI summary available.</p>
+                )}
+              </div>
+            )}
+
             <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
               <FileText className="w-4 h-4 text-slate-400" /> Patient History & Prescriptions
             </h3>

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Phone, MapPin, Activity, Save, Loader2, FileText, Calendar, FileDown, ShieldCheck, Building2, UserPlus, ArrowRight } from 'lucide-react';
+import { Phone, MapPin, Activity, Save, Loader2, FileText, Calendar, FileDown, ShieldCheck, Building2, UserPlus, ArrowRight, BrainCircuit } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import useAuthStore from '../../store/useAuthStore';
 import PrescriptionPreview from '../../components/PrescriptionPreview';
-import { getPatientProfile, updatePatientProfile, getAppointments, getPrescriptions, getDoctors } from '../../lib/api';
+import ReactMarkdown from 'react-markdown';
+import { getPatientProfile, updatePatientProfile, getAppointments, getPrescriptions, getDoctors, getPatientAISummary } from '../../lib/api';
 
 const profileSchema = z.object({
   phone: z.string().optional(),
@@ -30,6 +31,10 @@ export default function PatientProfile() {
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showPreview, setShowPreview] = useState<any>(null); // holds prescription data
+
+  // AI Summary State
+  const [aiSummary, setAiSummary] = useState<string>('');
+  const [loadingAi, setLoadingAi] = useState(false);
 
   const { register, handleSubmit, reset } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -56,6 +61,15 @@ export default function PatientProfile() {
       setAppointments(apptRes.data || []);
       setPrescriptions(rxRes.data || []);
       setDoctorsList(docsRes.data || []);
+
+      if (profileRes.data?._id) {
+        setLoadingAi(true);
+        getPatientAISummary(profileRes.data._id)
+          .then(res => setAiSummary(res.data.summary))
+          .catch(() => setAiSummary('Failed to generate AI summary.'))
+          .finally(() => setLoadingAi(false));
+      }
+
     } catch (err) {
       console.error(err);
     } finally {
@@ -216,6 +230,34 @@ export default function PatientProfile() {
                 </div>
               )}
             </form>
+          </div>
+
+          {/* AI Medical Summary */}
+          <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-2xl border border-teal-100 shadow-sm p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center text-teal-600">
+                <BrainCircuit className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">My AI Health Summary</h3>
+                <p className="text-xs text-slate-500">Auto-generated based on your medical history</p>
+              </div>
+            </div>
+            
+            <div className="bg-white/60 backdrop-blur-sm rounded-xl border border-teal-100/50 p-4">
+              {loadingAi ? (
+                <div className="flex items-center gap-2 text-sm text-slate-500 py-4">
+                  <div className="w-5 h-5 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+                  Generating your personalized AI summary...
+                </div>
+              ) : aiSummary ? (
+                <div className="text-sm text-slate-700 prose prose-sm max-w-none prose-p:leading-relaxed prose-li:my-0.5">
+                   <ReactMarkdown>{aiSummary}</ReactMarkdown>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500 italic">No AI summary available. Start by uploading a medical record or booking a consultation.</p>
+              )}
+            </div>
           </div>
 
           {/* Privacy & Access Control */}

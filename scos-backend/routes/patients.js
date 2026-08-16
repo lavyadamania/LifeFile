@@ -176,4 +176,51 @@ router.post('/records/:id/verify', auth, async (req, res) => {
   }
 });
 
+// GET /api/patients/:id/ai-summary
+router.get('/:id/ai-summary', auth, async (req, res) => {
+  try {
+    const patient = await Patient.findById(req.params.id);
+    if (!patient) return res.status(404).json({ error: 'Patient not found' });
+
+    if (req.user.role === 'patient' && patient.userId.toString() !== req.user._id.toString()) {
+       return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const Prescription = require('../models/Prescription');
+    const prescriptions = await Prescription.find({ patientId: patient._id }).sort({ createdAt: -1 });
+
+    const MedicalRecord = require('../models/MedicalRecord');
+    const records = await MedicalRecord.find({ patientId: patient._id });
+
+    let prompt = `You are an expert medical AI assistant. Summarize the following patient's medical history into a concise, professional clinical summary. Use Markdown. Highlight chronic conditions, active medications, recent diagnoses, and health trends.\n\n`;
+    prompt += `Patient Name: ${patient.name}\n\n`;
+    prompt += `Past Prescriptions & Diagnoses:\n`;
+    if (prescriptions.length === 0) prompt += "None.\n";
+    prescriptions.forEach(p => {
+      prompt += `- Date: ${new Date(p.createdAt).toLocaleDateString()}, Doctor: Dr. ${p.doctorName}, Diagnosis: ${p.diagnosis}, Medications: ${p.medications.map(m => `${m.name} (${m.dosage})`).join(', ')}\n`;
+    });
+    prompt += `\nMedical Records Uploaded:\n`;
+    if (records.length === 0) prompt += "None.\n";
+    records.forEach(r => {
+      prompt += `- ${r.title} (${r.type})\n`;
+    });
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.json({ summary: "⚠️ **AI Not Configured**: Please add a `GEMINI_API_KEY` to the backend `.env` file to enable AI Summarization." });
+    }
+
+    const { GoogleGenAI } = require('@google/genai');
+    const ai = new GoogleGenAI({ apiKey });
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+
+    res.json({ summary: response.text });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

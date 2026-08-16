@@ -128,5 +128,6 @@ export const transferHospital = (hospitalId: string | null) =>
   api.put('/patients/me/hospital', { hospitalId });
 export const getHospitalPrescriptions = (hospitalId: string, patientId: string) =>
   api.get(`/prescriptions/hospital/${hospitalId}/patient/${patientId}`);
+export const getPatientAISummary = (id: string) => api.get(`/patients/${id}/ai-summary`);
 
 export default api;
