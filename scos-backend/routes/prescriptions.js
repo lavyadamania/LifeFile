@@ -93,11 +93,19 @@ router.post('/', auth, async (req, res) => {
     if (!data.patientId || data.patientId === 'new' || data.patientId.length < 12) {
       delete data.patientId;
     }
-    if (!data.doctorId || data.doctorId === 'DOC-1' || data.doctorId.length < 12) {
-      data.doctorId = req.user._id;
-    }
 
-    data.doctorName = data.doctorName || req.user.name;
+    // Force doctorId and doctorName to match the authenticated user
+    if (req.user.role === 'doctor') {
+      const Doctor = require('../models/Doctor');
+      const docProfile = await Doctor.findOne({ userId: req.user._id });
+      data.doctorId = docProfile ? docProfile._id : req.user._id;
+      data.doctorName = docProfile ? docProfile.name : req.user.name;
+    } else {
+      if (!data.doctorId || data.doctorId === 'DOC-1' || data.doctorId.length < 12) {
+        data.doctorId = req.user._id;
+      }
+      data.doctorName = data.doctorName || req.user.name;
+    }
 
     const prescription = await Prescription.create(data);
 

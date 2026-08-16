@@ -47,9 +47,12 @@ router.get('/:id', auth, async (req, res) => {
 // PUT /api/patients/me
 router.put('/me', auth, async (req, res) => {
   try {
+    // Prevent mass assignment of sensitive fields
+    const { _id, userId, hospitalHistory, currentHospital, grantedDoctors, ...safeData } = req.body;
+
     const patient = await Patient.findOneAndUpdate(
       { userId: req.user._id },
-      { $set: req.body },
+      { $set: safeData },
       { new: true, upsert: true }
     ).populate('grantedDoctors').populate('currentHospital', 'name address phone');
     res.json(patient);
