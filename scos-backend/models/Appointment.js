@@ -7,7 +7,7 @@ const appointmentSchema = new mongoose.Schema({
   spec:       { type: String, default: '' },
   date:       { type: String, required: true },
   time:       { type: String, required: true },
-  status:     { type: String, enum: ['Confirmed', 'Pending', 'Cancelled', 'Rescheduled', 'Completed', 'Missed', 'Postponed'], default: 'Pending' },
+  status:     { type: String, enum: ['Confirmed', 'Pending', 'Cancelled', 'Rescheduled', 'Completed', 'Missed', 'Postponed', 'In_Progress'], default: 'Pending' },
   location:   { type: String, default: 'Main Clinic' },
   postponedTo: { type: String, default: '' },
   isWalkin:     { type: Boolean, default: false },
