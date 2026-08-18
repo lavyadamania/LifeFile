@@ -123,7 +123,7 @@ export default function DoctorQueue() {
                    {nowServing.name || nowServing.patientName}
                  </h1>
                  <p className="text-sm font-bold text-blue-600 mb-6 font-mono">
-                   Permanent Token #{nowServing.tokenNumber || nowServing.baseToken}
+                   Permanent Token #{nowServing.tokenNumber || nowServing.baseToken} • Slot Time: {nowServing.time || '—'}
                  </p>
                 
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -219,13 +219,17 @@ export default function DoctorQueue() {
                    </div>
                  </div>
                  
-                 <div className={`grid grid-cols-2 gap-2 mt-1 pt-2 border-t text-[10px] ${isEmergencyTop ? 'border-red-200' : 'border-slate-100'}`}>
-                   <div className={`p-1.5 rounded ${isEmergencyTop ? 'bg-red-100/50' : 'bg-slate-50'}`}>
-                     <span className={`block uppercase font-bold text-[8px] ${isEmergencyTop ? 'text-red-500' : 'text-slate-400'}`}>Wait Time</span>
+                 <div className={`grid grid-cols-3 gap-1 mt-1 pt-2 border-t text-[10px] ${isEmergencyTop ? 'border-red-200' : 'border-slate-100'}`}>
+                   <div className={`p-1 rounded ${isEmergencyTop ? 'bg-red-100/50' : 'bg-slate-50'}`}>
+                     <span className={`block uppercase font-bold text-[7px] ${isEmergencyTop ? 'text-red-500' : 'text-slate-400'}`}>Time</span>
+                     <span className={`font-bold ${isEmergencyTop ? 'text-red-800' : 'text-slate-700'}`}>{patient.time || '—'}</span>
+                   </div>
+                   <div className={`p-1 rounded ${isEmergencyTop ? 'bg-red-100/50' : 'bg-slate-50'}`}>
+                     <span className={`block uppercase font-bold text-[7px] ${isEmergencyTop ? 'text-red-500' : 'text-slate-400'}`}>Wait</span>
                      <span className={`font-bold ${isEmergencyTop ? 'text-red-800' : 'text-slate-700'}`}>{patient.priority?.waitMinutes}m</span>
                    </div>
-                   <div className={`p-1.5 rounded ${isEmergencyTop ? 'bg-red-100/50' : 'bg-slate-50'}`}>
-                     <span className={`block uppercase font-bold text-[8px] ${isEmergencyTop ? 'text-red-500' : 'text-slate-400'}`}>Triage</span>
+                   <div className={`p-1 rounded ${isEmergencyTop ? 'bg-red-100/50' : 'bg-slate-50'}`}>
+                     <span className={`block uppercase font-bold text-[7px] ${isEmergencyTop ? 'text-red-500' : 'text-slate-400'}`}>Triage</span>
                      <span className={`font-bold ${isEmergencyTop ? 'text-red-800' : 'text-slate-700'}`}>Lvl {patient.triageLevel}</span>
                    </div>
                  </div>
@@ -276,13 +280,17 @@ export default function DoctorQueue() {
                    </div>
                  </div>
                  
-                 <div className="grid grid-cols-2 gap-2 mt-1 pt-2 border-t border-red-100 text-[10px]">
-                   <div className="bg-red-50 p-1.5 rounded">
-                     <span className="text-red-400 block uppercase font-bold text-[8px]">Wait Time</span>
+                 <div className="grid grid-cols-3 gap-1 mt-1 pt-2 border-t border-red-100 text-[10px]">
+                   <div className="bg-red-50 p-1 rounded">
+                     <span className="text-red-400 block uppercase font-bold text-[7px]">Time</span>
+                     <span className="font-bold text-red-700">{patient.time || '—'}</span>
+                   </div>
+                   <div className="bg-red-50 p-1 rounded">
+                     <span className="text-red-400 block uppercase font-bold text-[7px]">Wait</span>
                      <span className="font-bold text-red-700">{patient.priority?.waitMinutes}m</span>
                    </div>
-                   <div className="bg-red-50 p-1.5 rounded">
-                     <span className="text-red-400 block uppercase font-bold text-[8px]">Triage</span>
+                   <div className="bg-red-50 p-1 rounded">
+                     <span className="text-red-400 block uppercase font-bold text-[7px]">Triage</span>
                      <span className="font-bold text-red-700">Lvl {patient.triageLevel}</span>
                    </div>
                  </div>

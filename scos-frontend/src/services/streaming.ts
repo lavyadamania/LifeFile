@@ -34,6 +34,7 @@ export interface QueuePatient {
   queuePosition?: number;
   triageLevel?: number;
   missedCalls?: number;
+  time?: string;
   priority?: PriorityDetails;
 }
 
@@ -97,6 +98,7 @@ const useStreamingStore = create<StreamingState>((set, get) => ({
           queuePosition: q.queuePosition,
           triageLevel: q.triageLevel,
           missedCalls: q.missedCalls,
+          time: q.time,
           priority: q.priority
         }));
       }

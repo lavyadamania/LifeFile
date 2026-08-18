@@ -44,6 +44,7 @@ router.get('/list', auth, async (req, res) => {
         triageLevel: appt.triageLevel,
         missedCalls: appt.missedCalls,
         status: appt.status,
+        time: appt.time,
         hospitalId: appt.hospitalId,
         hospitalName: appt.hospitalName,
         priority: priorityDetails
