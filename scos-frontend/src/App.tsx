@@ -27,6 +27,7 @@ import HospitalDetail from './pages/patient/HospitalDetail';
 import HospitalRecords from './pages/patient/HospitalRecords';
 import AIPredictor from './pages/patient/AIPredictor';
 import SymptomTriage from './pages/patient/SymptomTriage';
+import PatientAnalytics from './pages/patient/PatientAnalytics';
 
 // Doctor Pages
 import DoctorProfile from './pages/doctor/DoctorProfile';
@@ -36,6 +37,7 @@ import DoctorConsultation from './pages/doctor/DoctorConsultation';
 import DoctorSchedule from './pages/doctor/DoctorSchedule';
 import DoctorRecords from './pages/doctor/DoctorRecords';
 import DoctorHospitals from './pages/doctor/DoctorHospitals';
+import DoctorAnalytics from './pages/doctor/DoctorAnalytics';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -44,9 +46,11 @@ import AdminManageClinics from './pages/admin/AdminManageClinics';
 import AdminAuditLogs from './pages/admin/AdminAuditLogs';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminManageHospitals from './pages/admin/AdminManageHospitals';
+import AdminAnalytics from './pages/admin/AdminAnalytics';
 
 // Hospital Pages
 import HospitalDashboard from './pages/hospital/HospitalDashboard';
+import HospitalAnalytics from './pages/hospital/HospitalAnalytics';
 
 // Initialize React Query client
 const queryClient = new QueryClient();
@@ -81,6 +85,7 @@ function App() {
                 <Route path="/patient/hospital/:id/records" element={<HospitalRecords />} />
                 <Route path="/patient/ai-predictor" element={<AIPredictor />} />
                 <Route path="/patient/ai-triage" element={<SymptomTriage />} />
+                <Route path="/patient/analytics" element={<PatientAnalytics />} />
                 <Route path="/patient/settings" element={<PatientProfile />} />
                 <Route path="/patient/history" element={<Navigate to="/patient/timeline" replace />} />
               </Route>
@@ -96,6 +101,7 @@ function App() {
                 <Route path="/doctor/records" element={<DoctorRecords />} />
                 <Route path="/doctor/profile" element={<DoctorProfile />} />
                 <Route path="/doctor/hospitals" element={<DoctorHospitals />} />
+                <Route path="/doctor/analytics" element={<DoctorAnalytics />} />
               </Route>
             </Route>
 
@@ -108,6 +114,7 @@ function App() {
                 <Route path="/admin/audit" element={<AdminAuditLogs />} />
                 <Route path="/admin/hospitals" element={<AdminManageHospitals />} />
                 <Route path="/admin/settings" element={<AdminSettings />} />
+                <Route path="/admin/analytics" element={<AdminAnalytics />} />
               </Route>
             </Route>
 
@@ -115,6 +122,7 @@ function App() {
             <Route element={<ProtectedRoute allowedRoles={['hospital']} />}>
               <Route element={<HospitalLayout />}>
                 <Route path="/hospital" element={<HospitalDashboard />} />
+                <Route path="/hospital/analytics" element={<HospitalAnalytics />} />
               </Route>
             </Route>
             

@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { Users, UserPlus, Activity, ArrowRight, CheckCircle2, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useStreamingStore from '../../services/streaming';
@@ -29,7 +28,8 @@ export default function DoctorQueue() {
   // BUG 3 FIX: Load the real doctor profile ID on mount
   useEffect(() => {
     getDoctors().then(res => {
-      const myProfile = res.data.find((d: any) => d.userId === user?.id || d.name === user?.name);
+      const userId = user?.id || (user as any)?._id;
+      const myProfile = res.data.find((d: any) => d.userId === userId || (typeof d.userId === 'object' && d.userId?._id === userId) || d.name === user?.name);
       if (myProfile) setDoctorProfileId(myProfile._id);
     }).catch(() => {});
   }, [user]);

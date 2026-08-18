@@ -46,7 +46,7 @@ export const addClinic = (data: any) => api.post('/clinics', data);
 export const updateClinic = (id: string, data: any) => api.put(`/clinics/${id}`, data);
 
 // Appointments
-export const getAppointments = (params?: { status?: string }) =>
+export const getAppointments = (params?: { status?: string; hospitalId?: string }) =>
   api.get('/appointments', { params });
 
 export const createAppointment = (data: any) => api.post('/appointments', data);
@@ -68,7 +68,7 @@ export const getMedicalRecords = () => api.get('/patients/records');
 export const verifyMedicalRecordPassword = (id: string, password: string) => api.post(`/patients/records/${id}/verify`, { password });
 
 // Queue
-export const addToQueue = (data: { patientId: string; patientName?: string; doctorId?: string }) => api.post('/queue/add', data);
+export const addToQueue = (data: { patientId: string; patientName?: string; doctorId?: string; hospitalId?: string; hospitalName?: string }) => api.post('/queue/add', data);
 
 // Prescriptions
 export const getPrescriptions = (params?: { hospitalId?: string }) => api.get('/prescriptions', { params });
@@ -129,5 +129,11 @@ export const transferHospital = (hospitalId: string | null) =>
 export const getHospitalPrescriptions = (hospitalId: string, patientId: string) =>
   api.get(`/prescriptions/hospital/${hospitalId}/patient/${patientId}`);
 export const getPatientAISummary = (id: string) => api.get(`/patients/${id}/ai-summary`);
+
+// Analytics
+export const getAdminAnalytics = () => api.get('/analytics/admin');
+export const getDoctorAnalytics = () => api.get('/analytics/doctor');
+export const getHospitalAnalytics = () => api.get('/analytics/hospital');
+export const getPatientAnalytics = () => api.get('/analytics/patient');
 
 export default api;

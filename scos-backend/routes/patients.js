@@ -213,12 +213,14 @@ router.get('/:id/ai-summary', auth, async (req, res) => {
     const { GoogleGenAI } = require('@google/genai');
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.6-flash',
       contents: prompt,
     });
 
     res.json({ summary: response.text });
   } catch (err) {
+    console.log("AI summary patientId:", req.params.id);
+    console.error("AI SUMMARY ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 });

@@ -108,7 +108,7 @@ export default function DoctorBooking() {
     
     if (!doctor.schedule || !Array.isArray(doctor.schedule.days) || doctor.schedule.days.length === 0) {
       // Fallback if no valid schedule is set
-      return generateTimeSlots('09:00', '17:00');
+      return generateTimeSlots('09:00', '17:00').map(s => s.display);
     }
 
     const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][selectedDateObj.getDay()];
@@ -176,7 +176,9 @@ export default function DoctorBooking() {
       {/* Doctor Info Card */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col md:flex-row gap-6">
         <div className="w-24 h-24 bg-slate-100 rounded-2xl flex-shrink-0 flex items-center justify-center">
-           <span className="text-3xl font-bold text-slate-400">{doctor.name.charAt(4)}</span>
+           <span className="text-3xl font-bold text-slate-400">
+             {doctor.name ? doctor.name.replace(/^Dr\.\s*/i, '').charAt(0) || doctor.name.charAt(0) : 'D'}
+           </span>
         </div>
         <div>
           <div className="flex items-center gap-3 mb-1">
@@ -227,28 +229,43 @@ export default function DoctorBooking() {
           {/* Time Selector */}
           <div>
             <h3 className="text-sm font-medium text-slate-700 mb-3">Select Time for {selectedDateObj?.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</h3>
-            {availableTimeSlots.length > 0 ? (
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                {availableTimeSlots.map(slot => (
-                  <button
-                    key={slot}
-                    onClick={() => setSelectedSlot(slot)}
-                    className={`py-2 px-1 text-sm font-medium rounded-lg border transition-colors ${
-                      selectedSlot === slot 
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-md' 
-                        : 'bg-white text-slate-700 border-slate-300 hover:border-blue-400 hover:bg-blue-50'
-                    }`}
-                  >
-                    {slot}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="py-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                <p className="text-slate-500 font-medium">Dr. {doctor.name} is not available on this day.</p>
-                <p className="text-sm text-slate-400 mt-1">Please select another date.</p>
-              </div>
-            )}
+            <div className="flex flex-col gap-2">
+              <input 
+                type="time" 
+                min="09:00" 
+                max="17:00" 
+                value={selectedSlot ? (() => {
+                  if (selectedSlot.includes('AM') || selectedSlot.includes('PM')) {
+                    const [time, modifier] = selectedSlot.split(' ');
+                    let [hours, minutes] = time.split(':');
+                    if (hours === '12') hours = '00';
+                    if (modifier === 'PM') hours = (parseInt(hours, 10) + 12).toString();
+                    return `${hours.padStart(2, '0')}:${minutes}`;
+                  }
+                  return selectedSlot;
+                })() : ''} 
+                onChange={(e) => {
+                  const timeStr = e.target.value;
+                  if (timeStr) {
+                    const [h] = timeStr.split(':').map(Number);
+                    if (h >= 9 && h <= 17) {
+                      let hours = h;
+                      const ampm = hours >= 12 ? 'PM' : 'AM';
+                      hours = hours % 12;
+                      hours = hours ? hours : 12;
+                      const strTime = hours.toString().padStart(2, '0') + ':' + timeStr.split(':')[1] + ' ' + ampm;
+                      setSelectedSlot(strTime);
+                    } else {
+                      alert('Please select a time between 09:00 AM and 05:00 PM');
+                    }
+                  } else {
+                    setSelectedSlot(null);
+                  }
+                }}
+                className="w-full sm:w-auto px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium text-slate-700 shadow-sm transition-all hover:border-blue-400" 
+              />
+              <span className="text-sm text-slate-500 font-medium">Working hours: 09:00 AM - 05:00 PM</span>
+            </div>
           </div>
         </div>
       </div>

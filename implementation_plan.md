@@ -1,29 +1,41 @@
-# SIH Hackathon AI Feature Proposals
+# Advanced Algorithm Implementation: Dynamic Weighted Priority Algorithm (DWPA)
 
-To make this project stand out for the Smart India Hackathon (SIH), we need a feature that looks computationally impressive but remains 100% free without needing paid API keys. 
+For a Smart India Hackathon (SIH) winning project, a simple FIFO or basic token queue is insufficient. To truly stand out, we must approach this like a computer science thesis by implementing a **Dynamic Weighted Priority Algorithm (DWPA)** inspired by Operating System CPU Scheduling (Multi-Level Feedback Queue & Aging).
 
-Here are three strong, hackathon-ready AI features we can implement natively. Please review and let me know which one (or multiple) you'd like to build!
+## The Core Problem with Standard Queues
+1. **FIFO**: Breaks instantly if a patient is late.
+2. **Basic Token**: If a doctor "Skips" Token 4 to the end of the line, Token 4 might wait 5 hours (Queue Starvation).
+3. **Walk-ins**: Walk-in emergencies disrupt the schedule, pushing all booked tokens back indefinitely.
+
+## The Solution: Current Effective Priority (CEP)
+
+Instead of a static position, every patient in the queue is constantly evaluated based on a continuous mathematical formula. The patient with the highest **CEP** is always next.
+
+### The Mathematics
+
+```text
+CEP = (W_base × Slot_Order) + (W_age × Wait_Time) + (W_triage × Severity) - (W_penalty × Missed_Calls)
+```
+
+**Variables Explained:**
+- `Slot_Order (Base Token)`: The sequential number given at booking time (e.g., Token 5).
+- `Wait_Time (Aging Factor)`: For every minute past their appointment time, their score slowly increases. This **prevents Starvation**. Even a low-priority patient will eventually reach maximum priority and be seen.
+- `Severity (Triage Factor)`: Walk-ins or AI-determined severe cases get a multiplier boost to jump the queue safely.
+- `Missed_Calls (The Skip Penalty)`: If a doctor clicks "Skip / Patient Not Present", the patient is NOT deleted or thrown to the absolute back. Instead, they receive a massive penalty drop. This allows the next 2-3 tokens to instantly bypass them. As time passes, the *Aging Factor* slowly raises their score back up, naturally slipping them back into the queue when they finally arrive.
+
+## System Architecture
+
+### 1. Backend: The Priority Engine (`scos-backend`)
+- **Appointment Model**: Will store `baseToken`, `triageLevel` (1-5), and `missedCalls` (default 0).
+- **Kafka Engine**: Will broadcast raw state events (`ADD`, `SKIP`, `TRIAGE_UPDATE`).
+
+### 2. Frontend: The Real-Time Sorting Matrix (`scos-frontend`)
+- **Dynamic Re-sorting**: The frontend array (`queueList`) is no longer static. Every 60 seconds (or on every Kafka event), the React state runs the CEP mathematical formula for every patient and re-sorts the array `O(N log N)`. 
+- **Doctor UI**: The doctor sees the queue shifting dynamically. The "Skip" button will simply increment the patient's `missedCalls` value in the database and fire a Kafka event. The queue will instantly re-sort, dropping that patient down a few spots based on the math.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> Please review the 3 options below and reply with the number(s) you want to implement. All of these can be built to run natively in the browser/Node.js, keeping them completely free.
-
-### Option 1: AI Cardiovascular / Diabetes Risk Predictor (Recommended)
-**What it is:** A machine learning model (using math/logistic regression or a lightweight TensorFlow.js model) embedded in the patient portal. 
-**How it works:** The patient enters basic vitals (Age, Blood Pressure, BMI, Glucose, Smoking Status). The AI calculates their % risk of developing heart disease or diabetes over the next 10 years.
-**Why it wins SIH:** Judges love predictive healthcare models. It demonstrates the use of data science to shift from reactive to *preventative* healthcare.
-
-### Option 2: Smart NLP Symptom Triage Checker
-**What it is:** A natural language processing (NLP) symptom checker.
-**How it works:** The patient types a paragraph explaining how they feel (e.g., "I have had a severe headache for 3 days, feeling dizzy, and my neck is stiff"). We use a local NLP library to extract the symptoms and match them against a medical knowledge base. The AI then outputs a triage level (e.g., "URGENT - Seek immediate care" or "MILD - Book a general consultation") and possible conditions.
-**Why it wins SIH:** It demonstrates intelligent routing and reduces unnecessary hospital load, a massive problem in Indian healthcare.
-
-### Option 3: "Smart Doctor Notes" with Auto-Extraction
-**What it is:** An enhancement to the Doctor's Consultation screen.
-**How it works:** Instead of manually typing medications and diagnosis, the doctor types a single block of raw clinical notes (e.g., "Patient presents with acute bronchitis. Prescribing Amoxicillin 500mg twice daily for 7 days."). We build a local NLP script that instantly scans the text, extracts the drug name, dosage, frequency, and diagnosis, and auto-fills the structured form.
-**Why it wins SIH:** It tackles doctor burnout and administrative overhead, showing that the system makes doctors faster.
-
----
-
-**Which option would you like to add? (I recommend combining Option 1 and Option 2 for maximum impact on the Patient side!)**
+> This is a highly advanced, thesis-level algorithm. It will look incredible in an SIH presentation because you can show the judges the actual mathematical formula determining patient flow.
+> 
+> **Are you ready to implement the Dynamic Weighted Priority Algorithm (DWPA)?**

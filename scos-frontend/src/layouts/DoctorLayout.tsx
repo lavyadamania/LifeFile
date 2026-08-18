@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, FileText, Calendar, PlusCircle, Search, LogOut, Stethoscope, UserCircle, Building } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Calendar, PlusCircle, Search, LogOut, Stethoscope, UserCircle, Building, BarChart3 } from 'lucide-react';
 import useAuthStore from '../store/useAuthStore';
 import useDoctorStore from '../store/useDoctorStore';
 import useStreamingStore from '../services/streaming';
@@ -28,6 +28,7 @@ export default function DoctorLayout() {
 
   const navigation = [
     { name: 'Dashboard', href: '/doctor', icon: LayoutDashboard },
+    { name: 'Analytics', href: '/doctor/analytics', icon: BarChart3 },
     { name: 'Active Queue', href: '/doctor/queue', icon: Users },
     { name: 'My Schedule', href: '/doctor/schedule', icon: Calendar },
     { name: 'Medical Records', href: '/doctor/records', icon: FileText },

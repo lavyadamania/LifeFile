@@ -44,7 +44,7 @@ export default function SymptomTriage() {
 
       let maxScore = 0;
       let matchedConditions = new Set<string>();
-      let triage: 'URGENT' | 'MODERATE' | 'MILD' = 'MILD';
+      let triage = 'MILD';
 
       kb.forEach(rule => {
         let matchCount = 0;
@@ -70,7 +70,7 @@ export default function SymptomTriage() {
 
       setResult({
         symptoms: [...new Set(keywords)].slice(0, 5), // show top 5 extracted words
-        triageLevel: maxScore === 0 ? 'MILD' : triage,
+        triageLevel: (maxScore === 0 ? 'MILD' : triage) as 'URGENT' | 'MODERATE' | 'MILD',
         conditions: Array.from(matchedConditions).length > 0 ? Array.from(matchedConditions) : ['Undiagnosed Mild Condition'],
         recommendation: maxScore === 0 ? 'Monitor symptoms. No immediate action required.' : rec
       });

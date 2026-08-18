@@ -67,7 +67,7 @@ const useStreamingStore = create<StreamingState>((set, get) => ({
     if (existing?.connected) return;
 
     const socket = io('http://localhost:5000', {
-      transports: ['websocket'],
+      transports: ['polling', 'websocket'],
     });
 
     socket.on('connect', () => {

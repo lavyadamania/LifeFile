@@ -57,6 +57,7 @@ export default function DoctorConsultation() {
   const [walkinPhone, setWalkinPhone] = useState('');
   const [walkinSubmitting, setWalkinSubmitting] = useState(false);
   const [walkinError, setWalkinError] = useState('');
+  const [walkinTime, setWalkinTime] = useState(new Date().toLocaleTimeString('en-US', { hour12: false }).slice(0, 5));
 
   // Success state
   const [successMsg, setSuccessMsg] = useState('');
@@ -303,7 +304,15 @@ export default function DoctorConsultation() {
           patientId: newPatient._id,
           doctorName: 'Doctor',
           date: new Date().toISOString().split('T')[0],
-          time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+          time: (() => {
+            if (walkinTime) {
+              const [h, m] = walkinTime.split(':').map(Number);
+              const ampm = h >= 12 ? 'PM' : 'AM';
+              const hours12 = h % 12 || 12;
+              return `${hours12.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} ${ampm}`;
+            }
+            return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+          })(),
         });
       } catch {
         // Non-critical — appointment creation can fail silently
@@ -550,6 +559,26 @@ export default function DoctorConsultation() {
                 placeholder="Phone (optional)"
                 className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-sm"
               />
+              <div className="flex items-center gap-2">
+                <input
+                  type="time"
+                  min="09:00"
+                  max="17:00"
+                  value={walkinTime}
+                  onChange={(e) => {
+                    const timeStr = e.target.value;
+                    if (timeStr) {
+                      const [h] = timeStr.split(':').map(Number);
+                      if (h >= 9 && h <= 17) {
+                        setWalkinTime(timeStr);
+                      } else {
+                        alert('Please select a time between 09:00 AM and 05:00 PM');
+                      }
+                    }
+                  }}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-sm"
+                />
+              </div>
               {walkinError && (
                 <p className="text-xs text-red-600 font-medium">{walkinError}</p>
               )}

@@ -1,11 +1,12 @@
-const { Kafka, Partitioners } = require('kafkajs');
+const { Kafka, Partitioners, logLevel } = require('kafkajs');
 
 const kafka = new Kafka({
   clientId: 'scos-backend',
   brokers: [process.env.KAFKA_BROKER || 'localhost:9092'],
+  logLevel: logLevel.WARN,
   retry: {
     initialRetryTime: 100,
-    retries: 8
+    retries: 5
   }
 });
 
@@ -16,6 +17,9 @@ const TOPICS = [
   'scos.queue.updates',
   'scos.appointments',
   'scos.prescriptions',
+  'lifefile.queue.updates',
+  'lifefile.appointments',
+  'lifefile.prescriptions',
 ];
 
 let io = null; // Socket.io instance
@@ -33,6 +37,9 @@ const attemptConnection = async () => {
       await consumer.subscribe({ topic, fromBeginning: false });
     }
     console.log('✅ Kafka Consumer subscribed to:', TOPICS.join(', '));
+
+    isKafkaConnected = true;
+    console.log('✅ Kafka Producer & Consumer running and fully initialized');
 
     await consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
@@ -53,10 +60,8 @@ const attemptConnection = async () => {
         }
       },
     });
-
-    isKafkaConnected = true;
-    console.log('✅ Kafka Consumer running and fully initialized');
   } catch (error) {
+    isKafkaConnected = false;
     console.warn(`⚠️ Kafka connection failed (${error.message}). Retrying in 5 seconds...`);
     // Backoff and retry
     setTimeout(attemptConnection, 5000);

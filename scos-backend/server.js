@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config(); // LifeFile Server Entrypoint - Gemini 3.6 Fix
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -11,7 +11,7 @@ const server = http.createServer(app);
 
 // Socket.io
 const io = new Server(server, {
-  cors: { origin: ['http://localhost:5173', 'http://localhost:5174'], credentials: true },
+  cors: { origin: true, credentials: true },
 });
 
 io.on('connection', (socket) => {
@@ -22,7 +22,7 @@ io.on('connection', (socket) => {
 });
 
 // Middleware
-app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:5174'], credentials: true }));
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
 // Serve uploaded files (signatures, attachments)
@@ -41,6 +41,7 @@ app.use('/api/stats', require('./routes/stats'));
 app.use('/api/patients', require('./routes/patients'));
 app.use('/api/queue', require('./routes/queue'));
 app.use('/api/hospitals', require('./routes/hospitals'));
+app.use('/api/analytics', require('./routes/analytics'));
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok', kafka: true, mongo: true }));

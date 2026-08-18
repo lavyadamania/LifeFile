@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Activity, Calendar, Clock, Settings, LogOut, User, Building2, BrainCircuit, HeartPulse } from 'lucide-react';
+import { Activity, Calendar, Clock, Settings, LogOut, User, Building2, BrainCircuit, HeartPulse, BarChart3 } from 'lucide-react';
 import useAuthStore from '../store/useAuthStore';
 import NotificationPanel from '../components/NotificationPanel';
 import PatientAIAssistant from '../components/PatientAIAssistant';
@@ -15,6 +15,7 @@ export default function PatientLayout() {
     { name: 'Hospitals', href: '/patient/hospitals', icon: Building2 },
     { name: 'My Appointments', href: '/patient/appointments', icon: Calendar },
     { name: 'Medical Timeline', href: '/patient/timeline', icon: Clock },
+    { name: 'Health Analytics', href: '/patient/analytics', icon: BarChart3 },
     { name: 'Settings', href: '/patient/settings', icon: Settings },
   ];
 

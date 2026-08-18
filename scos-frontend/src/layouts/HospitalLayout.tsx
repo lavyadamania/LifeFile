@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Building2, LayoutDashboard, Users, Search, LogOut } from 'lucide-react';
+import { Building2, LayoutDashboard, Users, Search, LogOut, BarChart3 } from 'lucide-react';
 import useAuthStore from '../store/useAuthStore';
 import NotificationPanel from '../components/NotificationPanel';
 
@@ -9,6 +9,7 @@ export default function HospitalLayout() {
 
   const navigation = [
     { name: 'Dashboard & Staff', href: '/hospital', icon: LayoutDashboard },
+    { name: 'Analytics', href: '/hospital/analytics', icon: BarChart3 },
   ];
 
   return (

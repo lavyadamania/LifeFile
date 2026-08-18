@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Shield, Users, ActivitySquare, Settings, LogOut, Building2, Hospital } from 'lucide-react';
+import { Shield, Users, ActivitySquare, Settings, LogOut, Building2, Hospital, BarChart3 } from 'lucide-react';
 import useAuthStore from '../store/useAuthStore';
 
 export default function AdminLayout() {
@@ -8,6 +8,7 @@ export default function AdminLayout() {
 
   const navigation = [
     { name: 'System Overview', href: '/admin', icon: ActivitySquare },
+    { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
     { name: 'Manage Doctors', href: '/admin/doctors', icon: Users },
     { name: 'Manage Clinics', href: '/admin/clinics', icon: Building2 },
     { name: 'Manage Hospitals', href: '/admin/hospitals', icon: Hospital },
