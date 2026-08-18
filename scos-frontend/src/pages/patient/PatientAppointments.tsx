@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, MapPin, CalendarDays, AlertTriangle, ArrowRightLeft, XCircle, Building2 } from 'lucide-react';
-import { getAppointments, cancelAppointment, rescheduleAppointment, getMissedAppointments, updateAppointmentStatus } from '../../lib/api';
+import { Clock, MapPin, CalendarDays, AlertTriangle, ArrowRightLeft, XCircle, Building2, Lock, UserCheck, Bell } from 'lucide-react';
+import { getAppointments, cancelAppointment, rescheduleAppointment, getMissedAppointments, updateAppointmentStatus, addToQueue } from '../../lib/api';
 
 export default function PatientAppointments() {
   const navigate = useNavigate();
@@ -25,11 +25,7 @@ export default function PatientAppointments() {
   const fetchAppointments = () => {
     getAppointments().then(res => {
       const all = res.data;
-      const today = new Date();
-      const todayStr = today.toISOString().split('T')[0];
-      const nowMins = today.getHours() * 60 + today.getMinutes();
-
-      setUpcoming(all.filter((a: any) => ['Confirmed', 'Pending', 'Rescheduled'].includes(a.status)));
+      setUpcoming(all.filter((a: any) => ['Confirmed', 'Pending', 'Rescheduled', 'In_Progress'].includes(a.status)));
       setPast(all.filter((a: any) => ['Completed', 'Cancelled', 'Missed', 'Postponed'].includes(a.status)));
     }).catch(() => {});
 
@@ -92,6 +88,80 @@ export default function PatientAppointments() {
     }
   };
 
+  const handleJoinQueue = async (apt: any) => {
+    try {
+      await addToQueue({
+        patientId: apt.patientId?._id || apt.patientId,
+        patientName: apt.patientName,
+        doctorId: apt.doctorId?._id || apt.doctorId,
+        hospitalId: apt.hospitalId
+      });
+      await updateAppointmentStatus(apt._id, { status: 'Pending' });
+    } catch (e) {
+      console.error(e);
+    }
+    navigate(`/patient/queue-status/${apt._id}`);
+  };
+
+  // Helper to determine Check-In Window (Opens 10m before slot, closes 20m post slot)
+  const getCheckInInfo = (apt: any) => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const isToday = apt.date === todayStr;
+
+    if (!isToday) {
+      return {
+        canCheckIn: false,
+        status: 'future_date',
+        message: `Check-in opens on appointment date (${apt.date}).`,
+        buttonText: 'Check-In Locked'
+      };
+    }
+
+    const timeStr = apt.time || '00:00';
+    const parts = timeStr.trim().split(' ');
+    const [hStr, mStr] = (parts[0] || '00:00').split(':');
+    let h = parseInt(hStr, 10) || 0;
+    const m = parseInt(mStr, 10) || 0;
+    const meridian = parts[1];
+
+    if (meridian === 'PM' && h !== 12) h += 12;
+    if (meridian === 'AM' && h === 12) h = 0;
+
+    const slotMins = h * 60 + m;
+    const now = new Date();
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+
+    const checkInStartMins = slotMins - 10; // 10 minutes BEFORE booking time
+    const checkInEndMins = slotMins + 20;   // 20 minutes POST booking time
+
+    if (nowMins < checkInStartMins) {
+      const openH = Math.floor(checkInStartMins / 60) % 24;
+      const openM = checkInStartMins % 60;
+      const formattedOpenTime = `${String(openH > 12 ? openH - 12 : openH === 0 ? 12 : openH).padStart(2, '0')}:${String(openM).padStart(2, '0')} ${openH >= 12 ? 'PM' : 'AM'}`;
+
+      return {
+        canCheckIn: false,
+        status: 'too_early',
+        message: `🔔 Reminder: Check-in opens 10 mins before slot (${formattedOpenTime}). Button is currently greyed out.`,
+        buttonText: `Opens at ${formattedOpenTime}`
+      };
+    } else if (nowMins >= checkInStartMins && nowMins <= checkInEndMins) {
+      return {
+        canCheckIn: true,
+        status: 'active',
+        message: `✅ Check-in is OPEN! You can check in up to 20 mins post booking time. Click below to join live queue.`,
+        buttonText: 'Join Queue / Check In Now'
+      };
+    } else {
+      return {
+        canCheckIn: false,
+        status: 'expired',
+        message: `⚠️ Check-in window closed (>20 mins past booking time). Please see reception or reschedule.`,
+        buttonText: 'Check-In Closed'
+      };
+    }
+  };
+
   const list = tab === 'upcoming' ? upcoming : tab === 'missed' ? missed : past;
 
   return (
@@ -144,7 +214,10 @@ export default function PatientAppointments() {
         </div>
       ) : (
         <div className="space-y-4">
-          {list.map((apt: any) => (
+          {list.map((apt: any) => {
+            const checkInInfo = tab === 'upcoming' ? getCheckInInfo(apt) : null;
+
+            return (
             <div key={apt._id} className={`bg-white rounded-2xl border shadow-sm p-6 hover:shadow-md transition-shadow ${
               tab === 'missed' ? 'border-amber-200' : 'border-slate-200'
             }`}>
@@ -153,12 +226,11 @@ export default function PatientAppointments() {
                   <h3 className="text-lg font-bold text-slate-800">{apt.doctorName}</h3>
                   <p className="text-blue-600 font-medium text-sm">{apt.spec}</p>
                   <div className="flex flex-wrap gap-3 mt-2 text-sm text-slate-600">
-                    {/* BUG 12 FIX: Format date nicely */}
                    <span className="flex items-center gap-1">
                      <CalendarDays className="w-4 h-4 text-slate-400" />
                      {apt.date ? new Date(apt.date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                    </span>
-                    <span className="flex items-center gap-1"><Clock className="w-4 h-4 text-slate-400" /> {apt.time}</span>
+                    <span className="flex items-center gap-1"><Clock className="w-4 h-4 text-slate-400" /> Slot: {apt.time}</span>
                     {apt.hospitalName && (
                       <span className="flex items-center gap-1 text-indigo-600 font-medium bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
                         <Building2 className="w-3.5 h-3.5" /> {apt.hospitalName}
@@ -174,35 +246,53 @@ export default function PatientAppointments() {
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                     apt.status === 'Confirmed' ? 'bg-emerald-50 text-emerald-700' :
                     apt.status === 'Pending' ? 'bg-amber-50 text-amber-700' :
+                    apt.status === 'In_Progress' ? 'bg-blue-600 text-white animate-pulse' :
                     apt.status === 'Cancelled' ? 'bg-red-50 text-red-700' :
                     apt.status === 'Rescheduled' ? 'bg-blue-50 text-blue-700' :
                     apt.status === 'Missed' ? 'bg-red-50 text-red-700' :
                     apt.status === 'Postponed' ? 'bg-amber-50 text-amber-700' :
                     'bg-slate-50 text-slate-700'
-                  }`}>{apt.status}</span>
+                  }`}>{apt.status === 'In_Progress' ? 'NOW SERVING' : apt.status}</span>
                 </div>
               </div>
 
-              {/* BUG 7 FIX: Warn if today's appointment time has already passed */}
-              {tab === 'upcoming' && apt.date === new Date().toISOString().split('T')[0] && (() => {
-                const [time, meridian] = (apt.time || '').split(' ');
-                const [h, m] = (time || '00:00').split(':').map(Number);
-                let totalMins = h * 60 + (m || 0);
-                if (meridian === 'PM' && h !== 12) totalMins += 720;
-                if (meridian === 'AM' && h === 12) totalMins -= 720;
-                const nowMins = new Date().getHours() * 60 + new Date().getMinutes();
-                return totalMins < nowMins ? (
-                  <div className="mt-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700 font-medium">
-                    ⚠️ This appointment time has passed. Consider cancelling or rescheduling.
-                  </div>
-                ) : null;
-              })()}
+              {/* Check-In Window Info Banner for Upcoming */}
+              {tab === 'upcoming' && checkInInfo && (
+                <div className={`mt-3 p-3 rounded-xl border text-xs font-medium flex items-center gap-2.5 ${
+                  checkInInfo.status === 'active' 
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+                    : checkInInfo.status === 'too_early'
+                    ? 'bg-amber-50 border-amber-200 text-amber-800'
+                    : 'bg-slate-50 border-slate-200 text-slate-600'
+                }`}>
+                  {checkInInfo.status === 'active' && <Bell className="w-4 h-4 text-emerald-600 shrink-0" />}
+                  {checkInInfo.status === 'too_early' && <Lock className="w-4 h-4 text-amber-600 shrink-0" />}
+                  {checkInInfo.status === 'expired' && <AlertTriangle className="w-4 h-4 text-slate-500 shrink-0" />}
+                  <p className="flex-1">{checkInInfo.message}</p>
+                </div>
+              )}
 
               {/* Actions for upcoming */}
-              {tab === 'upcoming' && (
-                <div className="flex gap-2 mt-4 pt-4 border-t border-slate-100">
-                  <button onClick={() => setRescheduleTarget(apt)} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium text-sm hover:bg-slate-200 transition-colors">Reschedule</button>
-                  <button onClick={() => setCancelTarget(apt)} className="px-4 py-2 bg-red-50 text-red-600 rounded-lg font-medium text-sm hover:bg-red-100 transition-colors">Cancel</button>
+              {tab === 'upcoming' && checkInInfo && (
+                <div className="flex flex-col sm:flex-row gap-2 mt-4 pt-4 border-t border-slate-100">
+                  <button
+                    onClick={() => handleJoinQueue(apt)}
+                    disabled={!checkInInfo.canCheckIn}
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm shadow-sm transition-all ${
+                      checkInInfo.canCheckIn
+                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200 animate-pulse'
+                        : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                    }`}
+                  >
+                    {!checkInInfo.canCheckIn && <Lock className="w-4 h-4" />}
+                    {checkInInfo.canCheckIn && <UserCheck className="w-4 h-4" />}
+                    {checkInInfo.buttonText}
+                  </button>
+                  <button onClick={() => navigate(`/patient/queue-status/${apt._id}`)} className="px-4 py-2.5 bg-blue-50 text-blue-700 font-bold rounded-xl hover:bg-blue-100 transition-colors text-sm border border-blue-200">
+                    Live ETA Tracker
+                  </button>
+                  <button onClick={() => setRescheduleTarget(apt)} className="px-3 py-2 bg-slate-100 text-slate-700 rounded-xl font-medium text-xs hover:bg-slate-200 transition-colors">Reschedule</button>
+                  <button onClick={() => setCancelTarget(apt)} className="px-3 py-2 bg-red-50 text-red-600 rounded-xl font-medium text-xs hover:bg-red-100 transition-colors">Cancel</button>
                 </div>
               )}
 
@@ -231,7 +321,7 @@ export default function PatientAppointments() {
                 </div>
               )}
             </div>
-          ))}
+          )})}
         </div>
       )}
 
