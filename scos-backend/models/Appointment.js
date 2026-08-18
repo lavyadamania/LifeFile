@@ -13,6 +13,9 @@ const appointmentSchema = new mongoose.Schema({
   isWalkin:     { type: Boolean, default: false },
   hospitalId:   { type: mongoose.Schema.Types.ObjectId, ref: 'Hospital', default: null },
   hospitalName: { type: String, default: '' },
+  baseToken:    { type: Number, default: 0 },
+  triageLevel:  { type: Number, min: 1, max: 5, default: 1 },
+  missedCalls:  { type: Number, default: 0 },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Appointment', appointmentSchema);

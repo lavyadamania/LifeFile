@@ -34,9 +34,16 @@ router.get('/', auth, async (req, res) => {
 // POST /api/appointments — book
 router.post('/', auth, async (req, res) => {
   try {
+    const { doctorId, date } = req.body;
+    // Generate sequential baseToken
+    const lastAppt = await Appointment.findOne({ doctorId, date }).sort('-baseToken');
+    const tokenNumber = lastAppt && lastAppt.baseToken ? lastAppt.baseToken + 1 : 1;
+
     const appointment = await Appointment.create({
       ...req.body,
       patientId: req.user._id,
+      baseToken: tokenNumber,
+      triageLevel: req.body.triageLevel || 1
     });
 
     // Produce Kafka event
@@ -141,6 +148,12 @@ router.post('/walkin', auth, requireRole('doctor', 'admin', 'hospital'), async (
       status: 'Confirmed',
       isWalkin: true,
     });
+
+    const lastWalkinAppt = await Appointment.findOne({ doctorId: finalDoctorId, date: appointment.date }).sort('-baseToken');
+    appointment.baseToken = lastWalkinAppt && lastWalkinAppt.baseToken ? lastWalkinAppt.baseToken + 1 : 1;
+    // Walk-ins might have higher triage by default, but we'll stick to 1 unless specified
+    appointment.triageLevel = req.body.triageLevel || 1;
+    await appointment.save();
 
     await produceEvent('scos.appointments', {
       action: 'WALKIN_CREATED',
