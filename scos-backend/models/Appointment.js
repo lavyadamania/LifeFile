@@ -16,6 +16,7 @@ const appointmentSchema = new mongoose.Schema({
   baseToken:    { type: Number, default: 0 },
   triageLevel:  { type: Number, min: 1, max: 5, default: 1 },
   missedCalls:  { type: Number, default: 0 },
+  chiefComplaint:{ type: String, default: '' },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Appointment', appointmentSchema);

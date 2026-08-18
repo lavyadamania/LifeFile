@@ -76,12 +76,34 @@ export default function HospitalLayout() {
         </aside>
 
         {/* Dashboard Focus Area */}
-        <main className="flex-1 flex flex-col h-full overflow-hidden">
+        <main className="flex-1 flex flex-col h-full overflow-hidden pb-16 md:pb-0">
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
             <Outlet />
           </div>
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-between px-2 py-2 z-40">
+        {[
+          { name: 'Dashboard', href: '/hospital', icon: LayoutDashboard },
+          { name: 'Analytics', href: '/hospital/analytics', icon: BarChart3 }
+        ].map((item) => {
+          const isActive = location.pathname === item.href;
+          return (
+            <Link
+              key={item.name}
+              to={item.href}
+              className={`flex flex-col items-center justify-center w-full p-2 rounded-lg transition-colors ${
+                isActive ? 'text-purple-600' : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              <item.icon className={`w-5 h-5 mb-1 ${isActive ? 'text-purple-600' : 'text-slate-400'}`} />
+              <span className="text-[10px] font-medium">{item.name}</span>
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }

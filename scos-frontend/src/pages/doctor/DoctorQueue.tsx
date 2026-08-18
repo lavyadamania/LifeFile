@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import useStreamingStore from '../../services/streaming';
 import useDoctorStore from '../../store/useDoctorStore';
 import useAuthStore from '../../store/useAuthStore';
-import { getAppointments, addToQueue, getDoctors, skipPatient, completeConsultation, callNextPatient, cancelAppointment } from '../../lib/api';
+import { getAppointments, addToQueue, getDoctors, skipPatient, completeConsultation, callNextPatient, cancelAppointment, getDoctorProfile } from '../../lib/api';
 import { useState, useEffect } from 'react';
 
 export default function DoctorQueue() {
@@ -17,18 +17,51 @@ export default function DoctorQueue() {
     return () => disconnect();
   }, [connect, disconnect]);
 
-  const handleCallNext = () => {
-    callNext(doctorProfileId || user?.id || 'DOC-1');
+  const handleCallNext = async () => {
+    const docId = doctorProfileId || user?.id || 'DOC-1';
+    
+    // Auto-skip logic: if there is currently a patient in progress, skip them before calling next.
+    if (currentServingId) {
+      const patId = currentServingPatientId || currentServingId || '';
+      try {
+        await skipPatient({ doctorId: docId, patientId: patId, appointmentId: currentServingId });
+        // The backend emits SKIP_PATIENT, but we still want to explicitly call next right after
+      } catch (err) {
+        console.error('Failed to auto-skip patient:', err);
+      }
+    }
+    
+    callNext(docId);
   };
 
   const [isStartingQueue, setIsStartingQueue] = useState(false);
   const [doctorProfileId, setDoctorProfileId] = useState<string>('');
+  const [lastAlertedPatientId, setLastAlertedPatientId] = useState<string | null>(null);
+
+  // Emergency Buzzer Logic
+  useEffect(() => {
+    const activeQueue = queueList.filter(p => !p.missedCalls || p.missedCalls === 0);
+    if (activeQueue.length > 0) {
+      const topPatient = activeQueue[0];
+      if ((topPatient.triageLevel ?? 0) >= 4 && lastAlertedPatientId !== topPatient.id) {
+        setLastAlertedPatientId(topPatient.id);
+        try {
+          // Public domain simple beep sound
+          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+          audio.volume = 0.5;
+          audio.play().catch(e => console.log('Audio autoplay blocked by browser (user needs to interact with page first)', e));
+        } catch (e) {
+          console.log('Audio error:', e);
+        }
+      }
+    }
+  }, [queueList, lastAlertedPatientId]);
 
   useEffect(() => {
-    getDoctors().then(res => {
-      const userId = user?.id || (user as any)?._id;
-      const myProfile = res.data.find((d: any) => d.userId === userId || (typeof d.userId === 'object' && d.userId?._id === userId) || d.name === user?.name);
-      if (myProfile) setDoctorProfileId(myProfile._id);
+    getDoctorProfile().then(res => {
+      if (res.data && res.data._id) {
+        setDoctorProfileId(res.data._id);
+      }
     }).catch(() => {});
   }, [user]);
 
@@ -36,12 +69,18 @@ export default function DoctorQueue() {
     setIsStartingQueue(true);
     try {
       const targetDoctorId = doctorProfileId || user?.id || 'DOC-1';
-      await fetchQueue(targetDoctorId);
+      await fetchQueue(targetDoctorId, activeHospitalId);
     } catch (err) {
       console.error('Failed to fetch authoritative queue:', err);
     }
     setIsStartingQueue(false);
   };
+
+  useEffect(() => {
+    if (doctorProfileId) {
+      fetchQueue(doctorProfileId, activeHospitalId);
+    }
+  }, [activeHospitalId, doctorProfileId]);
 
   const handleStartConsultation = () => {
     if (currentServingId) {
@@ -73,7 +112,7 @@ export default function DoctorQueue() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         
         {/* Active Consultation Panel */}
         <div className="lg:col-span-2 space-y-6">
@@ -157,159 +196,155 @@ export default function DoctorQueue() {
             </div>
           </div>
 
-          {/* Postponed / Late Patients Summary */}
-          <div className="bg-white rounded-2xl shadow-sm border border-red-200 overflow-hidden">
-            <div className="p-4 border-b border-red-100 bg-red-50 flex justify-between items-center">
-              <h3 className="font-bold text-red-900 flex items-center gap-2">
-                 <AlertCircle className="w-5 h-5" /> Postponed & Late Patients
-              </h3>
-              <span className="bg-red-200 text-red-800 text-xs font-bold px-2 py-1 rounded">
-                {queueList.filter(p => (p.missedCalls && p.missedCalls > 0) || (p.priority && p.priority.waitMinutes > 60)).length}
-              </span>
+          {/* Active Queue List */}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-[500px]">
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-blue-50">
+               <h2 className="text-sm font-bold text-blue-900">Waiting Queue</h2>
+               <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">
+                 {queueList.filter(p => !p.missedCalls || p.missedCalls === 0).length} Left
+               </span>
             </div>
-            <div className="p-4 max-h-48 overflow-y-auto">
-              {queueList.filter(p => (p.missedCalls && p.missedCalls > 0) || (p.priority && p.priority.waitMinutes > 60)).length === 0 ? (
-                <p className="text-slate-400 text-sm text-center py-4">No patients are currently delayed or postponed.</p>
-              ) : (
-                <div className="space-y-2">
-                  {queueList.filter(p => (p.missedCalls && p.missedCalls > 0) || (p.priority && p.priority.waitMinutes > 60)).map((patient, i) => (
-                    <div key={i} className="flex justify-between items-center text-sm p-3 bg-red-50/50 rounded-lg border border-red-100">
-                      <div>
-                        <p className="font-bold text-red-900">{patient.name}</p>
-                        <p className="text-xs text-red-700">Token T{patient.baseToken?.toString().padStart(2, '0')}</p>
-                      </div>
-                      <div className="text-right">
-                        {patient.missedCalls && patient.missedCalls > 0 ? (
-                          <span className="px-2 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded block mb-1 text-center">SKIPPED {patient.missedCalls}x</span>
-                        ) : null}
-                        {patient.priority && patient.priority.waitMinutes > 60 ? (
-                          <span className="px-2 py-1 bg-orange-100 text-orange-700 text-[10px] font-bold rounded block mb-2 text-center">LATE {patient.priority.waitMinutes}m</span>
-                        ) : null}
-                        
-                        <div className="flex gap-2 justify-end mt-2">
-                          <button
-                            onClick={() => {
-                              const docId = doctorProfileId || user?.id || 'DOC-1';
-                              const patId = patient.patientId || patient.id;
-                              callNextPatient({ doctorId: docId, patientId: patId, appointmentId: patient.id })
-                                .then(() => {
-                                  fetchQueue(docId);
-                                })
-                                .catch(console.error);
-                            }}
-                            className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] px-2 py-1 rounded font-bold"
-                          >
-                            START
-                          </button>
-                          <button
-                            onClick={() => {
-                              const docId = doctorProfileId || user?.id || 'DOC-1';
-                              cancelAppointment(patient.id)
-                                .then(() => {
-                                  fetchQueue(docId);
-                                })
-                                .catch(console.error);
-                            }}
-                            className="bg-red-100 hover:bg-red-200 text-red-700 text-[10px] px-2 py-1 rounded font-bold border border-red-200"
-                          >
-                            CANCEL
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Queue List */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-[500px]">
-          <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-             <h2 className="text-lg font-bold text-slate-800">Waiting Queue</h2>
-             <span className="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-1 rounded">{queueList.length} Left</span>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {queueList.map((patient, idx) => (
-              <div key={patient.id} className={`p-4 border rounded-xl shadow-sm flex flex-col gap-2 relative overflow-hidden ${patient.missedCalls && patient.missedCalls > 0 ? 'bg-orange-50 border-orange-200' : 'bg-white border-slate-200'}`}>
-                 {idx === 0 && (
-                   <div className="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg">UP NEXT</div>
-                 )}
-                 {patient.missedCalls && patient.missedCalls > 0 && idx !== 0 ? (
-                   <div className="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg">SKIPPED</div>
-                 ) : null}
-                 <div className="flex justify-between items-start">
-                   <div>
-                     <p className={`font-bold text-lg ${patient.missedCalls && patient.missedCalls > 0 ? 'text-orange-900' : 'text-slate-800'}`}>#{idx + 1} - {patient.name}</p>
-                     <p className="text-xs text-slate-500 font-medium font-mono mt-1">Token: T{patient.baseToken?.toString().padStart(2, '0')}</p>
+            
+            <div className="flex-1 overflow-y-auto p-3 space-y-3">
+              {queueList.filter(p => !p.missedCalls || p.missedCalls === 0).map((patient, idx) => {
+                const isEmergencyTop = idx === 0 && (patient.triageLevel ?? 0) >= 4;
+                return (
+                <div key={patient.id} className={`p-3 border rounded-xl shadow-sm flex flex-col gap-2 relative ${isEmergencyTop ? 'bg-red-50 border-red-500 animate-pulse ring-2 ring-red-500 ring-opacity-50' : 'bg-white border-slate-200'}`}>
+                   {idx === 0 && (
+                     <div className={`absolute top-0 right-0 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg ${isEmergencyTop ? 'bg-red-600' : 'bg-blue-600'}`}>
+                       {isEmergencyTop ? 'EMERGENCY NEXT' : 'UP NEXT'}
+                     </div>
+                   )}
+                   <div className="flex justify-between items-start">
+                     <div>
+                       <p className={`font-bold text-sm ${isEmergencyTop ? 'text-red-900' : 'text-slate-800'}`}>#{idx + 1} - {patient.name}</p>
+                       <p className={`text-[10px] font-medium font-mono mt-0.5 ${isEmergencyTop ? 'text-red-700' : 'text-slate-500'}`}>Token: T{patient.baseToken?.toString().padStart(2, '0')}</p>
+                     </div>
+                     <div className="text-right">
+                       <p className={`font-bold text-sm ${isEmergencyTop ? 'text-red-700' : 'text-indigo-700'}`}>CEP: {patient.priority?.score}</p>
+                       <p className={`text-[9px] font-bold uppercase tracking-wider ${isEmergencyTop ? 'text-red-500' : 'text-slate-400'}`}>{patient.priority?.priorityLevel}</p>
+                     </div>
                    </div>
-                   <div className="text-right">
-                     <p className={`font-bold text-lg ${patient.missedCalls && patient.missedCalls > 0 ? 'text-orange-700' : 'text-indigo-700'}`}>CEP: {patient.priority?.score}</p>
-                     <p className={`text-[10px] font-bold uppercase tracking-wider ${patient.missedCalls && patient.missedCalls > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{patient.priority?.priorityLevel}</p>
+                   
+                   <div className={`grid grid-cols-2 gap-2 mt-1 pt-2 border-t text-[10px] ${isEmergencyTop ? 'border-red-200' : 'border-slate-100'}`}>
+                     <div className={`p-1.5 rounded ${isEmergencyTop ? 'bg-red-100/50' : 'bg-slate-50'}`}>
+                       <span className={`block uppercase font-bold text-[8px] ${isEmergencyTop ? 'text-red-500' : 'text-slate-400'}`}>Wait Time</span>
+                       <span className={`font-bold ${isEmergencyTop ? 'text-red-800' : 'text-slate-700'}`}>{patient.priority?.waitMinutes}m</span>
+                     </div>
+                     <div className={`p-1.5 rounded ${isEmergencyTop ? 'bg-red-100/50' : 'bg-slate-50'}`}>
+                       <span className={`block uppercase font-bold text-[8px] ${isEmergencyTop ? 'text-red-500' : 'text-slate-400'}`}>Triage</span>
+                       <span className={`font-bold ${isEmergencyTop ? 'text-red-800' : 'text-slate-700'}`}>Lvl {patient.triageLevel}</span>
+                     </div>
                    </div>
-                 </div>
-                 
-                 <div className={`grid grid-cols-3 gap-2 mt-2 pt-2 border-t text-xs ${patient.missedCalls && patient.missedCalls > 0 ? 'border-orange-200' : 'border-slate-100'}`}>
-                   <div className={`${patient.missedCalls && patient.missedCalls > 0 ? 'bg-orange-100/50' : 'bg-slate-50'} p-1.5 rounded`}>
-                     <span className={`${patient.missedCalls && patient.missedCalls > 0 ? 'text-orange-500' : 'text-slate-400'} block text-[10px] uppercase font-bold`}>Wait Time</span>
-                     <span className={`font-bold ${patient.missedCalls && patient.missedCalls > 0 ? 'text-orange-800' : 'text-slate-700'}`}>{patient.priority?.waitMinutes}m</span>
-                   </div>
-                   <div className={`${patient.missedCalls && patient.missedCalls > 0 ? 'bg-orange-100/50' : 'bg-slate-50'} p-1.5 rounded`}>
-                     <span className={`${patient.missedCalls && patient.missedCalls > 0 ? 'text-orange-500' : 'text-slate-400'} block text-[10px] uppercase font-bold`}>Triage</span>
-                     <span className={`font-bold ${patient.missedCalls && patient.missedCalls > 0 ? 'text-orange-800' : 'text-slate-700'}`}>Lvl {patient.triageLevel}</span>
-                   </div>
-                   <div className={`${patient.missedCalls && patient.missedCalls > 0 ? 'bg-orange-200' : 'bg-slate-50'} p-1.5 rounded`}>
-                     <span className={`${patient.missedCalls && patient.missedCalls > 0 ? 'text-orange-700' : 'text-slate-400'} block text-[10px] uppercase font-bold`}>Missed</span>
-                     <span className={`font-bold ${patient.missedCalls && patient.missedCalls > 0 ? 'text-orange-900' : 'text-slate-700'}`}>{patient.missedCalls}</span>
-                   </div>
-                 </div>
-                 
-                 <div className="mt-1 flex items-center justify-between">
-                   <p className={`text-xs italic ${patient.missedCalls && patient.missedCalls > 0 ? 'text-orange-700 font-medium' : 'text-slate-500'}`}>{patient.priority?.reason}</p>
-                   <div className="flex items-center gap-2">
-                     {patient.hospitalName && (
-                       <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
-                         <Building2 className="w-3 h-3" />{patient.hospitalName}
-                       </span>
-                     )}
+                   
+                   <div className="mt-1 flex items-center justify-between">
+                     <p className={`text-[10px] italic truncate max-w-[120px] ${isEmergencyTop ? 'text-red-600 font-medium' : 'text-slate-500'}`}>{patient.priority?.reason}</p>
                      <button
                        onClick={() => {
                          const docId = doctorProfileId || user?.id || 'DOC-1';
                          const patId = patient.patientId || patient.id;
                          callNextPatient({ doctorId: docId, patientId: patId, appointmentId: patient.id })
-                           .then(() => fetchQueue(docId))
+                           .then(() => fetchQueue(docId, activeHospitalId))
                            .catch(console.error);
                        }}
-                       className="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] px-3 py-1 rounded-full font-bold shadow-sm transition-colors"
+                       className={`text-white text-[9px] px-2 py-1 rounded font-bold shadow-sm transition-colors ${isEmergencyTop ? 'bg-red-600 hover:bg-red-700 animate-bounce' : 'bg-indigo-600 hover:bg-indigo-700'}`}
                      >
-                       START NOW
+                       START
                      </button>
                    </div>
-                 </div>
-              </div>
-            ))}
-            {queueList.length === 0 && (
-              <div className="text-center py-8 text-slate-500">Queue is empty.</div>
-            )}
+                </div>
+              )})}
+              {queueList.filter(p => !p.missedCalls || p.missedCalls === 0).length === 0 && (
+                <div className="text-center py-8 text-slate-500 text-sm">Queue is empty.</div>
+              )}
+            </div>
           </div>
+          
+          {/* Skipped Patients Column */}
+          <div className="bg-white rounded-2xl shadow-sm border border-red-200 flex flex-col h-[500px]">
+            <div className="p-4 border-b border-red-100 flex justify-between items-center bg-red-50">
+               <h2 className="text-sm font-bold text-red-900">Skipped</h2>
+               <span className="bg-red-200 text-red-800 text-xs font-bold px-2 py-1 rounded">
+                 {queueList.filter(p => p.missedCalls && p.missedCalls > 0).length} Total
+               </span>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-red-50/30">
+              {queueList.filter(p => p.missedCalls && p.missedCalls > 0).map((patient, idx) => (
+                <div key={patient.id} className="p-3 border border-red-200 rounded-xl shadow-sm flex flex-col gap-2 relative bg-white">
+                   <div className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg">
+                     SKIPPED {patient.missedCalls}x
+                   </div>
+                   <div className="flex justify-between items-start mt-2">
+                     <div>
+                       <p className="font-bold text-sm text-red-900">{patient.name}</p>
+                       <p className="text-[10px] text-red-700 font-medium font-mono mt-0.5">Token: T{patient.baseToken?.toString().padStart(2, '0')}</p>
+                     </div>
+                   </div>
+                   
+                   <div className="grid grid-cols-2 gap-2 mt-1 pt-2 border-t border-red-100 text-[10px]">
+                     <div className="bg-red-50 p-1.5 rounded">
+                       <span className="text-red-400 block uppercase font-bold text-[8px]">Wait Time</span>
+                       <span className="font-bold text-red-700">{patient.priority?.waitMinutes}m</span>
+                     </div>
+                     <div className="bg-red-50 p-1.5 rounded">
+                       <span className="text-red-400 block uppercase font-bold text-[8px]">Triage</span>
+                       <span className="font-bold text-red-700">Lvl {patient.triageLevel}</span>
+                     </div>
+                   </div>
+                   
+                   <div className="mt-1 flex items-center justify-between gap-2">
+                     <button
+                       onClick={() => {
+                         const docId = doctorProfileId || user?.id || 'DOC-1';
+                         cancelAppointment(patient.id)
+                           .then(() => fetchQueue(docId, activeHospitalId))
+                           .catch(console.error);
+                       }}
+                       className="flex-1 bg-white hover:bg-red-50 border border-red-200 text-red-600 text-[9px] px-2 py-1.5 rounded font-bold transition-colors"
+                     >
+                       CANCEL
+                     </button>
+                     <button
+                       onClick={() => {
+                         const docId = doctorProfileId || user?.id || 'DOC-1';
+                         const patId = patient.patientId || patient.id;
+                         callNextPatient({ doctorId: docId, patientId: patId, appointmentId: patient.id })
+                           .then(() => fetchQueue(docId, activeHospitalId))
+                           .catch(console.error);
+                       }}
+                       className="flex-1 bg-red-600 hover:bg-red-700 text-white text-[9px] px-2 py-1.5 rounded font-bold shadow-sm transition-colors"
+                     >
+                       CALL NOW
+                     </button>
+                   </div>
+                </div>
+              ))}
+              {queueList.filter(p => p.missedCalls && p.missedCalls > 0).length === 0 && (
+                <div className="text-center py-8 text-slate-400 text-sm">No skipped patients.</div>
+              )}
+            </div>
+          </div>
+        </div>
 
-          <div className="p-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl space-y-3">
+        {/* Global Controls */}
+        <div className="lg:col-span-4 mt-6">
+
+          <div className="p-4 border-t border-slate-100 bg-slate-50 rounded-2xl shadow-sm space-y-3 flex flex-col sm:flex-row gap-4 justify-between items-center">
             <button 
               onClick={handleStartQueue}
               disabled={isStartingQueue}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 disabled:opacity-50 transition-colors shadow-sm"
+              className="w-full sm:w-1/2 flex items-center justify-center gap-2 py-3 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 disabled:opacity-50 transition-colors shadow-sm"
             >
-              {isStartingQueue ? 'Loading...' : 'Load Today\'s Appointments'}
+              {isStartingQueue ? 'Loading...' : 'Refresh Database Queue'}
             </button>
             <button 
               onClick={handleCallNext}
-              disabled={queueList.length === 0}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+              disabled={queueList.length === 0 && !currentServingId}
+              className="w-full sm:w-1/2 flex items-center justify-center gap-2 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
             >
               <UserPlus className="w-5 h-5" />
-              Call Next Patient
+              {currentServingId ? 'Skip & Call Next' : 'Call Next Patient'}
             </button>
           </div>
         </div>

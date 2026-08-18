@@ -19,7 +19,7 @@ export default function AdminLayout() {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Dense Sidebar for Deep System Controls */}
-      <div className="w-64 bg-slate-900 text-slate-300 flex flex-col fixed inset-y-0 z-10">
+      <div className="w-64 bg-slate-900 text-slate-300 hidden md:flex flex-col fixed inset-y-0 z-10">
         <div className="p-6 flex items-center gap-3 bg-slate-950">
           <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
             <Shield className="w-5 h-5 text-white" />
@@ -64,17 +64,41 @@ export default function AdminLayout() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 ml-64 flex flex-col min-h-screen">
+      <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
         <header className="bg-white border-b border-slate-200 h-16 flex items-center px-6 sticky top-0 z-20">
           <h1 className="text-xl font-semibold text-slate-800">
             {navigation.find(n => n.href === location.pathname)?.name || 'Admin Console'}
           </h1>
         </header>
 
-        <main className="flex-1 p-6 lg:p-8">
+        <main className="flex-1 p-6 lg:p-8 pb-20 md:pb-8">
           <Outlet />
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-between px-2 py-2 z-40">
+        {[
+          { name: 'Overview', href: '/admin', icon: ActivitySquare },
+          { name: 'Doctors', href: '/admin/doctors', icon: Users },
+          { name: 'Clinics', href: '/admin/clinics', icon: Building2 },
+          { name: 'Hospitals', href: '/admin/hospitals', icon: Hospital }
+        ].map((item) => {
+          const isActive = location.pathname === item.href;
+          return (
+            <Link
+              key={item.name}
+              to={item.href}
+              className={`flex flex-col items-center justify-center w-full p-2 rounded-lg transition-colors ${
+                isActive ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              <item.icon className={`w-5 h-5 mb-1 ${isActive ? 'text-indigo-600' : 'text-slate-400'}`} />
+              <span className="text-[10px] font-medium">{item.name}</span>
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }

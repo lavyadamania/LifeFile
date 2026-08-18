@@ -60,13 +60,13 @@ export default function DoctorLayout() {
 
           <div className="flex items-center gap-4">
             
-            {/* Context Switcher */}
-            <div className="hidden sm:flex items-center gap-2 bg-slate-800 rounded-lg px-3 py-1.5 border border-slate-700">
-              <Building className="w-4 h-4 text-slate-400" />
+            {/* Context Switcher - Now visible on mobile */}
+            <div className="flex items-center gap-1 sm:gap-2 bg-slate-800 rounded-lg px-2 sm:px-3 py-1.5 border border-slate-700">
+              <Building className="w-3 h-3 sm:w-4 sm:h-4 text-slate-400" />
               <select
                 value={activeHospitalId}
                 onChange={(e) => setActiveHospitalId(e.target.value)}
-                className="bg-transparent text-sm text-white focus:outline-none appearance-none cursor-pointer pr-4"
+                className="bg-transparent text-xs sm:text-sm text-white focus:outline-none appearance-none cursor-pointer pr-2 sm:pr-4 max-w-[100px] sm:max-w-none truncate"
               >
                 <option value="all" className="text-slate-900">All Facilities</option>
                 <option value="private" className="text-slate-900">My Private Clinic</option>
@@ -124,12 +124,36 @@ export default function DoctorLayout() {
         </aside>
 
         {/* Dashboard Focus Area */}
-        <main className="flex-1 flex flex-col h-full overflow-hidden">
+        <main className="flex-1 flex flex-col h-full overflow-hidden pb-16 md:pb-0">
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
             <Outlet />
           </div>
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-between px-2 py-2 z-40">
+        {[
+          { name: 'Dashboard', href: '/doctor', icon: LayoutDashboard },
+          { name: 'Queue', href: '/doctor/queue', icon: Users },
+          { name: 'Schedule', href: '/doctor/schedule', icon: Calendar },
+          { name: 'Records', href: '/doctor/records', icon: FileText }
+        ].map((item) => {
+          const isActive = location.pathname === item.href;
+          return (
+            <Link
+              key={item.name}
+              to={item.href}
+              className={`flex flex-col items-center justify-center w-full p-2 rounded-lg transition-colors ${
+                isActive ? 'text-blue-600' : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              <item.icon className={`w-5 h-5 mb-1 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
+              <span className="text-[10px] font-medium">{item.name}</span>
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }

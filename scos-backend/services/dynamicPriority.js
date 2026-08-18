@@ -1,6 +1,7 @@
-const DWPA_WEIGHTS = {
+const ACPA_WEIGHTS = {
   base: 10,       // Points per position closer to 1 (inverted slot order)
-  age: 0.5,       // Points per minute waited past appointment time
+  age: 0.5,       // Linear points per minute waited
+  fairness: 1.2,  // Exponential multiplier to prevent starvation (waitMinutes ^ 1.2)
   triage: 20,     // Points per triage level (1-5)
   penalty: 30     // Points deducted per missed call / skip
 };
@@ -30,51 +31,51 @@ function parseAppointmentDateTime(dateStr, timeStr) {
       minutes = parseInt(m, 10);
     }
     
-    const d = new Date(dateStr);
-    d.setHours(hours, minutes, 0, 0);
-    return d;
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day, hours, minutes, 0, 0);
   } catch (err) {
     return new Date(); // fallback
   }
 }
 
 /**
- * Calculates the Current Effective Priority (CEP) for an appointment
+ * Calculates the Current Effective Priority (CEP) using Adaptive Clinical Priority Algorithm (ACPA)
  * @param {Object} appointment - The appointment mongoose document
  * @param {Date} currentTime - The current time to calculate aging
  * @returns {Object} Priority details including final score and contributions
  */
 function calculateCEP(appointment, currentTime = new Date()) {
   // 1. Slot Contribution
-  // Lower token number means earlier appointment. Max tokens usually won't exceed 100.
-  // We invert it so Token 1 gets a higher score than Token 10.
-  // Base score = (100 - baseToken) * W_base
   const token = appointment.baseToken || 1;
-  const slotContribution = Math.max(0, 100 - token) * DWPA_WEIGHTS.base;
+  const slotContribution = Math.max(0, 100 - token) * ACPA_WEIGHTS.base;
 
   // 2. Aging / Wait Time Contribution
-  // Time waited past their scheduled appointment time (in minutes)
   const scheduledTime = parseAppointmentDateTime(appointment.date, appointment.time);
   const diffMs = currentTime.getTime() - scheduledTime.getTime();
   let waitMinutes = Math.floor(diffMs / 1000 / 60);
-  // If they are early, waitMinutes is negative, we can floor it at 0 to avoid negative aging
   if (waitMinutes < 0) waitMinutes = 0; 
-  const agingContribution = waitMinutes * DWPA_WEIGHTS.age;
+  const agingContribution = waitMinutes * ACPA_WEIGHTS.age;
 
-  // 3. Triage Contribution
+  // 3. Fairness Contribution (Non-linear exponential growth to prevent starvation)
+  // If waitMinutes is high, fairness exponentially grows to forcefully bypass triage
+  const fairnessContribution = Math.pow(waitMinutes, ACPA_WEIGHTS.fairness) * 0.1;
+
+  // 4. Triage (Clinical) Contribution (Exponential for emergency levels 4 & 5 to ethically prioritize life-threatening cases)
   const severity = appointment.triageLevel || 1; // 1-5
-  const triageContribution = severity * DWPA_WEIGHTS.triage;
+  let triageContribution = severity * ACPA_WEIGHTS.triage;
+  if (severity === 5) triageContribution += 1000; // Critical Resuscitation Priority Override
+  else if (severity === 4) triageContribution += 500;  // Severe Emergency Priority Override
 
-  // 4. Penalty Contribution (Skip / Missed Calls)
+  // 5. Penalty Contribution (Missed Calls) - capped to prevent permanent clinical lock-out
   const missed = appointment.missedCalls || 0;
-  const penaltyContribution = missed * DWPA_WEIGHTS.penalty;
+  const penaltyContribution = Math.min(150, missed * ACPA_WEIGHTS.penalty);
 
   // Final CEP Calculation
-  const score = parseFloat((slotContribution + agingContribution + triageContribution - penaltyContribution).toFixed(1));
+  const score = parseFloat((slotContribution + agingContribution + fairnessContribution + triageContribution - penaltyContribution).toFixed(1));
 
-  // Determine priority level (informative only)
+  // Determine priority level
   let priorityLevel = 'NORMAL';
-  if (score >= 1000) priorityLevel = 'EMERGENCY'; // very high triage + long wait
+  if (score >= 1000) priorityLevel = 'EMERGENCY'; 
   else if (score >= 800) priorityLevel = 'HIGH';
   else if (score < 500) priorityLevel = 'LOW';
   
@@ -82,7 +83,8 @@ function calculateCEP(appointment, currentTime = new Date()) {
 
   // Construct Reason
   let reason = 'Standard queue position';
-  if (triageContribution > 50 && agingContribution > 30) reason = 'High triage + prolonged waiting';
+  if (fairnessContribution > 50) reason = 'Fairness priority (anti-starvation override)';
+  else if (triageContribution > 50 && agingContribution > 30) reason = 'High triage + prolonged waiting';
   else if (triageContribution > 50) reason = 'High clinical triage';
   else if (agingContribution > 50) reason = 'Aging priority (long wait)';
   else if (penaltyContribution > 0) reason = 'Missed-call penalty applied';
@@ -91,6 +93,7 @@ function calculateCEP(appointment, currentTime = new Date()) {
     score,
     slotContribution,
     agingContribution,
+    fairnessContribution: parseFloat(fairnessContribution.toFixed(1)),
     triageContribution,
     penaltyContribution,
     priorityLevel,
@@ -101,7 +104,7 @@ function calculateCEP(appointment, currentTime = new Date()) {
 }
 
 module.exports = {
-  DWPA_WEIGHTS,
+  ACPA_WEIGHTS,
   calculateCEP,
   parseAppointmentDateTime
 };

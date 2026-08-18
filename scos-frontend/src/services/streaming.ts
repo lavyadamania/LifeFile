@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { io, Socket } from 'socket.io-client';
-import { getQueueList, callNextPatient } from '../lib/api';
+import { getQueueList, callNextPatient, API_BASE_URL } from '../lib/api';
 
 export type KafkaEvent = {
   topic: string;
@@ -45,10 +45,11 @@ interface StreamingState {
   queueList: QueuePatient[];
   socket: Socket | null;
   activeDoctorId: string | null;
+  activeHospitalId: string | undefined; // Store the current context
   // Actions
   connect: () => void;
   disconnect: () => void;
-  fetchQueue: (doctorId: string) => Promise<void>;
+  fetchQueue: (doctorId: string, hospitalId?: string) => Promise<void>;
   callNext: (doctorId: string, hospitalId?: string, hospitalName?: string) => void;
   addToQueue: (patientId: string, patientName: string, doctorId: string, hospitalId?: string, hospitalName?: string) => void;
 }
@@ -83,11 +84,12 @@ const useStreamingStore = create<StreamingState>((set, get) => ({
   queueList: persisted.queueList,
   socket: null,
   activeDoctorId: null,
+  activeHospitalId: undefined,
 
-  fetchQueue: async (doctorId: string) => {
+  fetchQueue: async (doctorId: string, hospitalId?: string) => {
     try {
-      set({ activeDoctorId: doctorId });
-      const res = await getQueueList({ doctorId });
+      set({ activeDoctorId: doctorId, activeHospitalId: hospitalId });
+      const res = await getQueueList({ doctorId, hospitalId });
       const queueData = res.data.map((q: any) => ({
         id: q._id, // appointmentId
         patientId: q.patientId,
@@ -115,7 +117,7 @@ const useStreamingStore = create<StreamingState>((set, get) => ({
     const existing = get().socket;
     if (existing?.connected) return;
 
-    const socket = io('http://localhost:5000', {
+    const socket = io(API_BASE_URL, {
       transports: ['polling', 'websocket'],
     });
 
@@ -139,10 +141,11 @@ const useStreamingStore = create<StreamingState>((set, get) => ({
 
       // DWPA Backend Authoritative: always refetch on relevant updates
       const doctorId = get().activeDoctorId;
+      const hospitalId = get().activeHospitalId;
       if (doctorId && (event.topic === 'lifefile.queue.updates' || event.topic === 'scos.queue.updates')) {
         const { action } = event.data;
         if (['ADD_TO_QUEUE', 'CALL_NEXT', 'SKIP_PATIENT', 'CONSULTATION_COMPLETE'].includes(action)) {
-          get().fetchQueue(doctorId);
+          get().fetchQueue(doctorId, hospitalId);
         }
 
         // Local state updates for the active patient

@@ -86,10 +86,34 @@ export default function PatientLayout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto pb-20 md:pb-8">
           <Outlet />
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-between px-2 py-2 z-40">
+        {[
+          { name: 'Dashboard', href: '/patient', icon: Activity },
+          { name: 'Appointments', href: '/patient/appointments', icon: Calendar },
+          { name: 'Timeline', href: '/patient/timeline', icon: Clock },
+          { name: 'Settings', href: '/patient/settings', icon: Settings }
+        ].map((item) => {
+          const isActive = location.pathname === item.href;
+          return (
+            <Link
+              key={item.name}
+              to={item.href}
+              className={`flex flex-col items-center justify-center w-full p-2 rounded-lg transition-colors ${
+                isActive ? 'text-blue-600' : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              <item.icon className={`w-5 h-5 mb-1 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
+              <span className="text-[10px] font-medium">{item.name}</span>
+            </Link>
+          );
+        })}
+      </nav>
 
       <PatientAIAssistant />
     </div>

@@ -6,6 +6,11 @@ const patientSchema = new mongoose.Schema({
   phone:            { type: String, default: '' },
   address:          { type: String, default: '' },
   emergencyContact: { type: String, default: '' },
+  age:              { type: Number, default: null },
+  gender:           { type: String, enum: ['Male', 'Female', 'Other', ''], default: '' },
+  height:           { type: String, default: '' }, // e.g. "175 cm"
+  weight:           { type: String, default: '' }, // e.g. "70 kg"
+  bloodGroup:       { type: String, default: '' },
   grantedDoctors:   [{ type: mongoose.Schema.Types.ObjectId, ref: 'Doctor' }],
   currentHospital:  { type: mongoose.Schema.Types.ObjectId, ref: 'Hospital', default: null },
   hospitalHistory:  [{

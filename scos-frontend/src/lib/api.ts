@@ -1,7 +1,12 @@
 import axios from 'axios';
 
+// Detect if we're running locally on a network IP (e.g. 192.168.x.x) or localhost
+// This allows the SIH judges to test it on their mobile phones connected to the same WiFi
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 
+  (window.location.hostname === 'localhost' ? 'http://localhost:5000' : `http://${window.location.hostname}:5000`);
+
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: `${API_BASE_URL}/api`,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -69,7 +74,8 @@ export const verifyMedicalRecordPassword = (id: string, password: string) => api
 
 // Queue
 export const addToQueue = (data: { patientId: string; patientName?: string; doctorId?: string; hospitalId?: string; hospitalName?: string }) => api.post('/queue/add', data);
-export const getQueueList = (params: { doctorId: string; date?: string }) => api.get('/queue/list', { params });
+export const getQueueList = (params: { doctorId: string; date?: string; hospitalId?: string }) => api.get('/queue/list', { params });
+export const getPatientETAStatus = (appointmentId: string) => api.get(`/queue/patient/${appointmentId}`);
 export const skipPatient = (data: { doctorId: string; patientId: string; appointmentId: string }) => api.post('/queue/skip', data);
 export const callNextPatient = (data: { doctorId: string; patientId: string; appointmentId: string; hospitalId?: string; hospitalName?: string }) => api.post('/queue/call-next', data);
 export const completeConsultation = (data: { doctorId: string; patientId: string; appointmentId: string; hospitalId?: string; hospitalName?: string }) => api.post('/queue/complete', data);

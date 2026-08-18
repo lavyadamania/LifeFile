@@ -21,6 +21,7 @@ import DoctorBooking from './pages/patient/DoctorBooking';
 import PublicDoctorProfile from './pages/patient/PublicDoctorProfile';
 import PatientAppointments from './pages/patient/PatientAppointments';
 import LiveQueue from './pages/patient/LiveQueue';
+import PatientQueueStatus from './pages/patient/PatientQueueStatus';
 import MedicalTimeline from './pages/patient/MedicalTimeline';
 import SearchHospitals from './pages/patient/SearchHospitals';
 import HospitalDetail from './pages/patient/HospitalDetail';
@@ -75,6 +76,7 @@ function App() {
             <Route element={<ProtectedRoute allowedRoles={['patient']} />}>
               <Route element={<PatientLayout />}>
                 <Route path="/patient" element={<LiveQueue />} />
+                <Route path="/patient/queue-status/:appointmentId" element={<PatientQueueStatus />} />
                 <Route path="/patient/search" element={<SearchDoctors />} />
                 <Route path="/patient/doctor/:id" element={<PublicDoctorProfile />} />
                 <Route path="/patient/book/:doctorId" element={<DoctorBooking />} />
