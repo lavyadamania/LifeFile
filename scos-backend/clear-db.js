@@ -27,10 +27,10 @@ async function clearDatabase() {
     await User.create({
       name: 'Admin Lavya',
       email: 'lavya@admin',
-      password: '123456',
+      password: 'Demo@123',
       role: 'admin',
     });
-    console.log('👑 Default Admin created: Email: lavya@admin | Password: 123456');
+    console.log('👑 Default Admin created: Email: lavya@admin | Password: Demo@123');
 
   } catch (err) {
     console.error('❌ Error clearing database:', err.message);
