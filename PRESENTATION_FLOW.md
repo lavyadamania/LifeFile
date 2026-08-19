@@ -216,6 +216,14 @@ If technical judges ask *"Can you show us the backend code, ACPA scoring formula
 ### Q3: "How is real-time performance handled under network drops?"
 * **Answer:** *"We utilize Apache Kafka with state-machine consumer rebalance guards combined with Socket.IO websockets. If a client disconnects, state is authoritatively resynchronized from MongoDB upon reconnection."*
 
+### Q4: "How accurate is the estimated wait time (ETA) shown to patients, and how do you defend it?"
+* **Answer:**
+  > *"Respected Judges, LifeFile calculates ETA mathematically based on 4 dynamic factors (`scos-backend/services/queueETA.js`):"*
+  > 1. **Dynamic Queue Order (Not Static Tokens):** *"ETA is calculated using your actual position in the ACPA priority queue, not fixed token subtraction. If an emergency arrives, the position re-evaluates in real-time."*
+  > 2. **Specialist Consult Averages:** *"Uses rolling historical consultation averages per doctor ($\bar{T}_{\text{consult}}$ e.g. 12m for Cardiology vs 6m for General Medicine)."*
+  > 3. **Zomato-Style Realistic Min–Max Bounding Window:** *"Displays a realistic range $[\text{Base} - \frac{T}{2}, \text{Base} + \frac{T}{2}]$ (e.g. 15–25 mins) rather than an overly optimistic single number, reducing patient anxiety."*
+  > 4. **Instant Event Resynchronization:** *"When a doctor completes a consultation, actual consultation time is logged, and Socket.IO pushes updated ETAs to all waiting patients instantly."*
+
 ---
 
 ## 🏆 6. WHY LIFEFILE BEATS UDHAY 2025 (LAST YEAR'S SIH WINNER)
