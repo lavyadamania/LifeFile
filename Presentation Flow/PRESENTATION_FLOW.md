@@ -137,6 +137,26 @@ The presentation seed engine calculates all appointment slots dynamically relati
 
 ---
 
+## 🧠 4B. HOW TO DEMONSTRATE NLP & AI TO THE JUDGES (3 LIVE LOCATIONS)
+
+If judges ask *"Where is NLP working in your system and how do I see it?"*, demonstrate these **3 live locations**:
+
+### 1. Real-Time Patient Booking Auto-Triage (Live UI Demo)
+* **Code Reference:** `scos-frontend/src/pages/patient/DoctorBooking.tsx` $\rightarrow$ `classifySymptoms()`
+* **How to Show:** Log in as Patient $\rightarrow$ Search Doctors $\rightarrow$ Book Appointment $\rightarrow$ Type: *"Severe chest pain radiating to left arm and sweating"*.
+* **Highlight:** Dynamic **🔴 ⚡ Level 5: Cardiac Event (Emergency)** badge illuminates instantly.
+
+### 2. Dedicated Interactive AI Symptom Checker (`/patient/triage`)
+* **Code Reference:** `scos-frontend/src/pages/patient/SymptomTriage.tsx` (`import nlp from 'compromise'`)
+* **How to Show:** Click **AI Symptom Checker** on patient sidebar $\rightarrow$ Type: *"High fever with severe chills and abdominal pain for 2 days"*.
+* **Highlight:** Real-time entity extraction, risk score, recommended specialist (Gastroenterology/Internal Medicine).
+
+### 3. Backend AI Memory Extraction & Gemini Engine (Code & Database Demo)
+* **Code Reference:** `scos-backend/services/memoryService.js` $\rightarrow$ `extractAIMemoryCandidates()` & `extractDeterministicMemories()`
+* **How to Show:** Open Doctor Consultation view $\rightarrow$ View Clinical Memory panel. Unstructured doctor notes & past prescriptions are automatically parsed into structured `ALLERGY`, `CONDITION`, and `MEDICATION` cards with red contradiction badges.
+
+---
+
 ## ❓ 5. JUDGE Q&A DEFENSE CHEAT SHEET
 
 ### Q1: "How does ACPA prevent low-priority patients from starving if emergencies keep coming?"

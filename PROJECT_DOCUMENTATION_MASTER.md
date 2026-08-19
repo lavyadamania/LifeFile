@@ -100,6 +100,17 @@ flowchart LR
 * 🔵 **Level 2 (Semi-Urgent / Green Code):** Symptoms like *"Mild skin allergy, earache"* $\rightarrow$ **+50 pts**.
 * ⚪ **Level 1 (Non-Urgent Routine / Blue Code):** Standard OPD consultation $\rightarrow$ **+0 pts**.
 
+### 🔍 How to Demonstrate NLP & AI to Judges (3 Live Implementation Locations):
+1. **Real-Time Booking Auto-Triage (`/patient/book/:doctorId`):**
+   * **File:** `scos-frontend/src/pages/patient/DoctorBooking.tsx` (`classifySymptoms()`)
+   * **Action:** Type *"Severe chest pain radiating to left arm"* $\rightarrow$ Watch **🔴 Level 5 Emergency** badge illuminate.
+2. **Dedicated Interactive AI Symptom Checker (`/patient/triage`):**
+   * **File:** `scos-frontend/src/pages/patient/SymptomTriage.tsx` (`import nlp from 'compromise'`)
+   * **Action:** Type *"High fever with severe chills and abdominal pain"* $\rightarrow$ View extracted entities, risk score & specialist recommendation.
+3. **Backend Medical Memory Extraction & Gemini AI Engine (`memoryService.js`):**
+   * **File:** `scos-backend/services/memoryService.js` (`extractAIMemoryCandidates()`)
+   * **Action:** Parses unstructured doctor notes & prescriptions into structured `ALLERGY`, `CONDITION`, `MEDICATION` cards with red contradiction warnings.
+
 ---
 
 ## 🧠 4. Adaptive Clinical Priority Algorithm (ACPA Engine)
