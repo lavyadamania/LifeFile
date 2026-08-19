@@ -121,3 +121,40 @@ npm run seed:presentation -- --confirm
 # 3. Start Frontend & Backend
 npm run dev
 ```
+
+---
+
+## 🧠 6. HOW TRIAGE LEVELS & QUEUE PRIORITIES ARE DECIDED (CLINICAL PARAMETERS)
+
+The LifeFile platform dynamically calculates patient triage levels and real-time OPD queue ordering using a combination of **NLP AI Symptom Analysis** and the **Adaptive Clinical Priority Algorithm (ACPA)**.
+
+---
+
+### A. 🧠 NLP AI Symptom Triage Levels (1–5 Scale)
+When a patient submits their chief complaint via voice or text, the NLP engine analyzes keywords, clinical red flags, and vital urgency to categorize them into 5 levels:
+
+| Triage Level | Classification | Medical Indicators & Clinical Red Flags | ACPA Priority Boost |
+| :--- | :--- | :--- | :--- |
+| 🔴 **Level 5** | **Critical Emergency (Resuscitation)** | Chest pain, acute dyspnea, anaphylaxis, severe head trauma, stroke symptoms. | **$+1000$ points (Instant Top Override)** |
+| 🔴 **Level 4** | **Urgent Trauma / High Risk** | Fractures, high fever with neck stiffness, severe abdominal pain, acute hemorrhage. | **$+500$ points (Immediate Priority)** |
+| 🟡 **Level 3** | **Acute Consultation** | Persistent fever (>101°F), moderate asthma flare, localized infection, persistent vomiting. | $+60$ points |
+| 🟢 **Level 2** | **Routine Consultation** | Chronic condition follow-up, mild joint pain, routine lab reviews, medication refill. | $+40$ points |
+| 🟢 **Level 1** | **Minor / Preventive Care** | Annual wellness checkup, mild skin rash, general fatigue evaluation. | $+20$ points |
+
+---
+
+### B. ⚡ ACPA Dynamic Queue Priority Formula ($CEP$)
+Every minute, the backend re-calculates each patient's **Current Effective Priority ($CEP$)** score to sort the doctor's live OPD queue:
+
+$$\text{CEP} = \text{Slot Base} + \text{Aging (Wait Time)} + \text{Fairness Multiplier} + \text{Triage Boost} - \text{Missed Call Penalty}$$
+
+#### 📐 The 5 Exact Algorithm Parameters:
+1. **Clinical Triage Boost ($T$):**  
+   - Level 5 Emergency $\rightarrow +1000$ pts (Emergency Override)  
+   - Level 4 Urgent $\rightarrow +500$ pts (High Urgency Override)  
+   - Levels 1–3 $\rightarrow \text{Level} \times 20$ pts
+2. **Aging / Linear Wait Time ($W$):** $+0.5$ points per minute spent waiting in the clinic waiting area.
+3. **Fairness / Anti-Starvation ($W^{1.2} \times 0.1$):** Non-linear exponential curve that increases a patient's score if they wait prolonged periods. **Prevents lower-triage patients from being trapped indefinitely** if higher-triage patients arrive later.
+4. **Token Booking Base ($\max(0, 100 - \text{Token}) \times 10$):** Baseline score assigned to earlier online appointments.
+5. **Missed Call Penalty ($M$):** $-30$ points per missed doctor call (capped at $-150$ pts) to penalize late patients.
+
