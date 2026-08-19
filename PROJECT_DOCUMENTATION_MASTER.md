@@ -205,6 +205,26 @@ npm run inspect:db
 
 ---
 
+## 💻 7B. Live Backend Code & Terminal Demonstration Manual
+
+When technical judges request to see the backend logic, ACPA mathematical formulation, or streaming logs, demonstrate these exact code modules:
+
+1. **ACPA Mathematical Priority Queue Engine (`scos-backend/routes/queue.js`):**
+   * **Location:** Lines 35–85 in `routes/queue.js`
+   * **Formula:** $\text{CEP Score} = (100 - \text{Base Token}) \times 10 + \text{Triage Bonus} + 1.5 \times \text{Wait Mins} - \min(\text{Misses} \times 30, 150)$
+2. **AI Medical Memory Extractor & Conflict Guard (`scos-backend/services/memoryService.js`):**
+   * **Location:** `extractAIMemoryCandidates()` (Lines 293–347) using Google Gemini 1.5 Flash.
+   * **Location:** `isContradictory()` (Lines 17–39) detecting allergy assertion conflicts (*"No known allergy"* vs *"Penicillin allergy"*).
+3. **Kafka Event Bus & Real-Time Sync Console Logs (`scos-backend/routes/queue.js`):**
+   * Demonstrate real-time backend terminal log output during consultation actions:
+     ```text
+     [Kafka Producer] Event published to topic: scos.queue.updates (Action: CALL_NEXT)
+     [ACPA Engine] Recalculated dynamic priority queue for Doctor ID 66c...
+     [Socket.IO] Broadcasted queue_update to room doctor_66c...
+     ```
+
+---
+
 ## 🛠️ 8. Database Schema & Data Models (Mongoose)
 
 ### Appointment Model (`models/Appointment.js`)

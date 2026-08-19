@@ -157,6 +157,43 @@ If judges ask *"Where is NLP working in your system and how do I see it?"*, demo
 
 ---
 
+## 💻 4C. HOW TO DEMONSTRATE BACKEND CODE & KAFKA LOGS TO JUDGES
+
+If technical judges ask *"Can you show us the backend code, ACPA scoring formula, or database state?"*, follow these steps:
+
+### Step 1: Live CLI Database Inspection Matrix (`npm run inspect:db`)
+* **Terminal Command:**
+  ```powershell
+  npm run inspect:db
+  ```
+* **What to Point Out:**
+  * **Queue Table:** Show calculated CEP Priority Scores, Triage Levels (1-5), and Missed Call Penalties.
+  * **Patient Memory Table:** Show extracted facts and `CONFLICTED` status flags.
+  * **Audit Trail Table:** Show real-time security logs and emergency overrides.
+
+### Step 2: Open Backend Source Code Files in Editor
+1. **ACPA Priority Queue Engine (`scos-backend/routes/queue.js`):**
+   * Show lines 35–85 where CEP score is dynamically computed:
+     ```js
+     CEP = (100 - baseToken)*10 + triageBonus + (1.5 * waitMins) - min(missedCalls * 30, 150)
+     ```
+2. **AI Medical Memory Extractor & Conflict Guard (`scos-backend/services/memoryService.js`):**
+   * Show lines 293–347 (`extractAIMemoryCandidates`) using Google Gemini 1.5 Flash to convert unstructured doctor notes into structured medical facts.
+   * Show lines 17–39 (`isContradictory`) where allergic assertions (e.g. *"No allergy"* vs *"Penicillin allergy"*) trigger red conflict warnings.
+3. **Kafka Event Streaming Bus (`scos-backend/routes/queue.js` & `scos-backend/services/`):**
+   * Show `scos.queue.updates` Kafka topic event production whenever a patient checks in or doctor calls next patient.
+
+### Step 3: Show Live Backend Console Terminal Logs (`npm run dev`)
+* Keep the backend server terminal window visible side-by-side.
+* Point out real-time console outputs during user actions:
+  ```text
+  [Kafka Producer] Event published to topic: scos.queue.updates (Action: CALL_NEXT)
+  [ACPA Engine] Recalculated dynamic priority queue for Doctor ID 66c...
+  [Socket.IO] Broadcasted queue_update to room doctor_66c...
+  ```
+
+---
+
 ## ❓ 5. JUDGE Q&A DEFENSE CHEAT SHEET
 
 ### Q1: "How does ACPA prevent low-priority patients from starving if emergencies keep coming?"
