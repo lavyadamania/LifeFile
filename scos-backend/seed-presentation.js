@@ -86,7 +86,7 @@ async function seedPresentation() {
       adminUser = await User.create({
         name: 'Admin Lavya',
         email: 'lavya@admin',
-        password: hashedPassword,
+        password: 'Demo@123',
         role: 'admin'
       });
       console.log('👑 Created default Admin account: lavya@admin / Demo@123');
@@ -99,7 +99,7 @@ async function seedPresentation() {
     const userH01 = await User.create({
       name: 'LifeFile Central Hospital',
       email: 'demo.hospital.central@lifefile.test',
-      password: hashedPassword,
+      password: 'Demo@123',
       role: 'hospital'
     });
 
@@ -117,7 +117,7 @@ async function seedPresentation() {
     const userH02 = await User.create({
       name: 'LifeFile North Hospital',
       email: 'demo.hospital.north@lifefile.test',
-      password: hashedPassword,
+      password: 'Demo@123',
       role: 'hospital'
     });
 
@@ -142,7 +142,7 @@ async function seedPresentation() {
     const userD01 = await User.create({
       name: 'Dr. Ananya Sharma',
       email: 'demo.doctor.ananya@lifefile.test',
-      password: hashedPassword,
+      password: 'Demo@123',
       role: 'doctor'
     });
 
@@ -163,7 +163,7 @@ async function seedPresentation() {
     const userD02 = await User.create({
       name: 'Dr. Rohan Verma',
       email: 'demo.doctor.rohan@lifefile.test',
-      password: hashedPassword,
+      password: 'Demo@123',
       role: 'doctor'
     });
 
@@ -184,7 +184,7 @@ async function seedPresentation() {
     const userD03 = await User.create({
       name: 'Dr. Sara Khan',
       email: 'demo.doctor.sara@lifefile.test',
-      password: hashedPassword,
+      password: 'Demo@123',
       role: 'doctor'
     });
 
@@ -220,7 +220,7 @@ async function seedPresentation() {
     const userP01 = await User.create({
       name: 'Aarav Sharma',
       email: 'demo.patient.01@lifefile.test',
-      password: hashedPassword,
+      password: 'Demo@123',
       role: 'patient'
     });
     const patient01 = await Patient.create({
@@ -242,7 +242,7 @@ async function seedPresentation() {
     const userP02 = await User.create({
       name: 'Diya Patel',
       email: 'demo.patient.02@lifefile.test',
-      password: hashedPassword,
+      password: 'Demo@123',
       role: 'patient'
     });
     const patient02 = await Patient.create({
@@ -264,7 +264,7 @@ async function seedPresentation() {
     const userP03 = await User.create({
       name: 'Kabir Joshi',
       email: 'demo.patient.03@lifefile.test',
-      password: hashedPassword,
+      password: 'Demo@123',
       role: 'patient'
     });
     const patient03 = await Patient.create({
@@ -286,7 +286,7 @@ async function seedPresentation() {
     const userP04 = await User.create({
       name: 'Isha Deshmukh',
       email: 'demo.patient.04@lifefile.test',
-      password: hashedPassword,
+      password: 'Demo@123',
       role: 'patient'
     });
     const patient04 = await Patient.create({
@@ -308,7 +308,7 @@ async function seedPresentation() {
     const userP05 = await User.create({
       name: 'Vihaan Kapoor',
       email: 'demo.patient.05@lifefile.test',
-      password: hashedPassword,
+      password: 'Demo@123',
       role: 'patient'
     });
     const patient05 = await Patient.create({
@@ -330,7 +330,7 @@ async function seedPresentation() {
     const userP06 = await User.create({
       name: 'Myra Nair',
       email: 'demo.patient.06@lifefile.test',
-      password: hashedPassword,
+      password: 'Demo@123',
       role: 'patient'
     });
     const patient06 = await Patient.create({
