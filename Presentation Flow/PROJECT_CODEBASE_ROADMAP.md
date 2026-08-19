@@ -1,259 +1,196 @@
-# 🗺️ LIFEFILE — MASTER CODEBASE ROADMAP & ARCHITECTURE BLOCK DIAGRAM
+# 🗺️ LIFEFILE — SYSTEM ARCHITECTURE BLOCK DIAGRAM & CODE ROADMAP
 **Platform:** LifeFile (Smart Clinic Operating System / SCOS)  
-**SIH 2026 Master System Architecture & Detailed Code Location Reference**
+**SIH 2026 Presentation Master System Architecture**
 
 ---
 
-## 📐 1. SYSTEM ARCHITECTURE BLOCK DIAGRAM
+## 📦 1. SYSTEM ARCHITECTURE VISUAL BLOCK DIAGRAM
+
+### 📺 Visual Box Art Layout
+
+```text
++----------------------------------------------------------------------------------------------------+
+|                                    1. FRONTEND PRESENTATION BLOCK                                  |
+|  +---------------------+  +-------------------------+  +-------------------+  +-----------------+  |
+|  |     Login.tsx       |  |    DoctorBooking.tsx     |  |  DoctorQueue.tsx  |  | PatientAppt.tsx |  |
+|  | (1-Click Auth Pills)|  | (NLP Triage Classifier) |  | (ACPA Queue View) |  | (Time Lock UI)  |  |
+|  +---------------------+  +-------------------------+  +-------------------+  +-----------------+  |
++----------------------------------------------------------------------------------------------------+
+                                                  |
+                                    (HTTP REST API + WebSockets)
+                                                  v
++----------------------------------------------------------------------------------------------------+
+|                                  2. COMMUNICATIONS & GATEWAY BLOCK                                 |
+|  +--------------------------------------------------+  +----------------------------------------+  |
+|  |            Axios API Client (lib/api.ts)         |  |   Socket.IO Stream (services/stream.ts)|  |
+|  +--------------------------------------------------+  +----------------------------------------+  |
++----------------------------------------------------------------------------------------------------+
+                                                  |
+                                                  v
++----------------------------------------------------------------------------------------------------+
+|                                   3. BACKEND SECURITY & AUTH BLOCK                                 |
+|  +----------------------------------------------------------------------------------------------+  |
+|  |                 JWT Token Authentication & Multi-Tenant Isolation (middleware/auth.js)          |  |
+|  +----------------------------------------------------------------------------------------------+  |
++----------------------------------------------------------------------------------------------------+
+                                                  |
+                                                  v
++----------------------------------------------------------------------------------------------------+
+|                                 4. EXPRESS API ROUTE CONTROLLERS BLOCK                             |
+|  +-------------------+  +--------------------------+  +------------------+  +-------------------+  |
+|  |      auth.js      |  |     appointments.js      |  |     queue.js     |  |     memory.js     |  |
+|  | (Doctor Register) |  | (Triage Level Recording) |  | (ACPA CEP Engine)|  | (Memory Endpoint) |  |
+|  +-------------------+  +--------------------------+  +------------------+  +-------------------+  |
++----------------------------------------------------------------------------------------------------+
+                                                  |
+                                                  v
++----------------------------------------------------------------------------------------------------+
+|                                  5. BACKGROUND AI & ENGINE SERVICES BLOCK                          |
+|  +--------------------------------------------------+  +----------------------------------------+  |
+|  |   Google Gemini 1.5 Flash (services/memory.js)   |  |   Kafka Producer (services/kafka.js)   |  |
+|  |   - NLP Entity Extractor                         |  |   - Queue Event Pipeline               |  |
+|  |   - Allergy Contradiction Classifier             |  |                                        |  |
+|  +--------------------------------------------------+  +----------------------------------------+  |
++----------------------------------------------------------------------------------------------------+
+                                                  |
+                                                  v
++----------------------------------------------------------------------------------------------------+
+|                                 6. DATA STORAGE & MESSAGING BUS BLOCK                              |
+|  +----------------------------------+  +----------------------------+  +------------------------+  |
+|  |         MongoDB Database         |  |      Apache Kafka Bus      |  |   Socket.IO Websocket  |  |
+|  | (Users, Appts, Queues, Memories)|  |   (Topic: scos.queue.updates) |  |   (Real-Time Rooms)    |  |
+|  +----------------------------------+  +----------------------------+  +------------------------+  |
++----------------------------------------------------------------------------------------------------+
+```
+
+---
+
+### 🎨 Mermaid Block Graph
 
 ```mermaid
 flowchart TD
-    subgraph CLIENT ["📱 FRONTEND PRESENTATION LAYER (React + Vite + Tailwind)"]
-        UI_Login["🔑 Login & Role Selection\n(src/pages/Login.tsx)"]
-        UI_Booking["🩺 Doctor Booking & Real-Time NLP Triage\n(src/pages/patient/DoctorBooking.tsx)"]
-        UI_PatAppt["🎟️ Patient Ticket & Time-Lock Check-In\n(src/pages/patient/PatientAppointments.tsx)"]
-        UI_DocQueue["👨‍⚕️ Doctor ACPA Priority Queue\n(src/pages/doctor/DoctorQueue.tsx)"]
-        UI_Memory["🧠 Clinical Memory & Allergy Safety Warning\n(src/components/PatientMemoryModal.tsx)"]
+    subgraph B1 ["📦 BLOCK 1: FRONTEND PRESENTATION LAYER"]
+        UI_Login["[ BLOCK 1A: Login & Auth Pills ]\nFile: src/pages/Login.tsx"]
+        UI_Booking["[ BLOCK 1B: NLP Triage Booking ]\nFile: src/pages/patient/DoctorBooking.tsx"]
+        UI_Queue["[ BLOCK 1C: Doctor Queue Dashboard ]\nFile: src/pages/doctor/DoctorQueue.tsx"]
+        UI_Appt["[ BLOCK 1D: Patient Ticket & Time Lock ]\nFile: src/pages/patient/PatientAppointments.tsx"]
     end
 
-    subgraph CLIENT_COMM ["🔌 FRONTEND COMMUNICATIONS LAYER"]
-        API_Client["🌐 Axios HTTP Client\n(src/lib/api.ts)"]
-        Socket_Client["⚡ Socket.IO Stream Listener\n(src/services/streaming.ts)"]
+    subgraph B2 ["📦 BLOCK 2: COMMUNICATIONS LAYER"]
+        API_Client["[ BLOCK 2A: Axios HTTP Client ]\nFile: src/lib/api.ts"]
+        Socket_Client["[ BLOCK 2B: Socket.IO Stream Listener ]\nFile: src/services/streaming.ts"]
     end
 
-    subgraph BACKEND_AUTH ["🔒 BACKEND MIDDLEWARE & SECURITY"]
-        Auth_Middleware["🛡️ JWT & Multi-Tenant Facility Isolation\n(middleware/auth.js)"]
+    subgraph B3 ["📦 BLOCK 3: SECURITY & AUTH MIDDLEWARE"]
+        Auth_Middleware["[ BLOCK 3A: JWT & Multi-Tenant Guard ]\nFile: middleware/auth.js"]
     end
 
-    subgraph BACKEND_ROUTES ["⚙️ EXPRESS API ROUTE CONTROLLERS"]
-        Route_Auth["🔑 Auth Route\n(routes/auth.js)"]
-        Route_Appt["🩺 Appointment & Triage Route\n(routes/appointments.js)"]
-        Route_Queue["📊 ACPA Queue Engine Route\n(routes/queue.js)"]
-        Route_Mem["🧠 Clinical Memory Route\n(routes/memory.js)"]
+    subgraph B4 ["📦 BLOCK 4: EXPRESS API CONTROLLERS"]
+        Route_Auth["[ BLOCK 4A: Auth Route ]\nFile: routes/auth.js"]
+        Route_Appt["[ BLOCK 4B: Appointment Route ]\nFile: routes/appointments.js"]
+        Route_Queue["[ BLOCK 4C: ACPA Queue Engine ]\nFile: routes/queue.js"]
+        Route_Mem["[ BLOCK 4D: Clinical Memory Route ]\nFile: routes/memory.js"]
     end
 
-    subgraph BACKEND_SERVICES ["🧠 BACKGROUND AI & MESSAGING SERVICES"]
-        Service_AI["✨ Gemini 1.5 Flash AI Memory Service\n(services/memoryService.js)"]
-        Service_Kafka["📩 Kafka Event Producer\n(services/kafkaProducer.js)"]
+    subgraph B5 ["📦 BLOCK 5: BACKGROUND AI & ENGINES"]
+        Service_AI["[ BLOCK 5A: Gemini 1.5 Flash AI ]\nFile: services/memoryService.js"]
+        Service_Kafka["[ BLOCK 5B: Kafka Message Producer ]\nFile: services/kafkaProducer.js"]
     end
 
-    subgraph INFRASTRUCTURE ["💾 DATA & MESSAGE BUS INFRASTRUCTURE"]
-        Mongo_DB[("🍃 MongoDB Database\n(Users, Appointments, Memory, Queues)")]
-        Kafka_Bus["🚀 Apache Kafka Event Bus\n(Topic: scos.queue.updates)"]
-        Socket_Server["📡 Socket.IO Websocket Server\n(Real-Time Room Broadcasts)"]
+    subgraph B6 ["📦 BLOCK 6: DATA & MESSAGING INFRASTRUCTURE"]
+        DB["[ BLOCK 6A: MongoDB Store ]\nCollections: Users, Appointments, Memory, Queues"]
+        Kafka["[ BLOCK 6B: Apache Kafka Bus ]\nTopic: scos.queue.updates"]
+        Socket["[ BLOCK 6C: Socket.IO Server ]\nReal-Time Client Broadcast Rooms"]
     end
 
-    %% Connections
-    UI_Login & UI_Booking & UI_PatAppt & UI_DocQueue & UI_Memory --> API_Client
-    UI_PatAppt & UI_DocQueue <--> Socket_Client
-
-    API_Client -->|HTTP Headers + JWT| Auth_Middleware
-    Auth_Middleware --> Route_Auth & Route_Appt & Route_Queue & Route_Mem
-
-    Route_Auth & Route_Appt & Route_Queue --> Mongo_DB
-    Route_Mem --> Service_AI
-    Service_AI -->|Google Gemini API| Mongo_DB
-    
-    Route_Queue --> Service_Kafka
-    Service_Kafka --> Kafka_Bus
-    Kafka_Bus --> Socket_Server
-    Socket_Server -->|Websocket Push| Socket_Client
+    B1 --> B2
+    B2 --> B3
+    B3 --> B4
+    B4 --> B5
+    B5 --> B6
 ```
 
 ---
 
-### 🔍 DETAILED EXPLANATION OF EACH SYSTEM BLOCK
+## 🔍 2. DETAILED EXPLANATION OF EVERY ARCHITECTURE BLOCK
 
 ---
 
-#### 🟢 Block 1: Frontend Presentation Layer (`scos-frontend/src/pages/`)
-* **What it does:** Renders the user interfaces for Patients, Doctors, Hospitals, and Admins. Handles form inputs, real-time UI state updates, and interactive feedback.
-* **Key Files & Code Locations:**
-  1. `Login.tsx`: Includes 1-Click Role Authentication Pills (`👑 Admin`, `🏥 Hospital`, `👨‍⚕️ Doctor`, `👤 Patient 1/2/3`).
-  2. `patient/DoctorBooking.tsx`: Contains `classifySymptoms()` which parses chief complaint text in real-time and illuminates the **Level 5 Emergency Badge**.
-  3. `patient/PatientAppointments.tsx`: Computes `isCheckInAllowed()` to enforce the **15-minute Time-Lock Window**.
-  4. `doctor/DoctorQueue.tsx`: Renders the dynamically sorted queue array ordered by the ACPA Priority CEP score.
-  5. `components/PatientMemoryModal.tsx`: Displays parsed medical history cards with red **CONFLICTED / ALLERGY WARNING** badges.
+### 🟢 BLOCK 1: FRONTEND PRESENTATION LAYER (`scos-frontend/src/pages/`)
+* **Block Purpose:** Renders the user interfaces for Patients, Doctors, Hospitals, and Admins.
+* **Component 1A (Login.tsx):** Implements 1-Click Role Login Pills for judge demos.
+* **Component 1B (DoctorBooking.tsx):** Executes client-side NLP symptom parsing via `classifySymptoms()` to detect Emergency Level 5 cases.
+* **Component 1C (DoctorQueue.tsx):** Renders the doctor's queue dynamically sorted by ACPA CEP score.
+* **Component 1D (PatientAppointments.tsx):** Evaluates slot times via `isCheckInAllowed()` to enforce 15-minute OPD time locks.
 
 ---
 
-#### 🔵 Block 2: Frontend Communications Layer (`scos-frontend/src/lib/` & `src/services/`)
-* **What it does:** Acts as the network bridge between the React frontend and the Node.js backend. Handles HTTP REST requests and persistent WebSocket subscriptions.
-* **Key Files & Code Locations:**
-  1. `lib/api.ts`: Pre-configured Axios instance with base URL `http://localhost:5000/api` and automatic JWT `Authorization` header injection.
-  2. `services/streaming.ts`: Socket.IO client connection manager (`io('http://localhost:5000')`). Listens to `queue_update` events and triggers React state refresh without page reloads.
+### 🔵 BLOCK 2: COMMUNICATIONS & GATEWAY LAYER (`scos-frontend/src/lib/` & `src/services/`)
+* **Block Purpose:** Handles network transport, REST API communication, and WebSocket streaming.
+* **Component 2A (lib/api.ts):** Axios client configured with base URL `http://localhost:5000/api` and automatic JWT header injection.
+* **Component 2B (services/streaming.ts):** Socket.IO listener handling `queue_update` events for zero-refresh UI updates.
 
 ---
 
-#### 🟣 Block 3: Backend Security & Multi-Tenant Middleware (`scos-backend/middleware/`)
-* **What it does:** Intercepts incoming HTTP requests, verifies JSON Web Tokens (JWT), extracts user identity, and enforces strict multi-tenant facility isolation (`hospitalId`).
-* **Key Files & Code Locations:**
-  1. `middleware/auth.js`: Implements `auth()` for token verification and `requireRole(['doctor', 'hospital'])` for route protection. Prevents unauthorized cross-hospital data access.
+### 🟣 BLOCK 3: BACKEND SECURITY & AUTH MIDDLEWARE (`scos-backend/middleware/`)
+* **Block Purpose:** Protects REST routes and enforces multi-tenant facility data isolation.
+* **Component 3A (middleware/auth.js):** Decodes JWT tokens, verifies user roles (`doctor`, `hospital`, `patient`), and scopes query results to `req.user.hospitalId`.
 
 ---
 
-#### 🟡 Block 4: Express API Route Controllers (`scos-backend/routes/`)
-* **What it does:** Handles HTTP endpoint logic, validates request payloads, executes database queries, and computes business algorithms.
-* **Key Files & Code Locations:**
-  1. `routes/auth.js`: Manages user login and registration with specialist fields (Cardiology, Orthopedics, Pathology).
-  2. `routes/appointments.js`: Saves appointments with `chiefComplaint` and `triageLevel` into MongoDB.
-  3. `routes/queue.js`: Implements the **ACPA Queue Algorithm** (Lines 35–85), computing CEP priority scores:
-     $$\text{CEP} = (100 - \text{Token}) \times 10 + \text{Triage Bonus} + (1.5 \times \text{Wait Mins}) - \text{Skip Penalty}$$
-  4. `routes/memory.js`: Manages patient memory cards and allergy conflict resolution routes.
+### 🟡 BLOCK 4: EXPRESS API ROUTE CONTROLLERS (`scos-backend/routes/`)
+* **Block Purpose:** Executes REST route handlers and core algorithms.
+* **Component 4A (routes/auth.js):** Handles registration with doctor specialization fields (Cardiology, Orthopedics, Pathology).
+* **Component 4B (routes/appointments.js):** Saves appointment bookings with `chiefComplaint` and `triageLevel`.
+* **Component 4C (routes/queue.js):** Computes ACPA CEP priority score formula:
+  $$\text{CEP} = (100 - \text{Token}) \times 10 + \text{Triage Bonus} + (1.5 \times \text{Wait Mins}) - \text{Skip Penalty}$$
+* **Component 4D (routes/memory.js):** Exposes endpoints for patient medical history retrieval.
 
 ---
 
-#### 🔴 Block 5: Background AI & Messaging Services (`scos-backend/services/`)
-* **What it does:** Runs asynchronous background processing, external AI model invocations, and Kafka message publishing.
-* **Key Files & Code Locations:**
-  1. `services/memoryService.js`:
-     * `extractAIMemoryCandidates()` (Lines 293–347): Invokes Google Gemini 1.5 Flash API with JSON schema prompt engineering to parse clinical notes.
-     * `isContradictory()` (Lines 17–39): Compares past patient assertions against current notes to detect opposing medical assertions (*"No allergy"* vs *"Penicillin allergy"*).
-  2. `services/kafkaProducer.js`: Publishes queue state update events to Apache Kafka.
+### 🔴 BLOCK 5: BACKGROUND AI & SERVICES LAYER (`scos-backend/services/`)
+* **Block Purpose:** Manages Google Gemini AI integration, NLP conflict detection, and message queues.
+* **Component 5A (services/memoryService.js):**
+  * `extractAIMemoryCandidates()` (Lines 293–347): Invokes Google Gemini 1.5 Flash API with JSON schema prompt engineering.
+  * `isContradictory()` (Lines 17–39): Evaluates medical term contradictions (*"No allergy"* vs *"Penicillin allergy"*).
+* **Component 5B (services/kafkaProducer.js):** Publishes queue state transitions to Apache Kafka.
 
 ---
 
-#### 🟤 Block 6: Data & Message Bus Infrastructure Layer
-* **What it does:** Persistent database storage and high-throughput real-time message broadcasting.
-* **Key Components & Code Locations:**
-  1. **MongoDB Database:** Stores `Users`, `Doctors`, `Patients`, `Hospitals`, `Appointments`, `Queues`, and `PatientMemories`.
-  2. **Apache Kafka Event Bus:** Topic `scos.queue.updates` decoupled queue state changes from websocket distribution.
-  3. **Socket.IO Websocket Server:** `server.js` broadcasts real-time `queue_update` events to scoped client rooms.
+### 🟤 BLOCK 6: DATA & MESSAGING INFRASTRUCTURE LAYER
+* **Block Purpose:** Persistent database storage and real-time event broadcasting.
+* **Component 6A (MongoDB):** Database housing Users, Doctors, Patients, Hospitals, Appointments, Queues, and Memories.
+* **Component 6B (Apache Kafka):** Topic `scos.queue.updates` providing decoupled message event streaming.
+* **Component 6C (Socket.IO Server):** Broadcasts real-time events to active browser sessions.
 
 ---
 
-## ⚡ 2. STEP-BY-STEP CALL TRACES (SEQUENCE DIAGRAMS)
-
----
-
-### 🟢 Call Trace 1: Patient Booking & Real-Time NLP Triage Execution Flow
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Patient as 👤 Patient (Browser UI)
-    participant UI as DoctorBooking.tsx
-    participant API as lib/api.ts
-    participant Express as routes/appointments.js
-    participant DB as MongoDB (Appointment)
-    participant Kafka as Kafka Event Bus
-
-    Patient->>UI: Types Chief Complaint ("Severe chest pain radiating to left arm...")
-    UI->>UI: classifySymptoms("Severe chest pain...") [Line 25]
-    Note over UI: Client-Side NLP parses entities -> Assigns Triage Level = 5 (Emergency)
-    Patient->>UI: Selects Slot & Clicks "Confirm & Book Slot"
-    UI->>API: createAppointment({ doctorId, chiefComplaint, triageLevel: 5 })
-    API->>Express: HTTP POST /api/appointments (Bearer JWT Token)
-    Express->>Express: Validate User Role & Hospital Scope (middleware/auth.js)
-    Express->>DB: Appointment.create({ doctorId, triageLevel: 5, chiefComplaint })
-    Express->>Kafka: sendQueueUpdateEvent("NEW_BOOKING", appointmentId)
-    Express-->>API: 201 Created { appointmentId, tokenNumber: 101 }
-    API-->>UI: Render Ticket Confirmation with Triage Level 5 Red Badge
-```
-
----
-
-### 🔵 Call Trace 2: OPD Crowd-Control Check-In & ACPA Dynamic Queue Calculation
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Patient as 👤 Patient
-    participant UI as PatientAppointments.tsx
-    participant Express as routes/queue.js
-    participant ACPA as ACPA Calculator Formula
-    participant DB as MongoDB (Queue Model)
-    participant Socket as Socket.IO Server
-    actor Doctor as 👨‍⚕️ Doctor (DoctorQueue.tsx)
-
-    Patient->>UI: Clicks "Check In Now" (Validates Time Lock <= 15 mins)
-    UI->>Express: HTTP POST /api/queue/checkin { appointmentId }
-    Express->>Express: Verify Slot Time & Active Window
-    Express->>ACPA: Compute CEP Priority Score
-    Note over ACPA: CEP = (100 - Token)*10 + TriageBonus(1000) + 1.5*WaitMins - Penalty
-    Express->>DB: Queue.create({ token: 101, status: 'WAITING', cepScore: 1005 })
-    Express->>Socket: io.to(doctorId).emit('queue_update', updatedQueue)
-    Socket-->>Doctor: Real-Time Websocket Push Updates Queue State
-    Note over Doctor: Token #101 jumps to Position #1 (Emergency Priority Override)
-```
-
----
-
-## 📂 3. COMPLETE DIRECTORY FILE MAP
+## 📂 3. COMPLETE DIRECTORY FILE INDEX
 
 ```text
 e:\ie proj\
-├── PRESENTATION_FLOW.md                   # 🎤 Master judge speaking points & presentation script
-├── PROJECT_DOCUMENTATION_MASTER.md        # 📘 Master technical architecture document
-├── PROJECT_CODEBASE_ROADMAP.md            # 🗺️ Codebase block diagram & execution map (THIS FILE)
+├── PRESENTATION_FLOW.md                   # 🎤 Master presentation script
+├── PROJECT_DOCUMENTATION_MASTER.md        # 📘 Master technical documentation
+├── PROJECT_CODEBASE_ROADMAP.md            # 🗺️ Architecture block diagram (THIS FILE)
 │
-├── scos-backend/                          # ⚙️ Node.js + Express Backend
+├── scos-backend/                          # ⚙️ Backend Node.js Service
 │   ├── inspect-db.js                      # 📊 CLI Database Inspector (npm run inspect:db)
-│   ├── seed-10-distinct.js                # 🕒 24/7 Presentation Seeding Engine
-│   ├── server.js                          # 🌐 Server Entrypoint & Socket.IO initialization
-│   │
-│   ├── middleware/
-│   │   └── auth.js                        # 🔒 JWT Authentication & Multi-Tenant Role Isolation
-│   │
-│   ├── models/                            # 💾 Mongoose Schemas
-│   │   ├── User.js                        # System User credentials & roles
-│   │   ├── Doctor.js                      # Doctor profile, specializations, schedules
-│   │   ├── Patient.js                     # Patient profile & medical history
-│   │   ├── Hospital.js                    # Hospital facility metadata & address
-│   │   ├── Appointment.js                 # Appointment slots, chief complaints, triage levels
-│   │   ├── Queue.js                       # Active OPD Queue tokens & ACPA CEP scores
-│   │   └── PatientMemory.js               # Structured medical memory facts & conflict flags
-│   │
+│   ├── seed-10-distinct.js                # 🕒 Presentation Seeding Engine
+│   ├── server.js                          # 🌐 Express & Socket.IO Entrypoint
+│   ├── middleware/auth.js                 # 🔒 Multi-Tenant Auth Middleware
+│   ├── models/                            # 💾 Database Models
+│   │   ├── User.js, Doctor.js, Patient.js, Hospital.js, Appointment.js, Queue.js, PatientMemory.js
 │   ├── routes/                            # 🚀 REST API Controllers
-│   │   ├── auth.js                        # Login, Registration (Specialist selection), Roles
-│   │   ├── appointments.js                # Booking, NLP Triage level storage, Status update
-│   │   ├── queue.js                       # ACPA priority algorithm, check-in, call next
-│   │   ├── memory.js                      # Clinical memory retrieval, conflict resolution
-│   │   ├── doctors.js                     # Doctor profiles, search, hospital affiliation
-│   │   └── hospitals.js                   # Facility management & doctor roster approvals
-│   │
-│   └── services/                          # 🧠 Background Services & AI Engines
-│       ├── memoryService.js               # Gemini 1.5 Flash AI extraction & conflict check
-│       └── kafkaProducer.js               # Kafka message bus producer service
+│   │   ├── auth.js, appointments.js, queue.js, memory.js, doctors.js, hospitals.js
+│   └── services/                          # 🧠 AI & Message Services
+│       ├── memoryService.js (Gemini AI), kafkaProducer.js
 │
-└── scos-frontend/                         # 💻 React + TypeScript + Vite Frontend
-    ├── src/
-    │   ├── lib/
-    │   │   └── api.ts                     # Axios HTTP API client for backend communication
-    │   │
-    │   ├── services/
-    │   │   └── streaming.ts               # Socket.IO real-time websocket listener
-    │   │
-    │   ├── components/
-    │   │   └── PatientMemoryModal.tsx     # Clinical memory cards & red allergy alert modal
-    │   │
-    │   ├── layouts/                       # Navigation sidebars & role layout wrappers
-    │   │   ├── AdminLayout.tsx            # System Admin Portal layout
-    │   │   ├── DoctorLayout.tsx           # Doctor Clinical Portal layout
-    │   │   ├── HospitalLayout.tsx         # Hospital Facility Portal layout
-    │   │   └── PatientLayout.tsx          # Patient Portal layout
-    │   │
-    │   └── pages/                         # Core UI Screen Views
-    │       ├── Login.tsx                  # 1-Click Role Login Pills (`/login`)
-    │       ├── Register.tsx               # Specialist Doctor / Hospital sign-up
-    │       │
-    │       ├── patient/
-    │       │   ├── SearchDoctors.tsx      # Specialist search & filter (`/patient/search`)
-    │       │   ├── DoctorBooking.tsx      # Real-time NLP Triage booking (`/patient/book/:id`)
-    │       │   ├── PatientAppointments.tsx# Live digital ticket & time-lock check-in
-    │       │   └── SymptomTriage.tsx      # AI NLP Symptom Checker portal (`/patient/triage`)
-    │       │
-    │       ├── doctor/
-    │       │   ├── DoctorQueue.tsx        # ACPA priority queue dashboard
-    │       │   └── DoctorSchedule.tsx     # Doctor OPD schedule manager
-    │       │
-    │       ├── hospital/
-    │       │   ├── HospitalDashboard.tsx  # Hospital facility analytics & doctor roster
-    │       │   └── DoctorApproval.tsx     # Doctor affiliation request manager
-    │       │
-    │       └── admin/
-    │           ├── AdminDashboard.tsx     # System analytics & usage stats
-    │           └── AuditLogs.tsx          # Immutable security audit log view
+└── scos-frontend/                         # 💻 Frontend React Application
+    ├── src/lib/api.ts                     # Axios API Client
+    ├── src/services/streaming.ts          # Socket.IO Listener
+    ├── src/components/PatientMemoryModal.tsx # Memory UI Modal
+    └── src/pages/                         # Core UI Views
+        ├── Login.tsx, Register.tsx, SearchDoctors.tsx, DoctorBooking.tsx, PatientAppointments.tsx, DoctorQueue.tsx
 ```
 
 ---
