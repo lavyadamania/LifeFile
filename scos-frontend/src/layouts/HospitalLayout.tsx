@@ -20,7 +20,7 @@ export default function HospitalLayout() {
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
               <Building2 className="w-6 h-6 text-purple-400" />
-              <span className="text-xl font-bold tracking-tight">LifeFile Hospital</span>
+              <span className="text-xl font-bold tracking-tight">SCOS Hospital</span>
             </div>
             
             <div className="hidden md:flex relative w-64">

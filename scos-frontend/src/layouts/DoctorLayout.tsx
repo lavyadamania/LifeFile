@@ -44,7 +44,7 @@ export default function DoctorLayout() {
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
               <Stethoscope className="w-6 h-6 text-blue-400" />
-              <span className="text-xl font-bold tracking-tight">LifeFile Clinical</span>
+              <span className="text-xl font-bold tracking-tight">SCOS Clinical</span>
             </div>
             
             {/* Contextual Search */}
