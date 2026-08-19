@@ -40,11 +40,9 @@ async function seedPresentation() {
     console.log('⚠️  SAFETY WARNING: SEED PRESENTATION SCRIPT');
     console.log('====================================================');
     console.log('This script will reset non-admin application data and seed');
-    console.log('an ultra-rich presentation dataset (50+ records per user).');
+    console.log('a high-density dataset with UNIQUE past medical records per patient.');
     console.log('\nTo confirm and execute, run:');
-    console.log('  npm run seed:presentation -- --confirm');
-    console.log('OR');
-    console.log('  node seed-presentation.js --confirm\n');
+    console.log('  npm run seed:presentation -- --confirm\n');
     process.exit(0);
   }
 
@@ -55,7 +53,7 @@ async function seedPresentation() {
 
   try {
     console.log('====================================================');
-    console.log('🚀 STARTING LIFEFILE / SCOS HIGH-DENSITY SEEDING ENGINE');
+    console.log('🚀 STARTING LIFEFILE / SCOS UNIQUE PATIENT DATA SEEDING');
     console.log('====================================================\n');
 
     await mongoose.connect(process.env.MONGO_URI);
@@ -133,7 +131,7 @@ async function seedPresentation() {
       phone: '(555) 088-9922',
       email: 'demo.hospital.north@lifefile.test',
       description: 'Secondary Outpatient Facility & Specialty Care Center',
-      departments: ['Orthopedics', 'General Medicine', 'Dermatology', 'Gastroenterology'],
+      departments: ['Orthopedics', 'General Medicine', 'Dermatology', 'Gastroenterology', 'Rheumatology'],
       status: 'active'
     });
 
@@ -241,7 +239,7 @@ async function seedPresentation() {
         name: 'Aarav Sharma',
         age: 34, gender: 'Male', height: '178 cm', weight: '76 kg', bloodGroup: 'B+',
         phone: '(555) 912-3401', address: '742 Evergreen Terrace, NY 10001', emergencyContact: 'Priya Sharma (Wife) - (555) 912-3499',
-        hospital: hospital01._id, doctors: [doctor01._id, doctor02._id, doctor04._id]
+        hospital: hospital01._id, doctors: [doctor01._id, doctor02._id]
       },
       {
         email: 'demo.patient.02@lifefile.test',
@@ -269,14 +267,14 @@ async function seedPresentation() {
         name: 'Vihaan Kapoor',
         age: 52, gender: 'Male', height: '180 cm', weight: '88 kg', bloodGroup: 'O-',
         phone: '(555) 555-5505', address: '350 Park Ave, NY 10022', emergencyContact: 'Anita Kapoor (Wife) - (555) 555-6600',
-        hospital: hospital01._id, doctors: [doctor01._id, doctor02._id]
+        hospital: hospital01._id, doctors: [doctor01._id, doctor04._id]
       },
       {
         email: 'demo.patient.06@lifefile.test',
         name: 'Myra Nair',
         age: 24, gender: 'Female', height: '168 cm', weight: '60 kg', bloodGroup: 'A-',
         phone: '(555) 444-6606', address: '15 Central Park West, NY 10023', emergencyContact: 'Siddharth Nair (Father) - (555) 444-7700',
-        hospital: hospital01._id, doctors: [doctor01._id, doctor04._id]
+        hospital: hospital01._id, doctors: [doctor01._id, doctor03._id]
       }
     ];
 
@@ -330,7 +328,6 @@ async function seedPresentation() {
     const timeNowPlus10 = new Date(now.getTime() + plus10Offset * 60000);
     const timeNowPlus45 = new Date(now.getTime() + plus45Offset * 60000);
 
-    // Core Demo Appointments
     const P01 = seededPatients[0];
     const P02 = seededPatients[1];
     const P03 = seededPatients[2];
@@ -341,7 +338,7 @@ async function seedPresentation() {
     await Appointment.create({
       patientId: P01.user._id, doctorId: doctor01._id, doctorName: doctor01.name, spec: doctor01.specialization,
       date: todayStr, time: formatTime(timeNowMinus10), status: 'Pending', hospitalId: hospital01._id, hospitalName: hospital01.name,
-      baseToken: 101, triageLevel: 5, missedCalls: 0, chiefComplaint: 'Severe chest pain radiating to left arm & Dyspnea (Triage 5 Emergency)'
+      baseToken: 101, triageLevel: 5, missedCalls: 0, chiefComplaint: 'Acute Chest Pain radiating to left arm & Dyspnea (Triage 5 Emergency)'
     });
 
     await Appointment.create({
@@ -381,90 +378,221 @@ async function seedPresentation() {
     });
 
     // -----------------------------------------------------------------
-    // 7. HIGH-DENSITY HISTORICAL SEEDING ENGINE (50+ Records Per Patient)
+    // 7. UNIQUE MEDICAL HISTORY DATASETS PER PATIENT ACCOUNT
     // -----------------------------------------------------------------
-    console.log('\n⚡ Launching High-Density Clinical Seeder (50+ Records per Patient)...');
+    console.log('\n⚡ Seeding Unique Clinical Datasets per Patient Account...');
 
-    const medicalScenarios = [
+    // --- PATIENT 01: AARAV SHARMA (Cardiology & Acute Coronary Syndrome Profile) ---
+    const aaravHistory = [
       {
-        diag: 'Essential Hypertension',
-        notes: 'BP 145/92 mmHg. Patient instructed on low-sodium diet and daily aerobic exercise.',
-        meds: [{ name: 'Amlodipine', dosage: '5mg', frequency: 'Once daily (Morning)', duration: '90 days' }],
-        category: 'CONDITION', content: 'Essential Hypertension',
-        recordTitle: 'Blood Pressure Vitals Log', recordType: 'blood'
-      },
-      {
-        diag: 'Type 2 Diabetes Mellitus',
-        notes: 'HbA1c 7.8%. Fasting blood glucose 142 mg/dL. Commenced oral hypoglycemic agent.',
-        meds: [{ name: 'Metformin XR', dosage: '500mg', frequency: 'Twice daily with meals', duration: '90 days' }],
-        category: 'CONDITION', content: 'Type 2 Diabetes Mellitus',
-        recordTitle: 'HbA1c & Fasting Glucose Report', recordType: 'blood'
-      },
-      {
-        diag: 'Acute Bronchitis & Respiratory Infection',
-        notes: 'Productive cough, low-grade fever. Wheezing heard on auscultation.',
+        diag: 'Acute Coronary Syndrome / Essential Hypertension',
+        notes: 'Patient presented with oppressive substernal chest discomfort. ECG revealed ST-segment changes. Severe allergy to Penicillin noted.',
         meds: [
-          { name: 'Azithromycin', dosage: '500mg', frequency: 'Once daily', duration: '5 days' },
-          { name: 'Levosalbutamol Inhaler', dosage: '100mcg', frequency: '2 puffs as needed', duration: '14 days' }
+          { name: 'Amlodipine', dosage: '5mg', frequency: 'Once daily (Morning)', duration: '90 days' },
+          { name: 'Aspirin', dosage: '75mg', frequency: 'Once daily (After food)', duration: '90 days' },
+          { name: 'Clopidogrel', dosage: '75mg', frequency: 'Once daily', duration: '90 days' }
         ],
-        category: 'CONDITION', content: 'Acute Bronchitis',
-        recordTitle: 'Chest X-Ray PA View Report', recordType: 'xray'
+        category: 'ALLERGY', content: 'Penicillin allergy (severe anaphylactic reaction)', confidence: 'VERIFIED', status: 'ACTIVE',
+        recordTitle: 'Chest X-Ray Digital Scan', recordType: 'xray', doc: doctor01
       },
       {
-        diag: 'Hyperlipidemia & Dyslipidemia',
-        notes: 'Total cholesterol 245 mg/dL, LDL 165 mg/dL. Prescribed statin therapy.',
-        meds: [{ name: 'Atorvastatin', dosage: '10mg', frequency: 'Once daily at bedtime', duration: '60 days' }],
-        category: 'MEDICATION', content: 'Atorvastatin 10mg nightly',
-        recordTitle: 'Comprehensive Lipid Panel', recordType: 'blood'
-      },
-      {
-        diag: 'Severe Penicillin Allergy Reaction',
-        notes: 'Patient suffered severe urticaria and facial angioedema post amoxicillin intake in 2023. STRICT ANAPHYLAXIS WARNING.',
-        meds: [{ name: 'Cetirizine', dosage: '10mg', frequency: 'Once daily as needed', duration: '7 days' }],
-        category: 'ALLERGY', content: 'Severe Penicillin Allergy (Anaphylaxis Risk)',
-        recordTitle: 'Allergy Sensitivity Clinical Note', recordType: 'other'
-      },
-      {
-        diag: 'Lumbosacral Disc Prolapse & Sciatica',
-        notes: 'Lower back pain radiating down right leg. L4-L5 nerve root compression confirmed on MRI.',
+        diag: 'Coronary Artery Stent Follow-Up & Lipid Control',
+        notes: 'Post-angioplasty 6-month evaluation. Echocardiogram shows LVEF 55%. Lipid profile shows LDL 110 mg/dL.',
         meds: [
-          { name: 'Pregabalin', dosage: '75mg', frequency: 'Twice daily', duration: '30 days' },
-          { name: 'Naproxen', dosage: '500mg', frequency: 'Twice daily after meals', duration: '14 days' }
+          { name: 'Atorvastatin', dosage: '40mg', frequency: 'Once daily at bedtime', duration: '90 days' },
+          { name: 'Metoprolol Succinate', dosage: '25mg', frequency: 'Once daily', duration: '90 days' }
         ],
-        category: 'PROCEDURE', content: 'Lumbosacral Spine MRI Scan',
-        recordTitle: 'Lumbar Spine MRI Scan', recordType: 'mri'
+        category: 'MEDICATION', content: 'Amlodipine (5mg once daily for hypertension)', confidence: 'VERIFIED', status: 'ACTIVE',
+        recordTitle: 'Cardiac Enzymes & Lipid Blood Report', recordType: 'blood', doc: doctor01
       },
       {
-        diag: 'Gastroesophageal Reflux Disease (GERD)',
-        notes: 'Epigastric burning sensation after meals. Endoscopy shows mild esophagitis.',
-        meds: [{ name: 'Pantoprazole', dosage: '40mg', frequency: 'Once daily before breakfast', duration: '30 days' }],
-        category: 'CONDITION', content: 'Gastroesophageal Reflux Disease (GERD)',
-        recordTitle: 'Upper GI Endoscopy Report', recordType: 'other'
+        diag: 'Post-Angioplasty Rehabilitation & ECG Check',
+        notes: 'Treadmill stress test completed. Maximum HR reached 145 bpm without ischemic changes.',
+        meds: [{ name: 'Nitroglycerin sublingual', dosage: '0.4mg', frequency: 'As needed for chest discomfort', duration: '30 days' }],
+        category: 'PROCEDURE', content: 'Percutaneous Coronary Intervention (PCI Stent in LAD)', confidence: 'SUPPORTED', status: 'ACTIVE',
+        recordTitle: '12-Lead Electrocardiogram (ECG) Tracing', recordType: 'blood', doc: doctor01
       },
       {
-        diag: 'Vitamin D3 & B12 Deficiency Syndrome',
-        notes: 'Serum 25-OH Vitamin D level 14 ng/mL. Generalized muscle fatigue.',
-        meds: [
-          { name: 'Cholecalciferol (Vit D3)', dosage: '60,000 IU', frequency: 'Once weekly', duration: '8 weeks' },
-          { name: 'Methylcobalamin', dosage: '1500mcg', frequency: 'Daily', duration: '30 days' }
-        ],
-        category: 'INVESTIGATION', content: 'Vitamin D3 Deficiency (14 ng/mL)',
-        recordTitle: 'Serum Micronutrient & Vitamin Panel', recordType: 'blood'
+        diag: 'Preventive Cardiac Vitals Review',
+        notes: '24-hour Holter monitoring normal sinus rhythm. No sustained ventricular ectopy.',
+        meds: [{ name: 'Omega-3 Ethyl Esters', dosage: '1000mg', frequency: 'Twice daily', duration: '60 days' }],
+        category: 'INVESTIGATION', content: '24-Hour Holter Monitor (Normal Sinus Rhythm)', confidence: 'SUPPORTED', status: 'ACTIVE',
+        recordTitle: '24-Hour Holter Telemetry Log', recordType: 'other', doc: doctor01
       },
       {
-        diag: 'Allergic Rhinitis & Sinusitis',
-        notes: 'Seasonal nasal congestion, sneezing, watery eyes.',
-        meds: [{ name: 'Fluticasone Nasal Spray', dosage: '50mcg', frequency: '2 sprays each nostril daily', duration: '30 days' }],
-        category: 'PREFERENCE', content: 'Prefers non-drowsy antihistamines',
-        recordTitle: 'ENT Paranasal Sinus CT Scan', recordType: 'other'
-      },
-      {
-        diag: 'Routine Preventive Health Checkup',
-        notes: 'Comprehensive physical examination normal. Resting heart rate 72 bpm, SpO2 99%.',
-        meds: [{ name: 'Multivitamin & Minerals', dosage: '1 tablet', frequency: 'Once daily', duration: '30 days' }],
-        category: 'INVESTIGATION', content: 'Annual Cardiac Risk Assessment Normal',
-        recordTitle: 'Resting 12-Lead ECG Report', recordType: 'blood'
+        diag: 'Emergency Cardiac Resuscitation Admission Note',
+        notes: 'Emergency Bay arrival for sudden retrosternal squeezing pain. Administered oxygen and IV heparin.',
+        meds: [{ name: 'Heparin Sodium IV', dosage: '5000 units', frequency: 'Stat dose', duration: '1 day' }],
+        category: 'CONDITION', content: 'Ischemic Heart Disease (Angina Pectoris)', confidence: 'VERIFIED', status: 'ACTIVE',
+        recordTitle: 'Emergency Department Resuscitation Report', recordType: 'other', doc: doctor02
       }
+    ];
+
+    // --- PATIENT 02: DIYA PATEL (Neurology & Chronic Migraine Profile) ---
+    const diyaHistory = [
+      {
+        diag: 'Chronic Migraine with Aura & Vertigo',
+        notes: 'Patient reports 4-5 headache episodes per month with scintillating scotoma visual aura. Brain MRI ordered.',
+        meds: [
+          { name: 'Sumatriptan', dosage: '50mg', frequency: 'At onset of migraine', duration: '10 days' },
+          { name: 'Propranolol', dosage: '40mg', frequency: 'Twice daily (Prophylaxis)', duration: '60 days' }
+        ],
+        category: 'CONDITION', content: 'Chronic Migraine with Aura', confidence: 'SUPPORTED', status: 'ACTIVE',
+        recordTitle: 'Brain MRI Scan Report', recordType: 'mri', doc: doctor01
+      },
+      {
+        diag: 'Cervical Spine Degenerative Tension Note',
+        notes: 'Cervical spinal radiograph shows mild C5-C6 disc space narrowing contributing to occipital headaches.',
+        meds: [{ name: 'Naproxen', dosage: '250mg', frequency: 'Twice daily post meals', duration: '14 days' }],
+        category: 'INVESTIGATION', content: 'Cervical Spine MRI (Mild C5-C6 Disc Prolapse)', confidence: 'SUPPORTED', status: 'ACTIVE',
+        recordTitle: 'Cervical Spine X-Ray Neutral View', recordType: 'xray', doc: doctor04
+      },
+      {
+        diag: 'Neurological EEG Brainwave Examination',
+        notes: '21-channel digital EEG routine tracing showing normal alpha rhythm without epileptiform discharges.',
+        meds: [{ name: 'Magnesium Glycinate', dosage: '400mg', frequency: 'Once daily before sleep', duration: '90 days' }],
+        category: 'PREFERENCE', content: 'Prefers non-sedating migraine prophylactic medication', confidence: 'SUPPORTED', status: 'ACTIVE',
+        recordTitle: 'Electroencephalogram (EEG) Brain Tracing', recordType: 'other', doc: doctor01
+      },
+      {
+        diag: 'Vitamin B12 Deficiency & Neuropathy Check',
+        notes: 'Serum B12 180 pg/mL. Mild tingling paresthesia in extremities.',
+        meds: [{ name: 'Methylcobalamin Injection', dosage: '1000mcg', frequency: 'Weekly for 5 weeks', duration: '5 weeks' }],
+        category: 'INVESTIGATION', content: 'Serum Vitamin B12 Deficiency (180 pg/mL)', confidence: 'SUPPORTED', status: 'ACTIVE',
+        recordTitle: 'Serum Neuro-Vitamins & Micronutrient Panel', recordType: 'blood', doc: doctor04
+      }
+    ];
+
+    // --- PATIENT 03: KABIR JOSHI (Endocrinology & Diabetic Nephropathy Profile) ---
+    const kabirHistory = [
+      {
+        diag: 'Type 2 Diabetes Mellitus & Essential Hypertension',
+        notes: 'Fasting blood sugar 168 mg/dL, HbA1c 8.2%. Patient statement claims no drug allergies.',
+        meds: [
+          { name: 'Metformin XR', dosage: '1000mg', frequency: 'Once daily with dinner', duration: '90 days' },
+          { name: 'Empagliflozin', dosage: '10mg', frequency: 'Once daily (Morning)', duration: '90 days' },
+          { name: 'Telmisartan', dosage: '40mg', frequency: 'Once daily', duration: '90 days' }
+        ],
+        category: 'ALLERGY', content: 'No known drug allergy (Patient statement)', confidence: 'CONFLICTED', status: 'CONFLICTED',
+        conflictNotes: 'Contradictory clinical record detected: Prior 2024 consultation noted Penicillin allergy.',
+        recordTitle: 'HbA1c & Glycemic Control Report', recordType: 'blood', doc: doctor03
+      },
+      {
+        diag: 'Historical Penicillin Allergy Consultation Note (2024)',
+        notes: 'Prior medical history review confirmed mild allergic skin rash to Oral Amoxicillin in 2024.',
+        meds: [{ name: 'Linagliptin', dosage: '5mg', frequency: 'Once daily', duration: '90 days' }],
+        category: 'ALLERGY', content: 'Penicillin allergy noted in 2024 consultation', confidence: 'CONFLICTED', status: 'CONFLICTED',
+        conflictNotes: 'Contradicts patient statement: "No known drug allergy"',
+        recordTitle: 'Comprehensive Renal Function & Microalbuminuria Test', recordType: 'blood', doc: doctor01
+      },
+      {
+        diag: 'Diabetic Retinopathy Screening',
+        notes: 'Fundus examination shows mild non-proliferative diabetic retinopathy. No macular edema.',
+        meds: [{ name: 'Fenofibrate', dosage: '145mg', frequency: 'Once daily', duration: '90 days' }],
+        category: 'CONDITION', content: 'Type 2 Diabetes Mellitus (HbA1c 8.2%)', confidence: 'VERIFIED', status: 'ACTIVE',
+        recordTitle: 'Digital Ophthalmic Retinal Scan', recordType: 'other', doc: doctor03
+      },
+      {
+        diag: 'Diabetic Peripheral Neuropathy & Foot Check',
+        notes: 'Monofilament tactile sensation test normal. Good peripheral pulses bilaterally.',
+        meds: [{ name: 'Alpha Lipoic Acid', dosage: '600mg', frequency: 'Once daily', duration: '60 days' }],
+        category: 'MEDICATION', content: 'Metformin XR 1000mg daily', confidence: 'VERIFIED', status: 'ACTIVE',
+        recordTitle: 'Diabetic Peripheral Vascular Doppler Report', recordType: 'other', doc: doctor03
+      }
+    ];
+
+    // --- PATIENT 04: ISHA DESHMUKH (Rheumatology & Joint Inflammation Profile) ---
+    const ishaHistory = [
+      {
+        diag: 'Seropositive Rheumatoid Arthritis & Synovitis',
+        notes: 'Symmetrical morning stiffness in PIP and MCP joints lasting >1 hour. Anti-CCP antibodies positive (>200 U/mL).',
+        meds: [
+          { name: 'Methotrexate', dosage: '15mg', frequency: 'Once weekly (Sunday)', duration: '12 weeks' },
+          { name: 'Folic Acid', dosage: '5mg', frequency: 'Once daily except Sunday', duration: '12 weeks' },
+          { name: 'Deflazacort', dosage: '6mg', frequency: 'Once daily (Morning)', duration: '14 days' }
+        ],
+        category: 'CONDITION', content: 'Seropositive Rheumatoid Arthritis', confidence: 'VERIFIED', status: 'ACTIVE',
+        recordTitle: 'Bilateral Hands & Wrists X-Ray', recordType: 'xray', doc: doctor03
+      },
+      {
+        diag: 'Acute Knee Joint Effusion & Arthrocentesis',
+        notes: 'Right knee joint swelling. Synovial fluid analysis negative for crystals or sepsis.',
+        meds: [{ name: 'Hydroxychloroquine', dosage: '200mg', frequency: 'Twice daily', duration: '90 days' }],
+        category: 'PROCEDURE', content: 'Right Knee Diagnostic Arthrocentesis', confidence: 'SUPPORTED', status: 'ACTIVE',
+        recordTitle: 'Synovial Fluid Cytology & Culture Analysis', recordType: 'blood', doc: doctor04
+      },
+      {
+        diag: 'Rheumatoid Inflammatory Marker Monitoring',
+        notes: 'ESR 48 mm/hr, CRP 24 mg/L. Demonstrates steady improvement post disease-modifying therapy.',
+        meds: [{ name: 'Calcium + Vit D3', dosage: '500mg/250IU', frequency: 'Twice daily', duration: '90 days' }],
+        category: 'INVESTIGATION', content: 'Elevated Inflammatory Markers (ESR 48 mm/hr)', confidence: 'SUPPORTED', status: 'ACTIVE',
+        recordTitle: 'Inflammatory Markers Panel (ESR & High-Sensitivity CRP)', recordType: 'blood', doc: doctor03
+      }
+    ];
+
+    // --- PATIENT 05: VIHAAN KAPOOR (Pulmonology & COPD Profile) ---
+    const vihaanHistory = [
+      {
+        diag: 'Chronic Obstructive Pulmonary Disease (COPD) & Asthma',
+        notes: 'Post-bronchodilator FEV1/FVC ratio 0.62. History of heavy smoking (20 pack-years). Breathlessness on exertion.',
+        meds: [
+          { name: 'Tiotropium Inhaler', dosage: '18mcg', frequency: '1 capsule inhalation daily', duration: '90 days' },
+          { name: 'Budesonide + Formoterol Inhaler', dosage: '400mcg/12mcg', frequency: '2 puffs twice daily', duration: '90 days' }
+        ],
+        category: 'CONDITION', content: 'Chronic Obstructive Pulmonary Disease (COPD)', confidence: 'VERIFIED', status: 'ACTIVE',
+        recordTitle: 'High-Resolution Chest CT Scan (HRCT)', recordType: 'other', doc: doctor04
+      },
+      {
+        diag: 'Spirometry Pulmonary Function Test Evaluation',
+        notes: 'Forced Expiratory Volume in 1sec (FEV1) 68% predicted showing moderate airflow obstruction.',
+        meds: [{ name: 'N-Acetylcysteine', dosage: '600mg', frequency: 'Effervescent tablet twice daily', duration: '30 days' }],
+        category: 'INVESTIGATION', content: 'Spirometry Pulmonary Function Test (FEV1 68%)', confidence: 'SUPPORTED', status: 'ACTIVE',
+        recordTitle: 'Spirometry Pulmonary Function Graphs', recordType: 'other', doc: doctor04
+      },
+      {
+        diag: 'Arterial Blood Gas (ABG) & Oxygenation Log',
+        notes: 'PaO2 78 mmHg, PaCO2 42 mmHg, pH 7.41. SpO2 on room air 94%.',
+        meds: [{ name: 'Doxofylline', dosage: '400mg', frequency: 'Once daily at bedtime', duration: '60 days' }],
+        category: 'PREFERENCE', content: 'Prefers dry powder inhaler device over MDI', confidence: 'SUPPORTED', status: 'ACTIVE',
+        recordTitle: 'Arterial Blood Gas Analysis (ABG)', recordType: 'blood', doc: doctor01
+      }
+    ];
+
+    // --- PATIENT 06: MYRA NAIR (Gynecology/Endocrinology & Metabolic Profile) ---
+    const myraHistory = [
+      {
+        diag: 'Polycystic Ovary Syndrome (PCOS) & Insulin Resistance',
+        notes: 'Irregular menstrual cycles, hirsutism, fasting insulin 18 uIU/mL. Bilateral polycystic ovarian morphology on ultrasound.',
+        meds: [
+          { name: 'Myo-Inositol + D-Chiro Inositol', dosage: '2000mg/50mg', frequency: 'Twice daily in water', duration: '90 days' },
+          { name: 'Metformin', dosage: '500mg', frequency: 'Twice daily post meals', duration: '90 days' }
+        ],
+        category: 'CONDITION', content: 'Polycystic Ovary Syndrome (PCOS)', confidence: 'VERIFIED', status: 'ACTIVE',
+        recordTitle: 'Pelvic Transvaginal Ultrasound Scan Report', recordType: 'other', doc: doctor04
+      },
+      {
+        diag: 'Reproductive Endocrine Hormone Profile',
+        notes: 'LH/FSH ratio 2.8:1. Serum total testosterone 65 ng/dL.',
+        meds: [{ name: 'Spironolactone', dosage: '50mg', frequency: 'Once daily', duration: '90 days' }],
+        category: 'INVESTIGATION', content: 'Hormonal Imbalance (LH/FSH Ratio 2.8:1)', confidence: 'SUPPORTED', status: 'ACTIVE',
+        recordTitle: 'Comprehensive Endocrine & Reproductive Hormone Panel', recordType: 'blood', doc: doctor01
+      },
+      {
+        diag: 'Metabolic Glucose Tolerance Test (GTT)',
+        notes: '2-hour oral glucose tolerance test 152 mg/dL indicating impaired glucose tolerance.',
+        meds: [{ name: 'Vitamin D3 Granules', dosage: '60,000 IU', frequency: 'Once weekly for 8 weeks', duration: '8 weeks' }],
+        category: 'INVESTIGATION', content: 'Impaired Oral Glucose Tolerance (152 mg/dL)', confidence: 'SUPPORTED', status: 'ACTIVE',
+        recordTitle: 'Oral Glucose Tolerance Test 3-Point Graph', recordType: 'blood', doc: doctor03
+      }
+    ];
+
+    const allPatientHistories = [
+      { patient: P01, history: aaravHistory },
+      { patient: P02, history: diyaHistory },
+      { patient: P03, history: kabirHistory },
+      { patient: P04, history: ishaHistory },
+      { patient: P05, history: vihaanHistory },
+      { patient: P06, history: myraHistory }
     ];
 
     let totalPrescriptions = 0;
@@ -473,96 +601,90 @@ async function seedPresentation() {
     let totalAuditLogs = 0;
     let totalReviews = 0;
 
-    for (let pIdx = 0; pIdx < seededPatients.length; pIdx++) {
-      const p = seededPatients[pIdx];
+    for (let pIdx = 0; pIdx < allPatientHistories.length; pIdx++) {
+      const { patient: p, history } = allPatientHistories[pIdx];
 
-      // Seed 8-10 historical appointments per patient
-      for (let i = 1; i <= 8; i++) {
-        const pastDate = new Date(now.getTime() - (i * 15 * 24 * 60 * 60 * 1000));
+      // 1. Seed 6-8 historical completed appointments with unique complaints
+      for (let i = 0; i < history.length; i++) {
+        const item = history[i];
+        const pastDate = new Date(now.getTime() - ((i + 1) * 20 * 24 * 60 * 60 * 1000));
         const pastDateStr = pastDate.toISOString().split('T')[0];
-        const doc = p.cfg.doctors[i % p.cfg.doctors.length];
 
         await Appointment.create({
           patientId: p.user._id,
-          doctorId: doc,
-          doctorName: doc === doctor01._id ? doctor01.name : doc === doctor02._id ? doctor02.name : doc === doctor03._id ? doctor03.name : doctor04.name,
-          spec: doc === doctor01._id ? doctor01.specialization : doc === doctor02._id ? doctor02.specialization : doc === doctor03._id ? doctor03.specialization : doctor04.specialization,
+          doctorId: item.doc._id,
+          doctorName: item.doc.name,
+          spec: item.doc.specialization,
           date: pastDateStr,
-          time: '10:00 AM',
+          time: '10:30 AM',
           status: 'Completed',
           hospitalId: p.cfg.hospital,
           hospitalName: p.cfg.hospital === hospital01._id ? hospital01.name : hospital02.name,
           baseToken: 500 + (pIdx * 10) + i,
-          triageLevel: (i % 3) + 1,
-          chiefComplaint: `Historical Consultation #${i}: ${medicalScenarios[i % medicalScenarios.length].diag}`
+          triageLevel: 2,
+          chiefComplaint: `Historical OPD Visit: ${item.diag}`
         });
-      }
 
-      // Seed 8-10 Prescriptions per patient
-      for (let i = 0; i < medicalScenarios.length; i++) {
-        const sc = medicalScenarios[i];
-        const doc = p.cfg.doctors[i % p.cfg.doctors.length];
-        const docObj = doc === doctor01._id ? doctor01 : doc === doctor02._id ? doctor02 : doc === doctor03._id ? doctor03 : doctor04;
-
+        // 2. Seed Prescription
         const rx = await Prescription.create({
           patientId: p.user._id,
-          doctorId: doc,
+          doctorId: item.doc._id,
           patientName: p.profile.name,
-          doctorName: docObj.name,
-          diagnosis: sc.diag,
-          notes: sc.notes,
-          medications: sc.meds,
+          doctorName: item.doc.name,
+          diagnosis: item.diag,
+          notes: item.notes,
+          medications: item.meds,
           hospitalId: p.cfg.hospital,
           hospitalName: p.cfg.hospital === hospital01._id ? hospital01.name : hospital02.name,
           attachments: [
             {
-              filename: `${sc.recordTitle}.pdf`,
-              url: makeMedicalSvg(sc.recordTitle, `Patient: ${p.profile.name} | Date: 2026-0${(i%8)+1}-15`),
-              type: sc.recordType
+              filename: `${item.recordTitle}.pdf`,
+              url: makeMedicalSvg(item.recordTitle, `Patient: ${p.profile.name} | Verified Record`),
+              type: item.recordType
             }
           ]
         });
         totalPrescriptions++;
 
-        // Seed Medical Record corresponding to prescription
+        // 3. Seed Medical Record
         await MedicalRecord.create({
           patientId: p.profile._id,
-          title: `${sc.recordTitle} (${p.profile.name})`,
-          type: sc.recordType,
-          fileUrl: makeMedicalSvg(sc.recordTitle, `Patient: ${p.profile.name} | Verified Diagnostic Record`),
-          isPasswordProtected: i === 5, // Protected MRI Scan for security test
-          password: i === 5 ? 'Demo@123' : null
+          title: `${item.recordTitle} (${p.profile.name})`,
+          type: item.recordType,
+          fileUrl: makeMedicalSvg(item.recordTitle, `Patient: ${p.profile.name} | Diagnostic Report`),
+          isPasswordProtected: item.recordType === 'mri',
+          password: item.recordType === 'mri' ? 'Demo@123' : null
         });
         totalRecords++;
 
-        // Seed Patient Memory Card
-        const normContent = sc.content.toLowerCase().trim();
+        // 4. Seed Patient Memory Card
+        const normContent = item.content.toLowerCase().trim();
         await PatientMemory.create({
           patientId: p.user._id,
-          category: sc.category,
+          category: item.category,
           type: 'FACT',
-          content: sc.content,
+          content: item.content,
           normalizedContent: normContent,
-          confidence: i === 4 ? 'CONFLICTED' : 'SUPPORTED',
-          status: i === 4 ? 'CONFLICTED' : 'ACTIVE',
-          conflictNotes: i === 4 ? 'Contradictory record detected in prior allergy history.' : '',
+          confidence: item.confidence,
+          status: item.status,
+          conflictNotes: item.conflictNotes || '',
           sourceRecordIds: [rx._id]
         });
         totalMemories++;
 
-        // Seed Audit Logs
+        // 5. Seed Audit Logs
         await AuditLog.create({
-          actor: docObj.name,
+          actor: item.doc.name,
           actorRole: 'doctor',
           action: 'PRESCRIPTION_ISSUED',
-          target: `Patient: ${p.profile.name} (${sc.diag})`,
+          target: `Patient: ${p.profile.name} (${item.diag})`,
           severity: 'info',
           ip: '127.0.0.1'
         });
         totalAuditLogs++;
       }
 
-      // Seed Memory Corrections for Patient P03 (Kabir Joshi) & P01 (Aarav)
+      // Seed Memory Corrections for Patient 3 (Kabir Joshi) & Patient 1 (Aarav Sharma)
       if (pIdx === 2 || pIdx === 0) {
         const mem = await PatientMemory.findOne({ patientId: p.user._id, category: 'ALLERGY' });
         if (mem) {
@@ -584,7 +706,7 @@ async function seedPresentation() {
           doctorId: dId,
           patientId: p.user._id,
           rating: 5 - (dIdx % 2),
-          comment: `Excellent consultation experience with thorough AI diagnosis review and clear prescription guidance.`
+          comment: `Excellent consultation experience. AI clinical history summarization was completely accurate.`
         });
         totalReviews++;
       }
@@ -605,19 +727,19 @@ async function seedPresentation() {
     });
 
     console.log('\n====================================================');
-    console.log('🎉 LIFEFILE / SCOS HIGH-DENSITY SIH PRESENTATION SEED COMPLETE!');
+    console.log('🎉 LIFEFILE / SCOS UNIQUE PATIENT SEEDING COMPLETE!');
     console.log('====================================================');
     console.log(`📊 SEEDED SUMMARY:`);
     console.log(`  - 🏥 Hospitals: 2`);
     console.log(`  - 👨‍⚕️ Doctors: 4`);
-    console.log(`  - 👤 Patients: 6 Primary (${seededPatients.length} Total Users)`);
-    console.log(`  - 📅 OPD Appointments: ${7 + (6 * 8)} Total`);
-    console.log(`  - 💊 Prescriptions: ${totalPrescriptions} Total`);
-    console.log(`  - 📂 Medical Records: ${totalRecords} Total`);
-    console.log(`  - 🧠 Patient Memories: ${totalMemories} Total`);
+    console.log(`  - 👤 Patients: 6 Primary (${seededPatients.length} Unique Medical Profiles)`);
+    console.log(`  - 📅 OPD Appointments: ${7 + totalPrescriptions} Total`);
+    console.log(`  - 💊 Prescriptions: ${totalPrescriptions} Total (Unique Per Patient)`);
+    console.log(`  - 📂 Medical Records: ${totalRecords} Total (Unique Per Patient)`);
+    console.log(`  - 🧠 Patient Memories: ${totalMemories} Total (Unique Per Patient)`);
     console.log(`  - 📜 Security Audit Logs: ${totalAuditLogs + 3} Total`);
     console.log(`  - ⭐ Doctor Reviews: ${totalReviews} Total`);
-    console.log(`  - ⚡ TOTAL CLINICAL DATA: 350+ Records (60+ per Patient User)!`);
+    console.log(`  - ⚡ 100% DISTINCT CLINICAL HISTORIES GENERATED FOR ALL 6 PATIENTS!`);
     console.log('====================================================\n');
 
   } catch (err) {
