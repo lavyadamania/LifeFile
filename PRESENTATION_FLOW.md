@@ -10,30 +10,47 @@
 
 ## 1. QUICK START COMMANDS
 
-### Step 0: Stop / Kill All Old Node Processes (Emergency Cleanup)
-To ensure no duplicate background servers compete for port 5000 or Kafka connections:
+> You can run all commands directly from the main project root folder (`cd "e:\ie proj"`).
+
+### Step 0: Stop / Kill All Old Node Processes (Cleanup)
+To guarantee zero duplicate background servers or socket conflicts:
 ```powershell
+# From root folder (e:\ie proj)
+npm run stop:all
+# Or directly:
 taskkill /F /IM node.exe
 ```
 
-### Step A: Seed / Reset the Presentation Database
-Run this single command right before your presentation (at any hour of the day or night) to initialize the dynamic time-aware dataset:
+### Step A: Seed / Reset Presentation Database (24/7 Time-Aware)
+Run right before your presentation (at any hour of day or night):
 ```powershell
+# From root folder (e:\ie proj):
+npm run seed:presentation -- --confirm
+
+# Or from scos-backend folder:
 cd "e:\ie proj\scos-backend"
 npm run seed:presentation -- --confirm
 ```
 
-### Step B: Start Backend Server
+### Step B: Start Applications
+
+#### Option 1 — Start Both Backend + Frontend Simultaneously (Single Terminal):
 ```powershell
-cd "e:\ie proj\scos-backend"
+# From root folder (e:\ie proj):
 npm run dev
 ```
 
-### Step C: Start Frontend Application
-```powershell
-cd "e:\ie proj\scos-frontend"
-npm run dev
-```
+#### Option 2 — Start Backend & Frontend in Separate Terminals:
+* **Terminal 1 (Backend API & Sockets):**
+  ```powershell
+  cd "e:\ie proj\scos-backend"
+  npm run dev
+  ```
+* **Terminal 2 (Frontend React App):**
+  ```powershell
+  cd "e:\ie proj\scos-frontend"
+  npm run dev
+  ```
 
 ### ⚡ Optional: 1-Click Clock Resync (If App is Left Running for Hours)
 If the server has been running for several hours and you want to recalibrate demo appointment slots to your current clock without wiping data:
