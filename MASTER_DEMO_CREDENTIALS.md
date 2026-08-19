@@ -32,19 +32,19 @@
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Dr. Ananya Sharma** | `demo.doctor.ananya@lifefile.test` | `Demo@123` | Cardiology | LifeFile Central Hospital | Active (4 Patients in Queue) |
 | **Dr. Rohan Verma** | `demo.doctor.rohan@lifefile.test` | `Demo@123` | Emergency Medicine | LifeFile Central Hospital | Active (4 Patients in Queue) |
-| **Dr. Vikram Sethi** | `demo.doctor.vikram@lifefile.test` | `Demo@123` | Pulmonology | LifeFile Central Hospital | Active (3 Patients in Queue) |
 | **Dr. Sara Khan** | `demo.doctor.sara@lifefile.test` | `Demo@123` | General Medicine | LifeFile North Hospital | Active (4 Patients in Queue) |
-| **Dr. Rajesh Iyer** | `demo.doctor.rajesh@lifefile.test` | `Demo@123` | Orthopedics | LifeFile North Hospital | Active (3 Patients in Queue) |
-| **Dr. Meera Patel** | `demo.doctor.meera@lifefile.test` | `Demo@123` | Gastroenterology | LifeFile North Hospital | Active (3 Patients in Queue) |
-| **Dr. Suresh Nambiar** | `demo.doctor.suresh@lifefile.test` | `Demo@123` | Rheumatology | LifeFile North Hospital | Active (3 Patients in Queue) |
-| **Dr. Arjun Kapoor** | `demo.doctor.arjun@lifefile.test` | `Demo@123` | Neurology | Metro City Trauma Institute | Active (4 Patients in Queue) |
-| **Dr. Priyanka Roy** | `demo.doctor.priyanka@lifefile.test` | `Demo@123` | Nephrology | Metro City Trauma Institute | Active (3 Patients in Queue) |
-| **Dr. Neha Gupta** | `demo.doctor.neha@lifefile.test` | `Demo@123` | ENT Specialist | Apex Suburb Specialty Care | Active (4 Patients in Queue) |
-| **Dr. Tariq Hussain** | `demo.doctor.tariq@lifefile.test` | `Demo@123` | Endocrinology | Apex Suburb Specialty Care | Active (3 Patients in Queue) |
-| **Dr. Sunita Rao** | `demo.doctor.sunita@lifefile.test` | `Demo@123` | Oncology | Apex Suburb Specialty Care | Active (3 Patients in Queue) |
-| **Dr. Alok Nath** | `demo.doctor.alok@lifefile.test` | `Demo@123` | Psychiatry | Apex Suburb Specialty Care | Active (3 Patients in Queue) |
-| **Dr. Kavita Joshi** | `demo.doctor.kavita@lifefile.test` | `Demo@123` | Pediatrics | St. Jude Children & Family | Active (3 Patients in Queue) |
-| **Dr. Deepak Shah** | `demo.doctor.deepak@lifefile.test` | `Demo@123` | Dermatology | St. Jude Children & Family | Active (3 Patients in Queue) |
+| **Dr. Vikram Rao** | `demo.doctor.vikram@lifefile.test` | `Demo@123` | Pulmonology & Endocrinology | LifeFile Central Hospital | Active (3 Patients in Queue) |
+| **Dr. Priya Deshmukh** | `demo.doctor.priya@lifefile.test` | `Demo@123` | Neurology | Metro City Trauma Institute | Active (4 Patients in Queue) |
+| **Dr. Amit Patel** | `demo.doctor.amit@lifefile.test` | `Demo@123` | Orthopedics | LifeFile North Hospital | Active (3 Patients in Queue) |
+| **Dr. Neha Gupta** | `demo.doctor.neha@lifefile.test` | `Demo@123` | Gastroenterology | LifeFile North Hospital | Active (3 Patients in Queue) |
+| **Dr. Rajesh Iyer** | `demo.doctor.rajesh@lifefile.test` | `Demo@123` | Nephrology | Metro City Trauma Institute | Active (3 Patients in Queue) |
+| **Dr. Meera Nambiar** | `demo.doctor.meera@lifefile.test` | `Demo@123` | Dermatology | St. Jude Children & Family | Active (3 Patients in Queue) |
+| **Dr. Sanjay Saxena** | `demo.doctor.sanjay@lifefile.test` | `Demo@123` | Rheumatology | LifeFile North Hospital | Active (3 Patients in Queue) |
+| **Dr. Kavita Singhania** | `demo.doctor.kavita@lifefile.test` | `Demo@123` | Pediatrics | St. Jude Children & Family | Active (3 Patients in Queue) |
+| **Dr. Alok Bhatia** | `demo.doctor.alok@lifefile.test` | `Demo@123` | ENT & Otolaryngology | Apex Suburb Specialty Care | Active (4 Patients in Queue) |
+| **Dr. Sunita Rastogi** | `demo.doctor.sunita@lifefile.test` | `Demo@123` | Endocrinology | Apex Suburb Specialty Care | Active (3 Patients in Queue) |
+| **Dr. Deepa Menon** | `demo.doctor.deepa@lifefile.test` | `Demo@123` | Oncology | Apex Suburb Specialty Care | Active (3 Patients in Queue) |
+| **Dr. Tarun Kulkarni** | `demo.doctor.tarun@lifefile.test` | `Demo@123` | Psychiatry | Apex Suburb Specialty Care | Active (3 Patients in Queue) |
 
 ---
 
