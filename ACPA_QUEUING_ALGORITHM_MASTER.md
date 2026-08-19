@@ -9,6 +9,15 @@
 
 ---
 
+## 💡 KEY DEFINITIONS & FULL FORMS
+
+| Term | Full Form | What It Is & What It Does |
+| :--- | :--- | :--- |
+| **ACPA** | **Adaptive Clinical Priority Algorithm** | The intelligent backend algorithm that dynamically sorts the OPD queue in real time based on medical urgency, wait time aging, and anti-starvation math. |
+| **CEP** | **Current Effective Priority** *(Score)* | The single calculated numerical score (e.g. `1970.0` vs `1050.9`) assigned to each patient every minute. The patient with the highest CEP score is placed at Position #1 in the doctor's queue. |
+
+---
+
 ## 🎯 1. EXECUTIVE SUMMARY & PROBLEM STATEMENT
 
 Traditional OPD hospital queues operate on a **static First-Come, First-Served (FCFS) token system**. This leads to three severe healthcare inefficiencies:
