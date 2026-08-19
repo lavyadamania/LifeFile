@@ -59,13 +59,9 @@ async function seedPresentation() {
     await mongoose.connect(process.env.MONGO_URI);
     console.log('✅ Connected to MongoDB');
 
-    // 1. Preserve Existing Admin Users
-    const existingAdmins = await User.find({ role: 'admin' });
-    console.log(`👑 Preserving ${existingAdmins.length} existing admin user(s)...`);
-
-    // 2. Wipe non-admin demo data
+    // 1. Wipe old demo data
     console.log('🧹 Clearing old demo data collections...');
-    await User.deleteMany({ role: { $ne: 'admin' } });
+    await User.deleteMany({});
     await Patient.deleteMany({});
     await Doctor.deleteMany({});
     await Hospital.deleteMany({});
@@ -81,19 +77,14 @@ async function seedPresentation() {
 
     console.log('✅ Old data cleared cleanly.\n');
 
-    const hashedPassword = await bcrypt.hash('Demo@123', 10);
-
-    // Ensure default admin exists
-    let adminUser = existingAdmins.find(a => a.email === 'lavya@admin');
-    if (!adminUser) {
-      adminUser = await User.create({
-        name: 'Admin Lavya',
-        email: 'lavya@admin',
-        password: 'Demo@123',
-        role: 'admin'
-      });
-      console.log('👑 Created default Admin account: lavya@admin / Demo@123');
-    }
+    // Re-create default admin account with guaranteed password Demo@123
+    const adminUser = await User.create({
+      name: 'Admin Lavya',
+      email: 'lavya@admin',
+      password: 'Demo@123',
+      role: 'admin'
+    });
+    console.log('👑 Created default Admin account: lavya@admin / Demo@123');
 
     // -----------------------------------------------------------------
     // 3. SEED HOSPITALS (5 Distinct Facilities)
