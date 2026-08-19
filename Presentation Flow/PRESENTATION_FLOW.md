@@ -1,207 +1,161 @@
-# LIFEFILE / SCOS — LIVE SIH JUDGE PRESENTATION MANUAL
-**System:** Smart Clinic Operating System (SCOS) / LifeFile  
+# 🏥 LIFEFILE — SIH 2026 LIVE JUDGE PRESENTATION MASTER MANUAL
+**Platform:** LifeFile (Smart Clinic Operating System / SCOS)  
 **Frontend URL:** `http://localhost:5173`  
 **Backend URL:** `http://localhost:5000`  
 **Database:** MongoDB (`process.env.MONGO_URI`)  
-**Real-Time Protocol:** Kafka + Socket.IO  
-**Time Independence:** 100% Dynamic 24/7 Time-Aware Seeding Engine  
+**Real-Time Bus:** Apache Kafka + Socket.IO  
+**Seeding Engine:** 100% Dynamic 24/7 Time-Aware Offset Engine  
 
 ---
 
-## 1. QUICK START COMMANDS
+## ⚡ 1. QUICK START COMMANDS CHEAT SHEET
 
-> You can run all commands directly from the main project root folder (`cd "e:\ie proj"`).
+> Run all commands directly from the project root folder (`cd "e:\ie proj"`).
 
-### Step 0: Stop / Kill All Old Node Processes (Cleanup)
-To guarantee zero duplicate background servers or socket conflicts:
+### 🛠️ Pre-Presentation Setup (Run before live demo):
 ```powershell
-# From root folder (e:\ie proj)
+# 1. Stop old background processes
 npm run stop:all
-# Or directly:
-taskkill /F /IM node.exe
-```
 
-### Step A: Seed / Reset Presentation Database (24/7 Time-Aware)
-Run right before your presentation (at any hour of day or night):
-```powershell
-# From root folder (e:\ie proj):
+# 2. Reset database with 24/7 time-aware offsets
 npm run seed:presentation -- --confirm
-```
 
-### Step B: Live Database CLI Inspection Matrix (For Technical Judges)
-Show clean live ASCII database state (Users, ACPA Queue, Clinical Memory, Audit Logs) in 1 command:
-```powershell
-# From root folder (e:\ie proj):
-npm run inspect:db
-```
-
-### Step C: Start Applications
-```powershell
-# From root folder (e:\ie proj):
+# 3. Start Frontend & Backend concurrently
 npm run dev
 ```
 
-### ⚡ Optional: 1-Click Clock Resync (If App is Left Running for Hours)
-If the server has been running for several hours and you want to recalibrate demo appointment slots to your current clock without wiping data:
-```http
-POST http://localhost:5000/api/queue/resync-demo
+### 📊 Live Database CLI Inspector (To show technical judges raw backend data):
+```powershell
+npm run inspect:db
 ```
-*(Or simply re-run `npm run seed:presentation -- --confirm`)*
 
 ---
 
-## 2. 24/7 TIME-INDEPENDENCE GUARANTEE
+## 🕒 2. 24/7 TIME-INDEPENDENCE GUARANTEE
 
-The seed engine dynamically calculates all appointment slots relative to the **exact moment** you run the command:
+The presentation seed engine calculates all appointment slots dynamically relative to your **current clock**:
 
-* **Patient 1 (Aarav Sharma - Emergency Override):** Scheduled for `NOW - 10m` (In queue as active emergency).
+* **Patient 1 (Aarav Sharma - Emergency Override):** Scheduled for `NOW - 10m` (Triage Level 5 Red Code).
 * **Patient 2 (Diya Patel - Active Check-In Window):** Scheduled for `NOW + 5m` (Check-In button is **ACTIVE**).
-* **Patient 3 (Kabir Joshi - Locked Check-In Window):** Scheduled for `NOW + 45m` (Check-In button is **LOCKED** with dynamic `Opens at HH:MM PM` message).
+* **Patient 3 (Kabir Joshi - Locked Check-In Window):** Scheduled for `NOW + 45m` (Check-In button is **LOCKED**).
 * **Patient 5 (Vihaan Kapoor - Skipped Penalty):** Scheduled for `NOW - 25m` (1 Missed Call Penalty applied).
 * **Patient 6 (Myra Nair - NOW SERVING):** Scheduled for `NOW - 15m` (`In_Progress Consultation`).
 
-> **Boundary Safety:** Even if you present near midnight (e.g. 11:45 PM), time-clamping guarantees offsets stay cleanly within the current date without rolling over.
-
 ---
 
-## 3. MASTER DEMO CREDENTIALS CHEAT SHEET
+## 🔑 3. MASTER DEMO CREDENTIALS CHEAT SHEET
 
-> **Global Password for All Demo Accounts:** `Demo@123`
+> **Global Password for All Accounts:** `Demo@123`
 
-| Role | Name | Email Address | Password | Demo Highlights / Focus |
+| Role | Name | Email Address | Password | Demo Highlights |
 | :--- | :--- | :--- | :--- | :--- |
-| **Admin** | Admin Lavya | `lavya@admin` | `Demo@123` | Master system analytics, doctor/hospital approvals, audit trail. |
-| **Hospital 1** | LifeFile Central Hospital | `demo.hospital.central@lifefile.test` | `Demo@123` | Main facility dashboard, staff roster, pending doctor join requests. |
-| **Hospital 2** | LifeFile North Hospital | `demo.hospital.north@lifefile.test` | `Demo@123` | Secondary facility dashboard, facility queue isolation demo. |
-| **Doctor 1** | Dr. Ananya Sharma | `demo.doctor.ananya@lifefile.test` | `Demo@123` | Senior Cardiologist @ Hospital 1. ACPA Queue, Emergency Override. |
-| **Doctor 2** | Dr. Rohan Verma | `demo.doctor.rohan@lifefile.test` | `Demo@123` | Emergency Specialist @ Hospital 1. Pending Join Request to Hospital 2. |
-| **Doctor 3** | Dr. Sara Khan | `demo.doctor.sara@lifefile.test` | `Demo@123` | General Medicine @ Hospital 2. Isolated North Hospital queue. |
-| **Patient 1** | Aarav Sharma | `demo.patient.01@lifefile.test` | `Demo@123` | Triage Level 5 (Emergency), Active Memory, X-Ray & Blood Records. |
-| **Patient 2** | Diya Patel | `demo.patient.02@lifefile.test` | `Demo@123` | Active Check-In Window (`NOW + 5m`), Brain MRI Report. |
-| **Patient 3** | Kabir Joshi | `demo.patient.03@lifefile.test` | `Demo@123` | Check-In Locked (`NOW + 45m`), Memory Contradiction & Review. |
-| **Patient 4** | Isha Deshmukh | `demo.patient.04@lifefile.test` | `Demo@123` | Hospital 2 Queue Patient (Facility Isolation Demo). |
-| **Patient 5** | Vihaan Kapoor | `demo.patient.05@lifefile.test` | `Demo@123` | Skipped Queue Patient (1 Missed Call Penalty Demo). |
-| **Patient 6** | Myra Nair | `demo.patient.06@lifefile.test` | `Demo@123` | Currently In Consultation (`NOW SERVING`). |
+| **Admin** | Admin Lavya | `lavya@admin` | `Demo@123` | Master analytics, audit logs, benchmark graphs. |
+| **Hospital 1** | LifeFile Central Hospital | `demo.hospital.central@lifefile.test` | `Demo@123` | Primary facility, doctor roster, pending approvals. |
+| **Hospital 2** | LifeFile North Hospital | `demo.hospital.north@lifefile.test` | `Demo@123` | Isolated secondary facility queue. |
+| **Doctor 1** | Dr. Ananya Sharma | `demo.doctor.ananya@lifefile.test` | `Demo@123` | Senior Cardiologist. ACPA Queue & Emergency Override. |
+| **Doctor 2** | Dr. Rohan Verma | `demo.doctor.rohan@lifefile.test` | `Demo@123` | Emergency Specialist. Pending affiliation to North Hospital. |
+| **Doctor 3** | Dr. Sara Khan | `demo.doctor.sara@lifefile.test` | `Demo@123` | General Medicine @ North Hospital (Isolated Queue). |
+| **Patient 1** | Aarav Sharma | `demo.patient.01@lifefile.test` | `Demo@123` | Triage Level 5, Medical Memory, Allergy Conflict. |
+| **Patient 2** | Diya Patel | `demo.patient.02@lifefile.test` | `Demo@123` | Active Check-In Window (`NOW + 5m`), Brain MRI report. |
+| **Patient 3** | Kabir Joshi | `demo.patient.03@lifefile.test` | `Demo@123` | Check-In Locked (`NOW + 45m`), Memory Contradiction. |
 
 ---
 
-## 4. STEP-BY-STEP LIVE JUDGE PRESENTATION SCRIPT
+## 🎤 4. STEP-BY-STEP LIVE JUDGE PRESENTATION SCRIPT
+
+---
 
 ### 📍 STEP 0: 1-Click Quick Demo Login & Auto-Role Detection
-1. Open `http://localhost:5173/login`.
-2. **Show Judges:** 1-Click Quick Login Pills (👑 Admin, 🏥 Hospital, 👨‍⚕️ Doctor, 👤 Patient 1/2/3).
-3. Click any pill to log in instantly—or type credentials manually (`Demo@123`). Backend automatically detects role without login errors!
+* **Action:** Open `http://localhost:5173/login`.
+* **What to Show Judges:** Point to the **1-Click Demo Login Pills** (`👑 Admin`, `🏥 Hospital`, `👨‍⚕️ Doctor`, `👤 Patient 1/2/3`).
+* **Verbatim Script:**
+  > *"Respected Judges, to ensure seamless live demonstrations, LifeFile includes 1-Click Role Authentication Pills that instantly log in any role—or you can type manual credentials. The backend automatically detects user roles with zero login ambiguity."*
 
 ---
 
-### 📍 STEP 1: Patient Medical Records & Profile
-1. Log in as **Patient 1 (Aarav Sharma)**: `demo.patient.01@lifefile.test` / `Demo@123`.
-2. Open **Medical Timeline / Records**.
-3. **Show Judges:** Chest X-Ray and Cardiac Blood Panel attachments.
-4. Open **Clinical Memory**: Show active verified allergy (`Penicillin allergy`) automatically extracted with source provenance.
+### 📍 STEP 1: Patient Chief Complaint & Real-Time NLP Auto-Triage
+* **Action:** Click `👤 Patient 1 (Aarav)` pill $\rightarrow$ Go to **Search Doctors** $\rightarrow$ Click **Book Appointment**.
+* **What to Show Judges:** Type in the **Describe Health Problem / Symptoms** box:
+  > *"Severe chest pain radiating to left arm and sweating"*
+* **Visual Highlight:** Watch the dynamic badge instantly turn **🔴 ⚡ Level 5: Cardiac Event (Emergency)**.
+* **Verbatim Script:**
+  > *"Notice how as the patient types their chief complaint, our real-time NLP Clinical Classifier automatically evaluates symptom urgency. Rather than assigning a static appointment slot, it flags this as a Level 5 Resuscitation Emergency, which directly feeds into our dynamic queue algorithm."*
 
 ---
 
-### 📍 STEP 2: Check-In Time Engine Locks (Dynamic Pre-Slot & Post-Slot Rules)
-1. Log in as **Patient 2 (Diya Patel)**: `demo.patient.02@lifefile.test` / `Demo@123`.
-   * **Show Judges:** Appointment is scheduled for `NOW + 5 mins` (within the valid window).
-   * **Result:** The Check-In button is **Active** (`Join Queue / Check In Now`).
-   * Click **Join Queue** to enter the live queue.
-2. Log in as **Patient 3 (Kabir Joshi)**: `demo.patient.03@lifefile.test` / `Demo@123`.
-   * **Show Judges:** Appointment is scheduled for `NOW + 45 mins` (too early).
-   * **Result:** The Check-In button is **Locked** (`Opens at HH:MM PM`). Explain: *"Prevents patients from overwhelming OPD queues hours in advance."*
+### 📍 STEP 2: Time-Aware Check-In Locks (Crowd Control Engine)
+* **Action:** Log in as **Patient 2 (Diya Patel)** vs **Patient 3 (Kabir Joshi)**.
+* **What to Show Judges:**
+  * **Diya Patel (Slot `NOW + 5m`):** Check-In button is **ACTIVE (`Join Queue / Check In Now`)**. Click it!
+  * **Kabir Joshi (Slot `NOW + 45m`):** Check-In button is **LOCKED (`Opens at HH:MM PM`)**.
+* **Verbatim Script:**
+  > *"To eliminate chaotic hospital waiting rooms, LifeFile enforces dynamic time-window locking. Diya's appointment is in 5 minutes, so her check-in is active. However, Kabir's slot is in 45 minutes, so his check-in is locked. This prevents patients from crowding OPDs hours in advance."*
 
 ---
 
-### 📍 STEP 2B: Live Booking with Chief Complaint & NLP Triage Badge
-1. Log in as any Patient and navigate to **Search Doctors** $\rightarrow$ **Book Appointment**.
-2. Type in **Describe Health Problem / Symptoms**: *"Severe chest pain radiating to left arm"*.
-3. **Show Judges:** The dynamic **⚡ Level 5: Cardiac Event (Emergency)** badge illuminates in real time!
-4. Click **Confirm Appointment**. Explain: *"The chief complaint is classified by our NLP engine on the fly and immediately feeds into ACPA queue ranking."*
+### 📍 STEP 3: ACPA Engine & Emergency Priority Override
+* **Action:** Log in as **Doctor 1 (Dr. Ananya Sharma)** $\rightarrow$ Open **Doctor Queue Dashboard**.
+* **What to Show Judges:** Point out **Aarav Sharma (Token #101)** standing at **Position #1** in the queue.
+* **Verbatim Script:**
+  > *"Here on Dr. Ananya Sharma's Queue Dashboard, observe that Aarav Sharma holds Position #1 despite earlier bookings. This is our ACPA Engine—Adaptive Clinical Priority Allocation. It calculates CEP priority scores combining Triage Level, Wait Time Aging, and Missed Call penalties. Emergency cases jump to top priority ethically while preserving token numbers."*
 
 ---
 
-### 📍 STEP 3: ACPA Queue Engine & Emergency Priority Override
-1. Log in as **Doctor 1 (Dr. Ananya Sharma)**: `demo.doctor.ananya@lifefile.test` / `Demo@123`.
-2. Open **Doctor Queue Dashboard**.
-3. **Point out Aarav Sharma (Token #101):**
-   * Aarav Sharma has **Triage Level 5 (Resuscitation / Emergency)**.
-   * ACPA places Aarav at **Queue Position #1**, outranking earlier routine appointments.
-   * Explain: *"Notice this is NOT a simple FIFO queue. ACPA dynamically calculates urgency scores, ensuring life-threatening cases are prioritized immediately while preserving token numbers."*
+### 📍 STEP 4: Dual Real-Time Synchronization (Kafka + Socket.IO)
+* **Action:** Keep Doctor Dashboard open in Window 1. Open Window 2 (Incognito) as **Patient 1 (Aarav)**.
+* **In Doctor Window 1:** Click **START Consultation** on Aarav.
+* **What to Show Judges:** Patient Window 2 updates **instantly in real time** showing status `NOW SERVING`.
+* **Verbatim Script:**
+  > *"Watch both screens: as the doctor clicks 'Start Consultation', our Kafka event bus dispatches a state transition through Socket.IO. The patient's mobile device updates instantly in real time without page refresh."*
 
 ---
 
-### 📍 STEP 4: Real-Time Dual Synchronization (Socket.IO + Kafka)
-1. Keep Doctor Dashboard open in Browser Window 1.
-2. Open Browser Window 2 (Incognito) and log in as **Patient 1 (Aarav Sharma)**. Open **Live Queue / ETA View**.
-3. In Doctor Window 1, click **START Consultation** on Aarav Sharma.
-4. **Show Judges:** Patient Window 2 updates **instantly in real time** without page refresh to show status `NOW SERVING`.
+### 📍 STEP 5: Patient Clinical Memory & Allergy Safety Warning
+* **Action:** In Doctor Consultation view for Aarav Sharma, view the **AI Clinical Memory** panel.
+* **What to Show Judges:** Highlight the red **CONFLICTED / ALLERGY WARNING** badge on Penicillin.
+* **Verbatim Script:**
+  > *"LifeFile features an AI-powered Patient Clinical Memory Engine. It aggregates medical history across past visits. Here, it flags an active Penicillin allergy conflict before the doctor prescribes medication, preventing dangerous drug interaction errors."*
 
 ---
 
-### 📍 STEP 5: Missed Call Penalty & Skipped Queue Recovery
-1. On Doctor Dashboard, point to **Vihaan Kapoor (Token #104)**:
-   * Status shows **1 Missed Call**.
-   * ACPA applies a penalty score deduction (`-30 points`), moving the patient down the queue without losing their token.
-2. Click **CALL NOW** or **START** to resume consultation for a skipped patient.
+### 📍 STEP 6: Multi-Facility Data Isolation
+* **Action:** Log in as **Doctor 3 (Dr. Sara Khan)** at **LifeFile North Hospital**.
+* **What to Show Judges:** Her queue contains **only Isha Deshmukh (P04)**. Zero data from Central Hospital.
+* **Verbatim Script:**
+  > *"LifeFile enforces strict multi-tenant facility isolation at the database layer. Doctor queues and patient lists are strictly scoped to the active hospital facility context, ensuring zero data leakage across hospital networks."*
 
 ---
 
-### 📍 STEP 6: Patient Memory Engine Conflict & Doctor Review Workflow
-1. Log in as **Doctor 1 (Dr. Ananya Sharma)**.
-2. Open Clinical Memory for **Kabir Joshi (P03)**.
-3. **Show Judges:** Red **CONFLICTED** badge on Penicillin Allergy.
-   * Assertion A: *"No known drug allergy (Patient assertion)"*
-   * Assertion B: *"Penicillin allergy noted in 2024 consultation"*
-4. Open **Correction Review Modal**: Show patient's review note: *"I took Amoxicillin in 2023 with no reaction..."*
-5. Click **Approve** or **Reject** to resolve the clinical memory conflict.
+### 📍 STEP 7: Live CLI Database Matrix (Terminal Demo for Technical Judges)
+* **Action:** Open terminal in root folder and execute:
+  ```powershell
+  npm run inspect:db
+  ```
+* **What to Show Judges:** Point out the clean ASCII tabular output displaying Users, Queue Tokens, Clinical Memory, and Audit Trail.
+* **Verbatim Script:**
+  > *"For complete system transparency, our CLI database inspection tool gives technical judges an instant, real-time audit matrix of database state, queue priority scores, and security audit logs."*
 
 ---
 
-### 📍 STEP 7: Multi-Facility Data & Queue Isolation
-1. Log in as **Doctor 3 (Dr. Sara Khan)**: `demo.doctor.sara@lifefile.test` / `Demo@123` at **LifeFile North Hospital**.
-2. Open Doctor Queue.
-3. **Show Judges:** Queue contains **only Isha Deshmukh (P04)**. Zero data leakage from LifeFile Central Hospital.
-4. Explain: *"LifeFile enforces multi-tenant facility isolation at the database layer. Doctors only see queue events affiliated with their active facility."*
+## ❓ 5. JUDGE Q&A DEFENSE CHEAT SHEET
+
+### Q1: "How does ACPA prevent low-priority patients from starving if emergencies keep coming?"
+* **Answer:** *"ACPA includes an anti-starvation wait-aging multiplier (+1.5 points accumulated per minute in the waiting room). As routine patients wait, their score steadily rises, ensuring they are served within reasonable bounds."*
+
+### Q2: "What happens if a patient misses their turn when called?"
+* **Answer:** *"The doctor clicks 'Skip Patient'. This increments `missedCalls` by 1 and applies a bounded penalty (-30 points). The patient drops down the queue so the doctor isn't stalled, but retains their token to be called when they return."*
+
+### Q3: "How is real-time performance handled under network drops?"
+* **Answer:** *"We utilize Apache Kafka with state-machine consumer rebalance guards combined with Socket.IO websockets. If a client disconnects, state is authoritatively resynchronized from MongoDB upon reconnection."*
 
 ---
 
-### 📍 STEP 8: Hospital Admin & Staff Roster Management
-1. Log in as **Hospital Admin (LifeFile Central Hospital)**: `demo.hospital.central@lifefile.test` / `Demo@123`.
-2. Open **Hospital Dashboard** (`/hospital`).
-3. **Show Judges:**
-   * Active Doctor Roster (`Dr. Ananya Sharma`, `Dr. Rohan Verma`).
-   * Pending Doctor Applications: View `Dr. Rohan Verma` requesting affiliation with North Hospital. Click **Approve**.
-   * Toggle doctor leave status or mark doctor unavailable for specific dates.
+## 🏆 6. WHY LIFEFILE BEATS UDHAY 2025 (LAST YEAR'S SIH WINNER)
 
----
-
-### 📍 STEP 9: Security & Cross-Patient Protection
-1. Log in as **Patient 1 (Aarav Sharma)**.
-2. Attempt to open Patient 2's memory endpoint in browser URL (`/api/memory/patient/<P02_ID>`).
-3. **Show Judges:** Request blocked with **HTTP 403 Forbidden**.
-
----
-
-### 📍 STEP 10: Admin System Oversight & Audit Trail
-1. Log in as **System Admin**: `lavya@admin` / `Demo@123`.
-2. Open **Audit Logs** (`/admin/audit`).
-3. **Show Judges:** Structured audit trail logging security actions, emergency overrides, and memory conflicts.
-4. Open **Benchmark Dashboard** (`/admin/benchmark`). Run high-load simulation to show live ACPA vs FIFO vs Priority comparative analytics.
-
----
-
-## 5. WHY LIFEFILE / SCOS BEATS SIH 2025 WINNER (UDHAY 2025) — KEY ARCHITECTURAL DIFFERENTIATORS
-
-### 📊 Live Benchmark Comparison Graph (Generated from Seeded Data)
-![Emergency Wait Time Graph](file:///e:/ie%20proj/docs/sih-validation/graph_emergency_wait.svg)
-![Starvation Incidents Graph](file:///e:/ie%20proj/docs/sih-validation/graph_starvation.svg)
-
-| Feature Dimension | Udhay 2025 (Last Year's Winner) | LifeFile / SCOS (SIH 2026 Platform) | Judge Impact / Technical Advantage |
-| :--- | :--- | :--- | :--- |
-| **Queue Management** | Basic FIFO (First-In, First-Out) token queue or rigid static priority lists. Emergency cases wait behind routine checkups. | **ACPA Engine (Adaptive Clinical Priority Allocation):** Dynamic multi-factor scoring combining Triage Level 1-5 + Wait Time Aging (+1.5/m) + Missed Call Penalties (`-30pts`). | Triage Level 5 emergency cases instantly jump to Position #1 without losing token numbers or causing queue starvation. |
-| **Medical Memory & AI** | Static PDF upload storage or unindexed doctor notes. No cross-consultation memory consolidation. | **Patient Memory Engine:** Automated extraction of facts, allergies, conditions & medications with source provenance + **Automated Contradiction Detection** & Patient Correction Workflow. | Flagged memory conflicts (e.g. "No allergy" vs "Penicillin allergy record") prevent fatal prescription errors before doctors prescribe. |
-| **OPD Crowd Control** | Unrestricted check-ins causing chaotic OPD waiting rooms hours before appointment times. | **Dynamic Check-In Time Engine:** Strict dynamic time window locking (Opens 10m pre-slot, closes 20m post-slot). | Prevents OPD overcrowding while automatically handling expired appointments. |
-| **Infrastructure & Real-Time** | Basic REST API polling. Prone to socket crashes under network disruption. | **Distributed Kafka Event Pipeline + Socket.IO:** Dual-sync architecture with custom state-machine Kafka consumer group rebalance guards (`0% message loss`). | Guaranteed real-time dual synchronization across doctor & patient screens under high concurrency. |
-| **Multi-Facility Governance** | Single hospital scope or loose data isolation. | **Strict Multi-Tenant Facility Isolation:** Full database isolation between hospitals (`LifeFile Central` vs `LifeFile North`) with Doctor Join Requests & Staff Roster management. | Enterprise hospital network scalability with zero cross-facility data leakage. |
-| **Empirical Proof & Validation** | Pure UI mockups; no quantitative simulation data. | **Automated Benchmark Suite (`npm run benchmark:all`):** High-load simulation engine generating real-time SVG charts comparing ACPA vs FIFO vs Priority algorithms. | Empirical proof showing 0% emergency starvation and minimal wait-time variance to impress technical judges. |
+| Feature | Udhay 2025 (Last Year) | LifeFile / SCOS (SIH 2026) |
+| :--- | :--- | :--- |
+| **Queue Logic** | Basic FIFO (First-In, First-Out) static list | **ACPA Engine:** Dynamic Triage Level (1-5) + Wait Aging + Skip Penalty |
+| **Triage** | Manual checkbox input | **Real-Time NLP Symptom Classifier** during booking |
+| **Crowd Control** | Unrestricted check-in anytime | **Dynamic Time-Lock Check-In Window** (Opens 15m pre-slot) |
+| **Safety** | No clinical conflict detection | **Patient Memory Engine** with active allergy warnings |
+| **Transparency** | Standard UI | **Live Terminal Database Inspector (`npm run inspect:db`)** |
