@@ -177,10 +177,12 @@ If technical judges ask *"Can you show us the backend code, ACPA scoring formula
      ```js
      CEP = (100 - baseToken)*10 + triageBonus + (1.5 * waitMins) - min(missedCalls * 30, 150)
      ```
-2. **AI Medical Memory Extractor & Conflict Guard (`scos-backend/services/memoryService.js`):**
-   * Show lines 293–347 (`extractAIMemoryCandidates`) using Google Gemini 1.5 Flash to convert unstructured doctor notes into structured medical facts.
-   * Show lines 17–39 (`isContradictory`) where allergic assertions (e.g. *"No allergy"* vs *"Penicillin allergy"*) trigger red conflict warnings.
-3. **Kafka Event Streaming Bus (`scos-backend/routes/queue.js` & `scos-backend/services/`):**
+2. **AI Medical Memory Extractor & Gemini 1.5 Flash (`scos-backend/services/memoryService.js`):**
+   * Show lines 293–347 (`extractAIMemoryCandidates`): Point out the `@google/generative-ai` GoogleGenerativeAI integration, JSON schema prompt engineering, and fallback extraction logic.
+   * Show lines 17–39 (`isContradictory`): Point out the NLP text normalization, stop-word stripping, and opposing medical assertion matching (`"no known allergy"` vs `"penicillin allergy"`).
+3. **Backend Appointment Triage Storage (`scos-backend/routes/appointments.js`):**
+   * Show lines 15–45: Point out how `triageLevel` (1-5) and `chiefComplaint` passed from the NLP classifier are saved into the `Appointment` model and passed to Kafka.
+4. **Kafka Event Streaming Bus (`scos-backend/routes/queue.js` & `scos-backend/services/`):**
    * Show `scos.queue.updates` Kafka topic event production whenever a patient checks in or doctor calls next patient.
 
 ### Step 3: Show Live Backend Console Terminal Logs (`npm run dev`)
