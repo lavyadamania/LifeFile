@@ -17,11 +17,20 @@
 # 1. Stop old background processes
 npm run stop:all
 
-# 2. Reset database with 24/7 time-aware offsets
+# 2. Clear all database collections completely (Optional Fresh Start)
+npm run clear-db
+
+# 3. Reset database with 24/7 time-aware presentation offsets
 npm run seed:presentation -- --confirm
 
-# 3. Start Frontend & Backend concurrently
+# 4. Start Frontend & Backend concurrently
 npm run dev
+```
+
+### 🗑️ Standalone Database Wiping Command:
+```powershell
+# Completely wipes all MongoDB collections & reinstates default Admin
+npm run clear-db
 ```
 
 ### 📊 Live Database CLI Inspector (To show technical judges raw backend data):
