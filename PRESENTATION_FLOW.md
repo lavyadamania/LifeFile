@@ -4,13 +4,14 @@
 **Backend URL:** `http://localhost:5000`  
 **Database:** MongoDB (`process.env.MONGO_URI`)  
 **Real-Time Protocol:** Kafka + Socket.IO  
+**Time Independence:** 100% Dynamic 24/7 Time-Aware Seeding Engine  
 
 ---
 
 ## 1. QUICK START COMMANDS
 
-### Step A: Seed the Presentation Database
-Run this single command in your terminal to initialize the deterministic demo dataset:
+### Step A: Seed / Reset the Presentation Database
+Run this single command right before your presentation (at any hour of the day or night) to initialize the dynamic time-aware dataset:
 ```powershell
 cd "e:\ie proj\scos-backend"
 npm run seed:presentation -- --confirm
@@ -28,9 +29,30 @@ cd "e:\ie proj\scos-frontend"
 npm run dev
 ```
 
+### ⚡ Optional: 1-Click Clock Resync (If App is Left Running for Hours)
+If the server has been running for several hours and you want to recalibrate demo appointment slots to your current clock without wiping data:
+```http
+POST http://localhost:5000/api/queue/resync-demo
+```
+*(Or simply re-run `npm run seed:presentation -- --confirm`)*
+
 ---
 
-## 2. MASTER DEMO CREDENTIALS CHEAT SHEET
+## 2. 24/7 TIME-INDEPENDENCE GUARANTEE
+
+The seed engine dynamically calculates all appointment slots relative to the **exact moment** you run the command:
+
+* **Patient 1 (Aarav Sharma - Emergency Override):** Scheduled for `NOW - 10m` (In queue as active emergency).
+* **Patient 2 (Diya Patel - Active Check-In Window):** Scheduled for `NOW + 5m` (Check-In button is **ACTIVE**).
+* **Patient 3 (Kabir Joshi - Locked Check-In Window):** Scheduled for `NOW + 45m` (Check-In button is **LOCKED** with dynamic `Opens at HH:MM PM` message).
+* **Patient 5 (Vihaan Kapoor - Skipped Penalty):** Scheduled for `NOW - 25m` (1 Missed Call Penalty applied).
+* **Patient 6 (Myra Nair - NOW SERVING):** Scheduled for `NOW - 15m` (`In_Progress Consultation`).
+
+> **Boundary Safety:** Even if you present near midnight (e.g. 11:45 PM), time-clamping guarantees offsets stay cleanly within the current date without rolling over.
+
+---
+
+## 3. MASTER DEMO CREDENTIALS CHEAT SHEET
 
 > **Global Password for All Demo Accounts:** `Demo@123`
 
@@ -51,7 +73,7 @@ npm run dev
 
 ---
 
-## 3. STEP-BY-STEP LIVE JUDGE PRESENTATION SCRIPT
+## 4. STEP-BY-STEP LIVE JUDGE PRESENTATION SCRIPT
 
 ### 📍 STEP 1: Patient Medical Records & Profile
 1. Log in as **Patient 1 (Aarav Sharma)**: `demo.patient.01@lifefile.test` / `Demo@123`.
@@ -109,7 +131,7 @@ npm run dev
 
 ---
 
-### 1📍 STEP 7: Multi-Facility Data & Queue Isolation
+### 📍 STEP 7: Multi-Facility Data & Queue Isolation
 1. Log in as **Doctor 3 (Dr. Sara Khan)**: `demo.doctor.sara@lifefile.test` / `Demo@123` at **LifeFile North Hospital**.
 2. Open Doctor Queue.
 3. **Show Judges:** Queue contains **only Isha Deshmukh (P04)**. Zero data leakage from LifeFile Central Hospital.
