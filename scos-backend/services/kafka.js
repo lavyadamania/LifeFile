@@ -5,13 +5,19 @@ const kafka = new Kafka({
   brokers: [process.env.KAFKA_BROKER || 'localhost:9092'],
   logLevel: logLevel.WARN,
   retry: {
-    initialRetryTime: 100,
-    retries: 5
+    initialRetryTime: 300,
+    retries: 8
   }
 });
 
 const producer = kafka.producer({ createPartitioner: Partitioners.DefaultPartitioner });
-const consumer = kafka.consumer({ groupId: 'scos-backend-group' });
+const consumer = kafka.consumer({ 
+  groupId: 'scos-backend-group',
+  sessionTimeout: 30000,
+  heartbeatInterval: 3000,
+  rebalanceTimeout: 30000,
+  allowAutoTopicCreation: true
+});
 
 const TOPICS = [
   'scos.queue.updates',
@@ -24,46 +30,96 @@ const TOPICS = [
 
 let io = null; // Socket.io instance
 let isKafkaConnected = false;
+let isConnecting = false;
+let isConsuming = false;
+let eventListenersRegistered = false;
+
+const registerConsumerEvents = () => {
+  if (eventListenersRegistered) return;
+  eventListenersRegistered = true;
+
+  const { GROUP_JOIN, REBALANCING, CRASH, CONNECT, DISCONNECT } = consumer.events;
+
+  consumer.on(CONNECT, () => {
+    console.log('📡 [Kafka Event] Consumer connected to broker');
+  });
+
+  consumer.on(DISCONNECT, () => {
+    console.log('🔌 [Kafka Event] Consumer disconnected from broker');
+    isKafkaConnected = false;
+    isConsuming = false;
+  });
+
+  consumer.on(GROUP_JOIN, (e) => {
+    console.log(`🤝 [Kafka Event] Consumer joined group "${e.payload.groupId}" (Member ID: ${e.payload.memberId}, Leader: ${e.payload.isLeader})`);
+  });
+
+  consumer.on(REBALANCING, (e) => {
+    console.log(`🔄 [Kafka Event] Consumer group "${e.payload?.groupId || 'scos-backend-group'}" is rebalancing...`);
+  });
+
+  consumer.on(CRASH, (e) => {
+    console.error(`💥 [Kafka Event] Consumer crashed:`, e.payload.error?.message || e.payload.error);
+    isConsuming = false;
+    isKafkaConnected = false;
+  });
+};
 
 const attemptConnection = async () => {
+  if (isConnecting || isConsuming) {
+    return;
+  }
+
+  isConnecting = true;
+
   try {
-    await producer.connect();
-    console.log('✅ Kafka Producer connected');
+    registerConsumerEvents();
 
-    await consumer.connect();
-    console.log('✅ Kafka Consumer connected');
+    if (!isKafkaConnected) {
+      await producer.connect();
+      console.log('✅ Kafka Producer connected');
 
-    for (const topic of TOPICS) {
-      await consumer.subscribe({ topic, fromBeginning: false });
+      await consumer.connect();
+      console.log('✅ Kafka Consumer connected');
+
+      for (const topic of TOPICS) {
+        await consumer.subscribe({ topic, fromBeginning: false });
+      }
+      console.log('✅ Kafka Consumer subscribed to:', TOPICS.join(', '));
+      isKafkaConnected = true;
     }
-    console.log('✅ Kafka Consumer subscribed to:', TOPICS.join(', '));
 
-    isKafkaConnected = true;
-    console.log('✅ Kafka Producer & Consumer running and fully initialized');
+    if (!isConsuming) {
+      isConsuming = true;
+      isConnecting = false;
+      console.log('✅ Kafka Producer & Consumer running and fully initialized');
 
-    await consumer.run({
-      eachMessage: async ({ topic, partition, message }) => {
-        try {
-          const value = JSON.parse(message.value.toString());
-          console.log(`[Kafka ← ${topic}]`, value);
+      await consumer.run({
+        eachMessage: async ({ topic, partition, message }) => {
+          try {
+            if (!message.value) return;
+            const value = JSON.parse(message.value.toString());
+            console.log(`[Kafka ← ${topic}] Action: ${value.action || 'EVENT'}`);
 
-          // Broadcast to all connected Socket.io clients
-          if (io) {
-            io.emit('kafka-event', {
-              topic,
-              data: value,
-              timestamp: new Date().toISOString(),
-            });
+            // Broadcast to all connected Socket.io clients for real-time UI synchronization
+            if (io) {
+              io.emit('kafka-event', {
+                topic,
+                data: value,
+                timestamp: new Date().toISOString(),
+              });
+            }
+          } catch (err) {
+            console.error(`Error processing Kafka message on topic ${topic}:`, err.message);
           }
-        } catch (err) {
-          console.error(`Error processing Kafka message on topic ${topic}:`, err);
-        }
-      },
-    });
+        },
+      });
+    }
   } catch (error) {
     isKafkaConnected = false;
-    console.warn(`⚠️ Kafka connection failed (${error.message}). Retrying in 5 seconds...`);
-    // Backoff and retry
+    isConsuming = false;
+    isConnecting = false;
+    console.warn(`⚠️ Kafka connection notice (${error.message}). Retrying in 5 seconds...`);
     setTimeout(attemptConnection, 5000);
   }
 };
@@ -71,7 +127,6 @@ const attemptConnection = async () => {
 const initKafka = (socketIo) => {
   io = socketIo;
   console.log('🔄 Starting Kafka connection manager...');
-  // Do not await, let it run in background to prevent blocking server startup
   attemptConnection();
 };
 
@@ -88,7 +143,7 @@ const produceEvent = async (topic, data) => {
         { value: JSON.stringify(data) },
       ],
     });
-    console.log(`[Kafka → ${topic}]`, data);
+    console.log(`[Kafka → ${topic}] Action: ${data.action || 'EVENT'}`);
   } catch (err) {
     console.error(`[Kafka Error] Failed to produce to ${topic}:`, err.message);
   }
@@ -96,12 +151,15 @@ const produceEvent = async (topic, data) => {
 
 const disconnectKafka = async () => {
   isKafkaConnected = false;
+  isConsuming = false;
+  isConnecting = false;
   try {
-    await producer.disconnect();
+    console.log('🔌 Disconnecting Kafka Producer & Consumer...');
     await consumer.disconnect();
-    console.log('Kafka disconnected');
+    await producer.disconnect();
+    console.log('✅ Kafka disconnected cleanly.');
   } catch (err) {
-    console.error('Failed to disconnect Kafka:', err);
+    console.error('Failed to disconnect Kafka cleanly:', err.message);
   }
 };
 

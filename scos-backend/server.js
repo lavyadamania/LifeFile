@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
-const { initKafka } = require('./services/kafka');
+const { initKafka, disconnectKafka } = require('./services/kafka');
 
 const app = express();
 const server = http.createServer(app);
@@ -46,6 +46,25 @@ app.use('/api/memory', require('./routes/memory'));
 app.use('/api/benchmark', require('./routes/benchmark'));
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok', kafka: true, mongo: true }));
+
+// Graceful Shutdown Handler
+const gracefulShutdown = async (signal) => {
+  console.log(`\n🛑 Received ${signal}. Gracefully shutting down SCOS backend...`);
+  await disconnectKafka();
+  server.close(() => {
+    mongoose.connection.close(false, () => {
+      console.log('✅ Server and MongoDB connections closed.');
+      process.exit(0);
+    });
+  });
+};
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.once('SIGUSR2', async () => {
+  await disconnectKafka();
+  process.kill(process.pid, 'SIGUSR2');
+});
 
 // Connect to MongoDB, Kafka, then start server
 const PORT = process.env.PORT || 5000;
