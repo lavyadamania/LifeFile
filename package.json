@@ -5,7 +5,11 @@
     "dev:backend": "npm run dev --prefix scos-backend",
     "dev:frontend": "npm run dev --prefix scos-frontend",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "start": "npm start --prefix scos-backend"
+    "start": "npm start --prefix scos-backend",
+    "seed:presentation": "npm run seed:presentation --prefix scos-backend --",
+    "stop:all": "taskkill /F /IM node.exe || exit 0",
+    "clear-db": "npm run clear-db --prefix scos-backend",
+    "benchmark:all": "npm run benchmark:all --prefix scos-backend"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
