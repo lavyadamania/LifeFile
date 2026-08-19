@@ -33,7 +33,8 @@ router.post('/register', async (req, res) => {
       await Doctor.create({
         userId: user._id,
         name: user.name,
-        specialization: 'General Practice',
+        specialization: req.body.specialization || 'General Practice',
+        bio: req.body.bio || `${req.body.title || 'Senior Specialist'} in ${req.body.specialization || 'General Practice'}`,
         schedule: { isSameEveryday: true, days: defaultDays },
       });
     }

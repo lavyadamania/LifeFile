@@ -3,7 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import { Search, Filter, Star, MapPin, Clock, Building2 } from 'lucide-react';
 import { getDoctors } from '../../lib/api';
 
-const SPECIALIZATIONS = ['All', 'Cardiology', 'General Practice', 'Neurology', 'Pediatrics', 'Dermatology', 'Orthopedics'];
+const SPECIALIZATIONS = [
+  'All', 
+  'Cardiology', 
+  'Orthopedics', 
+  'Pathology', 
+  'Neurology', 
+  'General Practice', 
+  'Emergency Medicine', 
+  'Pediatrics', 
+  'Dermatology', 
+  'Oncology', 
+  'Radiology'
+];
 
 export default function SearchDoctors() {
   const navigate = useNavigate();

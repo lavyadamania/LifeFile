@@ -13,6 +13,8 @@ const registerSchema = z.object({
   role: z.enum(['patient', 'doctor', 'hospital']),
   address: z.string().optional(),
   phone: z.string().optional(),
+  specialization: z.string().optional(),
+  title: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.role === 'hospital') {
     if (!data.address || data.address.trim() === '') {
@@ -117,6 +119,35 @@ export default function Register() {
                 {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>}
               </div>
             </div>
+
+            {selectedRole === 'doctor' && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">Specialization / Department</label>
+                  <div className="mt-1">
+                    <select {...register('specialization')} className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white cursor-pointer font-medium text-slate-700">
+                      <option value="Cardiology">Cardiology (Senior Cardiologist)</option>
+                      <option value="Orthopedics">Orthopedics (Senior Orthopedist)</option>
+                      <option value="Pathology">Pathology (Clinical Pathologist)</option>
+                      <option value="Neurology">Neurology (Senior Neurologist)</option>
+                      <option value="General Practice">General Practice (General Physician)</option>
+                      <option value="Emergency Medicine">Emergency Medicine (ER Specialist)</option>
+                      <option value="Pediatrics">Pediatrics (Child Specialist)</option>
+                      <option value="Dermatology">Dermatology (Skin Specialist)</option>
+                      <option value="Oncology">Oncology (Oncologist)</option>
+                      <option value="Radiology">Radiology (Radiologist)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">Title / Designation</label>
+                  <div className="mt-1">
+                    <input type="text" {...register('title')} placeholder="e.g. Senior Consultant / Head of Department" className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors" />
+                  </div>
+                </div>
+              </>
+            )}
 
             {selectedRole === 'hospital' && (
               <>
