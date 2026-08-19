@@ -82,11 +82,7 @@ router.post('/login', async (req, res) => {
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(401).json({ error: 'Invalid email or password' });
 
-    // If role is specified, check it matches
-    if (role && user.role !== role) {
-      return res.status(403).json({ error: `This account does not have ${role} access` });
-    }
-
+    // Return actual user role (auto-detected from database user record)
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
     res.json({
