@@ -40,7 +40,7 @@ async function seedPresentation() {
     console.log('⚠️  SAFETY WARNING: MEGA SCALE SEED PRESENTATION SCRIPT');
     console.log('====================================================');
     console.log('This script will reset non-admin application data and seed');
-    console.log('50+ UNIQUE PATIENTS, 15 DOCTORS, and 5 HOSPITALS AT ONCE.');
+    console.log('50+ UNIQUE PATIENTS DIRECTLY INTO ACTIVE QUEUES across 15 DOCTORS & 5 HOSPITALS.');
     console.log('\nTo confirm and execute, run:');
     console.log('  npm run seed:presentation -- --confirm\n');
     process.exit(0);
@@ -53,7 +53,7 @@ async function seedPresentation() {
 
   try {
     console.log('====================================================');
-    console.log('🚀 STARTING LIFEFILE MEGA-SCALE SEEDING ENGINE (50+ PATIENTS)');
+    console.log('🚀 STARTING LIFEFILE DIRECT QUEUE SEEDING ENGINE (50 PATIENTS IN QUEUE)');
     console.log('====================================================\n');
 
     await mongoose.connect(process.env.MONGO_URI);
@@ -156,32 +156,31 @@ async function seedPresentation() {
     // -----------------------------------------------------------------
     // 5. SEED 50 UNIQUE PATIENTS WITH 50 DISTINCT MEDICAL HISTORIES
     // -----------------------------------------------------------------
-    console.log('👤 Seeding 50+ UNIQUE Patient Accounts with Distinct Medical Profiles...');
+    console.log('👤 Seeding 50 UNIQUE Patient Accounts...');
 
     const patientMasterList = [
-      { name: 'Aarav Sharma', age: 34, gender: 'Male', bg: 'B+', spec: 'Cardiology', diag: 'Acute Coronary Syndrome', notes: 'Severe sub-sternal chest discomfort. Allergy to Penicillin.', drug: 'Amlodipine 5mg', recTitle: 'Chest X-Ray Digital Scan', recType: 'xray', category: 'ALLERGY', content: 'Penicillin allergy (severe anaphylactic reaction)', conf: 'VERIFIED', status: 'ACTIVE' },
-      { name: 'Diya Patel', age: 28, gender: 'Female', bg: 'A+', spec: 'Neurology', diag: 'Chronic Migraine with Aura', notes: 'Visual aura scotoma episodes. Brain MRI performed.', drug: 'Sumatriptan 50mg', recTitle: 'Brain MRI Scan Report', recType: 'mri', category: 'CONDITION', content: 'Chronic Migraine with Aura', conf: 'SUPPORTED', status: 'ACTIVE' },
-      { name: 'Kabir Joshi', age: 45, gender: 'Male', bg: 'O+', spec: 'Endocrinology', diag: 'Type 2 Diabetes Mellitus', notes: 'HbA1c 8.2%. Contradictory allergy history flagged.', drug: 'Metformin XR 1000mg', recTitle: 'HbA1c Glycemic Report', recType: 'blood', category: 'ALLERGY', content: 'No known drug allergy (Patient statement)', conf: 'CONFLICTED', status: 'CONFLICTED' },
-      { name: 'Isha Deshmukh', age: 31, gender: 'Female', bg: 'AB+', spec: 'Rheumatology', diag: 'Seropositive Rheumatoid Arthritis', notes: 'Symmetrical morning joint stiffness. Anti-CCP >200 U/mL.', drug: 'Methotrexate 15mg', recTitle: 'Bilateral Hands X-Ray', recType: 'xray', category: 'CONDITION', content: 'Seropositive Rheumatoid Arthritis', conf: 'VERIFIED', status: 'ACTIVE' },
-      { name: 'Vihaan Kapoor', age: 52, gender: 'Male', bg: 'O-', spec: 'Pulmonology', diag: 'Chronic Obstructive Pulmonary Disease', notes: 'FEV1 68% predicted. Heavy smoking history.', drug: 'Tiotropium Inhaler 18mcg', recTitle: 'Chest High Resolution CT (HRCT)', recType: 'other', category: 'CONDITION', content: 'Chronic Obstructive Pulmonary Disease (COPD)', conf: 'VERIFIED', status: 'ACTIVE' },
-      { name: 'Myra Nair', age: 24, gender: 'Female', bg: 'A-', spec: 'Gynecology', diag: 'Polycystic Ovary Syndrome (PCOS)', notes: 'Fasting insulin 18 uIU/mL. Bilateral ovarian morphology.', drug: 'Myo-Inositol 2000mg', recTitle: 'Pelvic Ultrasound Scan', recType: 'other', category: 'CONDITION', content: 'Polycystic Ovary Syndrome (PCOS)', conf: 'VERIFIED', status: 'ACTIVE' },
-      { name: 'Rohan Gupta', age: 39, gender: 'Male', bg: 'B-', spec: 'Gastroenterology', diag: 'Gastroesophageal Reflux Disease (GERD)', notes: 'Epigastric burning sensation. Grade A esophagitis on endoscopy.', drug: 'Pantoprazole 40mg', recTitle: 'Upper GI Endoscopy Scan', recType: 'other', category: 'CONDITION', content: 'Gastroesophageal Reflux Disease (GERD)', conf: 'SUPPORTED', status: 'ACTIVE' },
-      { name: 'Ananya Roy', age: 22, gender: 'Female', bg: 'O+', spec: 'Dermatology', diag: 'Severe Atopic Dermatitis (Eczema)', notes: 'Pruritic erythematous lesions on flexural limb creases.', drug: 'Tacrolimus Ointment 0.1%', recTitle: 'Dermal Allergy Patch Test Report', recType: 'other', category: 'CONDITION', content: 'Atopic Dermatitis / Eczema', conf: 'SUPPORTED', status: 'ACTIVE' },
-      { name: 'Vikram Singh', age: 58, gender: 'Male', bg: 'AB-', spec: 'Nephrology', diag: 'Stage 3 Chronic Kidney Disease', notes: 'eGFR 48 mL/min, Serum Creatinine 1.8 mg/dL.', drug: 'Torsemide 10mg', recTitle: 'Renal Function & Microalbumin Panel', recType: 'blood', category: 'CONDITION', content: 'Stage 3 Chronic Kidney Disease', conf: 'VERIFIED', status: 'ACTIVE' },
-      { name: 'Sneha Reddy', age: 19, gender: 'Female', bg: 'A+', spec: 'Pediatrics/Allergy', diag: 'Extrinsic Allergic Asthma', notes: 'Expiratory wheeze triggered by dust mite allergen.', drug: 'Fluticasone + Salmeterol', recTitle: 'Allergen Specific IgE Blood Test', recType: 'blood', category: 'ALLERGY', content: 'Dust Mite & Pollen Allergy', conf: 'VERIFIED', status: 'ACTIVE' },
-      { name: 'Aditya Verma', age: 41, gender: 'Male', bg: 'B+', spec: 'Orthopedics', diag: 'L4-L5 Lumbar Disc Herniation', notes: 'Right leg radiculopathy (Sciatica). Lasegue sign positive.', drug: 'Pregabalin 75mg', recTitle: 'Lumbar Spine MRI Scan', recType: 'mri', category: 'PROCEDURE', content: 'Lumbar Spine MRI (L4-L5 Disc Herniation)', conf: 'SUPPORTED', status: 'ACTIVE' },
-      { name: 'Kavya Iyer', age: 36, gender: 'Female', bg: 'O-', spec: 'Oncology/Breast', diag: 'Benign Fibroadenoma Breast', notes: 'Well-circumscribed hypo-echoic lesion 1.5 cm in upper outer quadrant.', drug: 'Evening Primrose Oil', recTitle: 'Digital Mammogram & Ultrasound', recType: 'other', category: 'INVESTIGATION', content: 'Benign Breast Fibroadenoma (BI-RADS 2)', conf: 'SUPPORTED', status: 'ACTIVE' },
-      { name: 'Devansh Malhotra', age: 29, gender: 'Male', bg: 'A+', spec: 'Psychiatry', diag: 'Generalized Anxiety Disorder', notes: 'Somatic tension, sleep latency >60 minutes. GAD-7 score 14.', drug: 'Escitalopram 10mg', recTitle: 'Sleep Polysomnography Log', recType: 'other', category: 'CONDITION', content: 'Generalized Anxiety Disorder', conf: 'SUPPORTED', status: 'ACTIVE' },
-      { name: 'Riya Choudhury', age: 26, gender: 'Female', bg: 'B+', spec: 'ENT', diag: 'Chronic Paranasal Sinusitis', notes: 'Bilateral maxillary sinus mucosal thickening on CT scan.', drug: 'Fluticasone Spray 50mcg', recTitle: 'Paranasal Sinus CT Scan', recType: 'xray', category: 'CONDITION', content: 'Chronic Maxillary Sinusitis', conf: 'SUPPORTED', status: 'ACTIVE' },
-      { name: 'Manav Bhatia', age: 62, gender: 'Male', bg: 'O+', spec: 'Cardiology', diag: 'Paroxysmal Atrial Fibrillation', notes: 'Irregularly irregular heart rhythm. CHA2DS2-VASc score 3.', drug: 'Apixaban 5mg', recTitle: '12-Lead ECG & Echocardiogram', recType: 'blood', category: 'CONDITION', content: 'Paroxysmal Atrial Fibrillation', conf: 'VERIFIED', status: 'ACTIVE' },
-      { name: 'Tanvi Saxena', age: 33, gender: 'Female', bg: 'AB+', spec: 'Gastroenterology', diag: 'Mild Left-Sided Ulcerative Colitis', notes: 'Colonoscopy shows rectal mucosal erythema and superficial ulcerations.', drug: 'Mesalamine 1.2g', recTitle: 'Diagnostic Colonoscopy Report', recType: 'other', category: 'CONDITION', content: 'Left-Sided Ulcerative Colitis', conf: 'VERIFIED', status: 'ACTIVE' },
-      { name: 'Yash Vardhan', age: 21, gender: 'Male', bg: 'A-', spec: 'Neurology', diag: 'Idiopathic Generalized Epilepsy', notes: 'Generalized tonic-clonic seizure history. EEG spikes present.', drug: 'Levetiracetam 500mg', recTitle: 'Sleep Deprived EEG Brain Scan', recType: 'other', category: 'CONDITION', content: 'Idiopathic Generalized Epilepsy', conf: 'VERIFIED', status: 'ACTIVE' },
-      { name: 'Ishani Banerjee', age: 48, gender: 'Female', bg: 'B-', spec: 'Endocrinology', diag: 'Primary Autoimmune Hypothyroidism', notes: 'TSH 12.4 uIU/mL, Anti-TPO Antibodies positive (>600 IU/mL).', drug: 'Levothyroxine 75mcg', recTitle: 'Thyroid Panel & Ultrasound', recType: 'blood', category: 'CONDITION', content: 'Primary Autoimmune Hypothyroidism', conf: 'VERIFIED', status: 'ACTIVE' },
-      { name: 'Siddharth Mehra', age: 50, gender: 'Male', bg: 'O+', spec: 'Pulmonology', diag: 'Severe Obstructive Sleep Apnea', notes: 'Apnea-Hypopnea Index (AHI) 32 events/hr during polysomnography.', drug: 'CPAP Therapy (10cm H2O)', recTitle: 'Polysomnography Sleep Study Graph', recType: 'other', category: 'PROCEDURE', content: 'Nasal CPAP Titration Therapy', conf: 'SUPPORTED', status: 'ACTIVE' },
-      { name: 'Pooja Kulkarni', age: 37, gender: 'Female', bg: 'A+', spec: 'Rheumatology', diag: 'Systemic Lupus Erythematosus (SLE)', notes: 'Malar rash, ANA positive 1:320, Anti-dsDNA positive.', drug: 'Hydroxychloroquine 200mg', recTitle: 'Autoimmune Serology Blood Panel', recType: 'blood', category: 'CONDITION', content: 'Systemic Lupus Erythematosus (SLE)', conf: 'VERIFIED', status: 'ACTIVE' }
+      { name: 'Aarav Sharma', age: 34, gender: 'Male', bg: 'B+', spec: 'Cardiology', diag: 'Acute Coronary Syndrome', notes: 'Severe sub-sternal chest discomfort. Allergy to Penicillin.', drug: 'Amlodipine 5mg', recTitle: 'Chest X-Ray Digital Scan', recType: 'xray', category: 'ALLERGY', content: 'Penicillin allergy (severe anaphylactic reaction)', conf: 'VERIFIED', status: 'ACTIVE', triage: 5 },
+      { name: 'Diya Patel', age: 28, gender: 'Female', bg: 'A+', spec: 'Neurology', diag: 'Chronic Migraine with Aura', notes: 'Visual aura scotoma episodes. Brain MRI performed.', drug: 'Sumatriptan 50mg', recTitle: 'Brain MRI Scan Report', recType: 'mri', category: 'CONDITION', content: 'Chronic Migraine with Aura', conf: 'SUPPORTED', status: 'ACTIVE', triage: 4 },
+      { name: 'Kabir Joshi', age: 45, gender: 'Male', bg: 'O+', spec: 'Endocrinology', diag: 'Type 2 Diabetes Mellitus', notes: 'HbA1c 8.2%. Contradictory allergy history flagged.', drug: 'Metformin XR 1000mg', recTitle: 'HbA1c Glycemic Report', recType: 'blood', category: 'ALLERGY', content: 'No known drug allergy (Patient statement)', conf: 'CONFLICTED', status: 'CONFLICTED', triage: 2 },
+      { name: 'Isha Deshmukh', age: 31, gender: 'Female', bg: 'AB+', spec: 'Rheumatology', diag: 'Seropositive Rheumatoid Arthritis', notes: 'Symmetrical morning joint stiffness. Anti-CCP >200 U/mL.', drug: 'Methotrexate 15mg', recTitle: 'Bilateral Hands X-Ray', recType: 'xray', category: 'CONDITION', content: 'Seropositive Rheumatoid Arthritis', conf: 'VERIFIED', status: 'ACTIVE', triage: 3 },
+      { name: 'Vihaan Kapoor', age: 52, gender: 'Male', bg: 'O-', spec: 'Pulmonology', diag: 'Chronic Obstructive Pulmonary Disease', notes: 'FEV1 68% predicted. Heavy smoking history.', drug: 'Tiotropium Inhaler 18mcg', recTitle: 'Chest High Resolution CT (HRCT)', recType: 'other', category: 'CONDITION', content: 'Chronic Obstructive Pulmonary Disease (COPD)', conf: 'VERIFIED', status: 'ACTIVE', triage: 1 },
+      { name: 'Myra Nair', age: 24, gender: 'Female', bg: 'A-', spec: 'Gynecology', diag: 'Polycystic Ovary Syndrome (PCOS)', notes: 'Fasting insulin 18 uIU/mL. Bilateral ovarian morphology.', drug: 'Myo-Inositol 2000mg', recTitle: 'Pelvic Ultrasound Scan', recType: 'other', category: 'CONDITION', content: 'Polycystic Ovary Syndrome (PCOS)', conf: 'VERIFIED', status: 'ACTIVE', triage: 1 },
+      { name: 'Rohan Gupta', age: 39, gender: 'Male', bg: 'B-', spec: 'Gastroenterology', diag: 'Gastroesophageal Reflux Disease (GERD)', notes: 'Epigastric burning sensation. Grade A esophagitis on endoscopy.', drug: 'Pantoprazole 40mg', recTitle: 'Upper GI Endoscopy Scan', recType: 'other', category: 'CONDITION', content: 'Gastroesophageal Reflux Disease (GERD)', conf: 'SUPPORTED', status: 'ACTIVE', triage: 2 },
+      { name: 'Ananya Roy', age: 22, gender: 'Female', bg: 'O+', spec: 'Dermatology', diag: 'Severe Atopic Dermatitis (Eczema)', notes: 'Pruritic erythematous lesions on flexural limb creases.', drug: 'Tacrolimus Ointment 0.1%', recTitle: 'Dermal Allergy Patch Test Report', recType: 'other', category: 'CONDITION', content: 'Atopic Dermatitis / Eczema', conf: 'SUPPORTED', status: 'ACTIVE', triage: 1 },
+      { name: 'Vikram Singh', age: 58, gender: 'Male', bg: 'AB-', spec: 'Nephrology', diag: 'Stage 3 Chronic Kidney Disease', notes: 'eGFR 48 mL/min, Serum Creatinine 1.8 mg/dL.', drug: 'Torsemide 10mg', recTitle: 'Renal Function & Microalbumin Panel', recType: 'blood', category: 'CONDITION', content: 'Stage 3 Chronic Kidney Disease', conf: 'VERIFIED', status: 'ACTIVE', triage: 3 },
+      { name: 'Sneha Reddy', age: 19, gender: 'Female', bg: 'A+', spec: 'Pediatrics/Allergy', diag: 'Extrinsic Allergic Asthma', notes: 'Expiratory wheeze triggered by dust mite allergen.', drug: 'Fluticasone + Salmeterol', recTitle: 'Allergen Specific IgE Blood Test', recType: 'blood', category: 'ALLERGY', content: 'Dust Mite & Pollen Allergy', conf: 'VERIFIED', status: 'ACTIVE', triage: 2 },
+      { name: 'Aditya Verma', age: 41, gender: 'Male', bg: 'B+', spec: 'Orthopedics', diag: 'L4-L5 Lumbar Disc Herniation', notes: 'Right leg radiculopathy (Sciatica). Lasegue sign positive.', drug: 'Pregabalin 75mg', recTitle: 'Lumbar Spine MRI Scan', recType: 'mri', category: 'PROCEDURE', content: 'Lumbar Spine MRI (L4-L5 Disc Herniation)', conf: 'SUPPORTED', status: 'ACTIVE', triage: 2 },
+      { name: 'Kavya Iyer', age: 36, gender: 'Female', bg: 'O-', spec: 'Oncology/Breast', diag: 'Benign Fibroadenoma Breast', notes: 'Well-circumscribed hypo-echoic lesion 1.5 cm in upper outer quadrant.', drug: 'Evening Primrose Oil', recTitle: 'Digital Mammogram & Ultrasound', recType: 'other', category: 'INVESTIGATION', content: 'Benign Breast Fibroadenoma (BI-RADS 2)', conf: 'SUPPORTED', status: 'ACTIVE', triage: 1 },
+      { name: 'Devansh Malhotra', age: 29, gender: 'Male', bg: 'A+', spec: 'Psychiatry', diag: 'Generalized Anxiety Disorder', notes: 'Somatic tension, sleep latency >60 minutes. GAD-7 score 14.', drug: 'Escitalopram 10mg', recTitle: 'Sleep Polysomnography Log', recType: 'other', category: 'CONDITION', content: 'Generalized Anxiety Disorder', conf: 'SUPPORTED', status: 'ACTIVE', triage: 1 },
+      { name: 'Riya Choudhury', age: 26, gender: 'Female', bg: 'B+', spec: 'ENT', diag: 'Chronic Paranasal Sinusitis', notes: 'Bilateral maxillary sinus mucosal thickening on CT scan.', drug: 'Fluticasone Spray 50mcg', recTitle: 'Paranasal Sinus CT Scan', recType: 'xray', category: 'CONDITION', content: 'Chronic Maxillary Sinusitis', conf: 'SUPPORTED', status: 'ACTIVE', triage: 1 },
+      { name: 'Manav Bhatia', age: 62, gender: 'Male', bg: 'O+', spec: 'Cardiology', diag: 'Paroxysmal Atrial Fibrillation', notes: 'Irregularly irregular heart rhythm. CHA2DS2-VASc score 3.', drug: 'Apixaban 5mg', recTitle: '12-Lead ECG & Echocardiogram', recType: 'blood', category: 'CONDITION', content: 'Paroxysmal Atrial Fibrillation', conf: 'VERIFIED', status: 'ACTIVE', triage: 4 },
+      { name: 'Tanvi Saxena', age: 33, gender: 'Female', bg: 'AB+', spec: 'Gastroenterology', diag: 'Mild Left-Sided Ulcerative Colitis', notes: 'Colonoscopy shows rectal mucosal erythema and superficial ulcerations.', drug: 'Mesalamine 1.2g', recTitle: 'Diagnostic Colonoscopy Report', recType: 'other', category: 'CONDITION', content: 'Left-Sided Ulcerative Colitis', conf: 'VERIFIED', status: 'ACTIVE', triage: 2 },
+      { name: 'Yash Vardhan', age: 21, gender: 'Male', bg: 'A-', spec: 'Neurology', diag: 'Idiopathic Generalized Epilepsy', notes: 'Generalized tonic-clonic seizure history. EEG spikes present.', drug: 'Levetiracetam 500mg', recTitle: 'Sleep Deprived EEG Brain Scan', recType: 'other', category: 'CONDITION', content: 'Idiopathic Generalized Epilepsy', conf: 'VERIFIED', status: 'ACTIVE', triage: 3 },
+      { name: 'Ishani Banerjee', age: 48, gender: 'Female', bg: 'B-', spec: 'Endocrinology', diag: 'Primary Autoimmune Hypothyroidism', notes: 'TSH 12.4 uIU/mL, Anti-TPO Antibodies positive (>600 IU/mL).', drug: 'Levothyroxine 75mcg', recTitle: 'Thyroid Panel & Ultrasound', recType: 'blood', category: 'CONDITION', content: 'Primary Autoimmune Hypothyroidism', conf: 'VERIFIED', status: 'ACTIVE', triage: 1 },
+      { name: 'Siddharth Mehra', age: 50, gender: 'Male', bg: 'O+', spec: 'Pulmonology', diag: 'Severe Obstructive Sleep Apnea', notes: 'Apnea-Hypopnea Index (AHI) 32 events/hr during polysomnography.', drug: 'CPAP Therapy (10cm H2O)', recTitle: 'Polysomnography Sleep Study Graph', recType: 'other', category: 'PROCEDURE', content: 'Nasal CPAP Titration Therapy', conf: 'SUPPORTED', status: 'ACTIVE', triage: 2 },
+      { name: 'Pooja Kulkarni', age: 37, gender: 'Female', bg: 'A+', spec: 'Rheumatology', diag: 'Systemic Lupus Erythematosus (SLE)', notes: 'Malar rash, ANA positive 1:320, Anti-dsDNA positive.', drug: 'Hydroxychloroquine 200mg', recTitle: 'Autoimmune Serology Blood Panel', recType: 'blood', category: 'CONDITION', content: 'Systemic Lupus Erythematosus (SLE)', conf: 'VERIFIED', status: 'ACTIVE', triage: 3 }
     ];
 
-    // Generate up to 50 distinct patients by expanding master list pattern dynamically
     const seededPatients = [];
     for (let i = 1; i <= 50; i++) {
       const base = patientMasterList[(i - 1) % patientMasterList.length];
@@ -189,8 +188,8 @@ async function seedPresentation() {
       const name = i <= 20 ? base.name : `${base.name} ${i}`;
       
       const u = await User.create({ name, email, password: 'Demo@123', role: 'patient' });
-      const hosp = seededHospitals[i % seededHospitals.length];
-      const doc = seededDoctors[i % seededDoctors.length];
+      const doc = seededDoctors[(i - 1) % seededDoctors.length];
+      const hosp = seededHospitals[doc.hospitals[0] ? seededHospitals.findIndex(h => h._id.equals(doc.hospitals[0])) : 0] || seededHospitals[0];
 
       const p = await Patient.create({
         userId: u._id, name, phone: `(555) ${100 + i}-${2000 + i}`,
@@ -225,61 +224,71 @@ async function seedPresentation() {
       // Seed Audit Log
       await AuditLog.create({ actor: doc.name, actorRole: 'doctor', action: 'PRESCRIPTION_ISSUED', target: `Patient: ${name}`, severity: 'info', ip: '127.0.0.1' });
 
-      seededPatients.push({ user: u, profile: p, doc, hosp, base });
+      seededPatients.push({ user: u, profile: p, doc, hosp, base, index: i });
     }
 
     // -----------------------------------------------------------------
-    // 6. TIME-AWARE PRESENTATION QUEUE (Core Presentation Scenarios)
+    // 6. DYNAMIC ACTIVE QUEUE GENERATOR (ALL 50 PATIENTS IN QUEUE!)
     // -----------------------------------------------------------------
-    console.log('\n📅 Seeding Dynamic Time-Aware OPD Queue across 5 Hospitals...');
+    console.log('\n⚡ Adding ALL 50 Patients directly to active OPD queues across 15 Doctors & 5 Hospitals...');
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
     const currentMins = now.getHours() * 60 + now.getMinutes();
 
-    const timeNowMinus10 = new Date(now.getTime() - Math.min(10, Math.max(1, currentMins - 2)) * 60000);
-    const timeNowPlus5 = new Date(now.getTime() + 5 * 60000);
-    const timeNowPlus45 = new Date(now.getTime() + 45 * 60000);
+    let totalAppointmentsSeeded = 0;
 
-    const P01 = seededPatients[0];
-    const P02 = seededPatients[1];
-    const P03 = seededPatients[2];
-    const P04 = seededPatients[3];
-    const P05 = seededPatients[4];
-    const P06 = seededPatients[5];
+    // Group patients by assigned Doctor
+    for (let dIdx = 0; dIdx < seededDoctors.length; dIdx++) {
+      const doc = seededDoctors[dIdx];
+      const docPatients = seededPatients.filter(sp => sp.doc._id.equals(doc._id));
+      const hosp = seededHospitals.find(h => h._id.equals(doc.hospitals[0])) || seededHospitals[0];
 
-    await Appointment.create({
-      patientId: P01.user._id, doctorId: seededDoctors[0]._id, doctorName: seededDoctors[0].name, spec: seededDoctors[0].specialization,
-      date: todayStr, time: formatTime(timeNowMinus10), status: 'Pending', hospitalId: seededHospitals[0]._id, hospitalName: seededHospitals[0].name,
-      baseToken: 101, triageLevel: 5, chiefComplaint: 'Acute Chest Pain radiating to left arm (Triage 5 Emergency)'
-    });
+      for (let pPos = 0; pPos < docPatients.length; pPos++) {
+        const sp = docPatients[pPos];
+        
+        // Valid enum statuses: ['Confirmed', 'Pending', 'Cancelled', 'Rescheduled', 'Completed', 'Missed', 'Postponed', 'In_Progress']
+        let apptStatus = 'Confirmed';
+        let apptOffset = (pPos * 10) - 5; // e.g. -5m, +5m, +15m, +25m
+        if (pPos === 0) {
+          // Position 1 for every doctor is NOW SERVING In_Progress
+          apptStatus = 'In_Progress';
+          apptOffset = -10;
+        } else if (pPos === 1) {
+          // Position 2 is Confirmed (Active Check-In window)
+          apptStatus = 'Confirmed';
+          apptOffset = 5;
+        } else if (sp.index === 5) {
+          // Patient 5 has Skipped Penalty
+          apptStatus = 'Pending';
+          apptOffset = -25;
+        }
 
-    await Appointment.create({
-      patientId: P02.user._id, doctorId: seededDoctors[0]._id, doctorName: seededDoctors[0].name, spec: seededDoctors[0].specialization,
-      date: todayStr, time: formatTime(timeNowPlus5), status: 'Confirmed', hospitalId: seededHospitals[0]._id, hospitalName: seededHospitals[0].name,
-      baseToken: 102, triageLevel: 4, chiefComplaint: 'Severe Migraine with visual aura'
-    });
+        const minsToMidnight = (24 * 60 - 1) - currentMins;
+        const boundedOffset = apptOffset < 0
+          ? -Math.min(Math.abs(apptOffset), Math.max(1, currentMins - 2))
+          : Math.min(apptOffset, Math.max(1, Math.floor(minsToMidnight * 0.8)));
 
-    await Appointment.create({
-      patientId: P03.user._id, doctorId: seededDoctors[0]._id, doctorName: seededDoctors[0].name, spec: seededDoctors[0].specialization,
-      date: todayStr, time: formatTime(timeNowPlus45), status: 'Confirmed', hospitalId: seededHospitals[0]._id, hospitalName: seededHospitals[0].name,
-      baseToken: 103, triageLevel: 2, chiefComplaint: 'Routine Diabetes Follow-up'
-    });
+        const apptTime = new Date(now.getTime() + boundedOffset * 60000);
+        const tokenNum = (dIdx + 1) * 100 + (pPos + 1);
 
-    await Appointment.create({
-      patientId: P04.user._id, doctorId: seededDoctors[2]._id, doctorName: seededDoctors[2].name, spec: seededDoctors[2].specialization,
-      date: todayStr, time: formatTime(timeNowPlus5), status: 'Pending', hospitalId: seededHospitals[1]._id, hospitalName: seededHospitals[1].name,
-      baseToken: 201, triageLevel: 3, chiefComplaint: 'Rheumatoid Arthritis Knee Swelling'
-    });
+        await Appointment.create({
+          patientId: sp.user._id,
+          doctorId: doc._id,
+          doctorName: doc.name,
+          spec: doc.specialization,
+          date: todayStr,
+          time: formatTime(apptTime),
+          status: apptStatus,
+          hospitalId: hosp._id,
+          hospitalName: hosp.name,
+          baseToken: tokenNum,
+          triageLevel: sp.base.triage || 2,
+          missedCalls: sp.index === 5 ? 1 : 0,
+          chiefComplaint: `OPD Queue Token #${tokenNum}: ${sp.base.diag} (${sp.base.notes})`
+        });
 
-    // Additional OPD Queue Slots for P07 to P20
-    for (let k = 6; k < 20; k++) {
-      const sp = seededPatients[k];
-      await Appointment.create({
-        patientId: sp.user._id, doctorId: sp.doc._id, doctorName: sp.doc.name, spec: sp.doc.specialization,
-        date: todayStr, time: formatTime(new Date(now.getTime() + (k * 10 * 60000))), status: 'Confirmed',
-        hospitalId: sp.hosp._id, hospitalName: sp.hosp.name, baseToken: 300 + k, triageLevel: (k % 4) + 1,
-        chiefComplaint: `Consultation: ${sp.base.diag}`
-      });
+        totalAppointmentsSeeded++;
+      }
     }
 
     // -----------------------------------------------------------------
@@ -289,27 +298,27 @@ async function seedPresentation() {
     await JoinRequest.create({ doctorId: seededDoctors[1]._id, doctorName: seededDoctors[1].name, hospitalId: seededHospitals[1]._id, hospitalName: seededHospitals[1].name, status: 'pending' });
     await JoinRequest.create({ doctorId: seededDoctors[0]._id, doctorName: seededDoctors[0].name, hospitalId: seededHospitals[0]._id, hospitalName: seededHospitals[0].name, status: 'approved' });
 
-    const memP03 = await PatientMemory.findOne({ patientId: P03.user._id });
+    const memP03 = await PatientMemory.findOne({ patientId: seededPatients[2].user._id });
     if (memP03) {
       await MemoryCorrection.create({
-        patientId: P03.user._id, memoryId: memP03._id, patientNote: 'I took Amoxicillin without reaction. Please review Penicillin allergy flag.', status: 'PENDING'
+        patientId: seededPatients[2].user._id, memoryId: memP03._id, patientNote: 'I took Amoxicillin without reaction. Please review Penicillin allergy flag.', status: 'PENDING'
       });
     }
 
     console.log('\n====================================================');
-    console.log('🎉 LIFEFILE MEGA-SCALE SEEDING COMPLETE!');
+    console.log('🎉 LIFEFILE DIRECT QUEUE SEEDING COMPLETE!');
     console.log('====================================================');
     console.log(`📊 SEEDED DATA SUMMARY:`);
     console.log(`  - 🏥 Hospitals: ${seededHospitals.length} Facilities`);
     console.log(`  - 👨‍⚕️ Doctors: ${seededDoctors.length} Specialists across 15 Specialties`);
     console.log(`  - 👤 Patients: ${seededPatients.length} UNIQUE Patient Accounts`);
-    console.log(`  - 📅 Appointments: ${4 + 14} OPD Queue Slots`);
+    console.log(`  - 📅 Active OPD Queue Appointments: ${totalAppointmentsSeeded} (100% OF PATIENTS DIRECTLY IN QUEUE!)`);
     console.log(`  - 💊 Prescriptions: ${seededPatients.length} Unique Prescriptions`);
     console.log(`  - 📂 Medical Records: ${seededPatients.length} Unique Lab Reports/Scans`);
     console.log(`  - 🧠 Patient Memories: ${seededPatients.length} Unique AI Memory Cards`);
     console.log(`  - 📜 Security Audit Logs: ${seededPatients.length + 3} Total`);
     console.log(`  - ⭐ Doctor Reviews: ${seededPatients.length} Total`);
-    console.log(`  - ⚡ 100% DISTINCT SYSTEM SEEDED AT ONCE IN < 3 SECONDS!`);
+    console.log(`  - ⚡ ALL 50 PATIENTS ARE DIRECTLY ADDED TO ACTIVE OPD QUEUES AT ONCE!`);
     console.log('====================================================\n');
 
   } catch (err) {
