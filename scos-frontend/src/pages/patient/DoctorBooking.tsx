@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Star, Clock, Calendar, CheckCircle, Loader2, Building2 } from 'lucide-react';
+import { ArrowLeft, Star, Clock, Calendar, CheckCircle, Loader2, Building2, Activity, AlertTriangle } from 'lucide-react';
 import { getDoctors, createAppointment } from '../../lib/api';
 import useAuthStore from '../../store/useAuthStore';
 
@@ -16,8 +16,28 @@ export default function DoctorBooking() {
   const [availableDates, setAvailableDates] = useState<{date: Date, display: string}[]>([]);
   const [selectedDateObj, setSelectedDateObj] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [chiefComplaint, setChiefComplaint] = useState('');
+  const [classifiedTriage, setClassifiedTriage] = useState(1);
+  const [classifiedCategory, setClassifiedCategory] = useState('Standard OPD');
   const [isBooking, setIsBooking] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
+
+  const classifySymptoms = (text: string) => {
+    const lower = text.toLowerCase();
+    if (lower.includes('chest pain') || lower.includes('heart attack') || lower.includes('severe breath') || lower.includes('left arm pain') || lower.includes('unconscious')) {
+      return { level: 5, category: 'Cardiac Event (Emergency)' };
+    }
+    if (lower.includes('headache') || lower.includes('dizzy') || lower.includes('stiff neck') || lower.includes('stroke') || lower.includes('fainted') || lower.includes('vision')) {
+      return { level: 4, category: 'Neurological / Acute Pain' };
+    }
+    if (lower.includes('fever') || lower.includes('cough') || lower.includes('vomit') || lower.includes('stomach') || lower.includes('abdomen') || lower.includes('diarrhea')) {
+      return { level: 3, category: 'Urgent Systemic Infection / Gastro' };
+    }
+    if (lower.includes('rash') || lower.includes('itch') || lower.includes('allergy') || lower.includes('earache') || lower.includes('sprain') || lower.includes('swelling')) {
+      return { level: 2, category: 'Moderate Allergic / Musculoskeletal' };
+    }
+    return { level: 1, category: 'Standard Outpatient Consultation' };
+  };
 
   useEffect(() => {
     // Generate next 5 days
@@ -60,6 +80,8 @@ export default function DoctorBooking() {
         type: 'Consultation',
         hospitalId: hospitalId || undefined,
         hospitalName: hospitalName || undefined,
+        chiefComplaint: chiefComplaint || 'General OPD Consultation',
+        triageLevel: classifiedTriage,
       });
       setIsConfirmed(true);
     } catch (err) {
@@ -196,6 +218,48 @@ export default function DoctorBooking() {
             </div>
           )}
           <p className="text-slate-600 leading-relaxed text-sm max-w-2xl">{doctor.bio || 'No summary available.'}</p>
+        </div>
+      </div>
+
+      {/* Chief Complaint / Health Problem Input with Live Auto-Triage */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-slate-100 bg-slate-50 flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <Activity className="w-5 h-5 text-blue-600" />
+              Describe Health Problem / Symptoms
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">Automated NLP Triage engine dynamically classifies urgency for queue ranking</p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all ${
+              classifiedTriage === 5 ? 'bg-red-600 text-white animate-pulse' :
+              classifiedTriage === 4 ? 'bg-orange-500 text-white' :
+              classifiedTriage === 3 ? 'bg-amber-500 text-white' :
+              classifiedTriage === 2 ? 'bg-blue-600 text-white' :
+              'bg-slate-700 text-white'
+            }`}>
+              {classifiedTriage >= 4 && <AlertTriangle className="w-3.5 h-3.5" />}
+              Level {classifiedTriage}: {classifiedCategory}
+            </span>
+          </div>
+        </div>
+
+        <div className="p-6">
+          <textarea
+            rows={3}
+            value={chiefComplaint}
+            onChange={(e) => {
+              const text = e.target.value;
+              setChiefComplaint(text);
+              const res = classifySymptoms(text);
+              setClassifiedTriage(res.level);
+              setClassifiedCategory(res.category);
+            }}
+            placeholder="Describe your health problem or symptoms (e.g. 'Severe chest pain radiating to left arm' or 'Routine blood pressure follow-up')..."
+            className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 font-medium placeholder:text-slate-400 bg-slate-50"
+          />
         </div>
       </div>
 
