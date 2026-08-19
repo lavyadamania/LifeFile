@@ -26,31 +26,20 @@ Run right before your presentation (at any hour of day or night):
 ```powershell
 # From root folder (e:\ie proj):
 npm run seed:presentation -- --confirm
-
-# Or from scos-backend folder:
-cd "e:\ie proj\scos-backend"
-npm run seed:presentation -- --confirm
 ```
 
-### Step B: Start Applications
+### Step B: Live Database CLI Inspection Matrix (For Technical Judges)
+Show clean live ASCII database state (Users, ACPA Queue, Clinical Memory, Audit Logs) in 1 command:
+```powershell
+# From root folder (e:\ie proj):
+npm run inspect:db
+```
 
-#### Option 1 — Start Both Backend + Frontend Simultaneously (Single Terminal):
+### Step C: Start Applications
 ```powershell
 # From root folder (e:\ie proj):
 npm run dev
 ```
-
-#### Option 2 — Start Backend & Frontend in Separate Terminals:
-* **Terminal 1 (Backend API & Sockets):**
-  ```powershell
-  cd "e:\ie proj\scos-backend"
-  npm run dev
-  ```
-* **Terminal 2 (Frontend React App):**
-  ```powershell
-  cd "e:\ie proj\scos-frontend"
-  npm run dev
-  ```
 
 ### ⚡ Optional: 1-Click Clock Resync (If App is Left Running for Hours)
 If the server has been running for several hours and you want to recalibrate demo appointment slots to your current clock without wiping data:
@@ -98,6 +87,13 @@ The seed engine dynamically calculates all appointment slots relative to the **e
 
 ## 4. STEP-BY-STEP LIVE JUDGE PRESENTATION SCRIPT
 
+### 📍 STEP 0: 1-Click Quick Demo Login & Auto-Role Detection
+1. Open `http://localhost:5173/login`.
+2. **Show Judges:** 1-Click Quick Login Pills (👑 Admin, 🏥 Hospital, 👨‍⚕️ Doctor, 👤 Patient 1/2/3).
+3. Click any pill to log in instantly—or type credentials manually (`Demo@123`). Backend automatically detects role without login errors!
+
+---
+
 ### 📍 STEP 1: Patient Medical Records & Profile
 1. Log in as **Patient 1 (Aarav Sharma)**: `demo.patient.01@lifefile.test` / `Demo@123`.
 2. Open **Medical Timeline / Records**.
@@ -114,6 +110,14 @@ The seed engine dynamically calculates all appointment slots relative to the **e
 2. Log in as **Patient 3 (Kabir Joshi)**: `demo.patient.03@lifefile.test` / `Demo@123`.
    * **Show Judges:** Appointment is scheduled for `NOW + 45 mins` (too early).
    * **Result:** The Check-In button is **Locked** (`Opens at HH:MM PM`). Explain: *"Prevents patients from overwhelming OPD queues hours in advance."*
+
+---
+
+### 📍 STEP 2B: Live Booking with Chief Complaint & NLP Triage Badge
+1. Log in as any Patient and navigate to **Search Doctors** $\rightarrow$ **Book Appointment**.
+2. Type in **Describe Health Problem / Symptoms**: *"Severe chest pain radiating to left arm"*.
+3. **Show Judges:** The dynamic **⚡ Level 5: Cardiac Event (Emergency)** badge illuminates in real time!
+4. Click **Confirm Appointment**. Explain: *"The chief complaint is classified by our NLP engine on the fly and immediately feeds into ACPA queue ranking."*
 
 ---
 
