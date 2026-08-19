@@ -42,7 +42,8 @@ app.use('/api/patients', require('./routes/patients'));
 app.use('/api/queue', require('./routes/queue'));
 app.use('/api/hospitals', require('./routes/hospitals'));
 app.use('/api/analytics', require('./routes/analytics'));
-
+app.use('/api/memory', require('./routes/memory'));
+app.use('/api/benchmark', require('./routes/benchmark'));
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok', kafka: true, mongo: true }));
 

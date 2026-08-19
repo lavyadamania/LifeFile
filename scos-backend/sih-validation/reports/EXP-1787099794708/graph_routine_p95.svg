@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" style="background-color:white; font-family:sans-serif;">
+<text x="300" y="30" text-anchor="middle" font-size="20" font-weight="bold">Routine P95 Wait Time</text>
+<text x="15" y="200" text-anchor="middle" font-size="14" transform="rotate(-90, 15, 200)">Minutes</text>
+<line x1="60" y1="340" x2="540" y2="340" stroke="black" stroke-width="2"/>
+<line x1="60" y1="60" x2="60" y2="340" stroke="black" stroke-width="2"/>
+<line x1="60" y1="340" x2="540" y2="340" stroke="#e2e8f0" stroke-width="1"/>
+<text x="50" y="345" text-anchor="end" font-size="12" fill="#64748b">0</text>
+<line x1="60" y1="284" x2="540" y2="284" stroke="#e2e8f0" stroke-width="1"/>
+<text x="50" y="289" text-anchor="end" font-size="12" fill="#64748b">179</text>
+<line x1="60" y1="228" x2="540" y2="228" stroke="#e2e8f0" stroke-width="1"/>
+<text x="50" y="233" text-anchor="end" font-size="12" fill="#64748b">359</text>
+<line x1="60" y1="172" x2="540" y2="172" stroke="#e2e8f0" stroke-width="1"/>
+<text x="50" y="177" text-anchor="end" font-size="12" fill="#64748b">538</text>
+<line x1="60" y1="116.00000000000003" x2="540" y2="116.00000000000003" stroke="#e2e8f0" stroke-width="1"/>
+<text x="50" y="121.00000000000003" text-anchor="end" font-size="12" fill="#64748b">718</text>
+<line x1="60" y1="60" x2="540" y2="60" stroke="#e2e8f0" stroke-width="1"/>
+<text x="50" y="65" text-anchor="end" font-size="12" fill="#64748b">897</text>
+<rect x="70" y="77.65990639625585" width="140" height="262.34009360374415" fill="#94a3b8" rx="4"/>
+<text x="140" y="67.65990639625585" text-anchor="middle" font-size="14" font-weight="bold">841</text>
+<text x="140" y="365" text-anchor="middle" font-size="14" font-weight="bold">FIFO</text>
+<rect x="230" y="71.91887675507024" width="140" height="268.08112324492976" fill="#f59e0b" rx="4"/>
+<text x="300" y="61.918876755070244" text-anchor="middle" font-size="14" font-weight="bold">859</text>
+<text x="300" y="365" text-anchor="middle" font-size="14" font-weight="bold">Priority</text>
+<rect x="390" y="60" width="140" height="280" fill="#3b82f6" rx="4"/>
+<text x="460" y="50" text-anchor="middle" font-size="14" font-weight="bold">897</text>
+<text x="460" y="365" text-anchor="middle" font-size="14" font-weight="bold">ACPA</text>
+</svg>

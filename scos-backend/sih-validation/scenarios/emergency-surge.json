@@ -1,0 +1,7 @@
+{
+  "name": "Emergency Surge",
+  "patientCount": 150,
+  "doctorCount": 1,
+  "emergencyRate": 0.35,
+  "noShowRate": 0.05
+}

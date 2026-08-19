@@ -1,0 +1,84 @@
+{
+  "experimentId": "EXP-1787099068758",
+  "scenario": "emergency-surge",
+  "seed": 20260819,
+  "config": {
+    "name": "Emergency Surge",
+    "patientCount": 150,
+    "doctorCount": 1,
+    "emergencyRate": 0.35,
+    "noShowRate": 0.05,
+    "seed": 20260819
+  },
+  "results": {
+    "FIFO": {
+      "overall": {
+        "averageWait": 806.7739726027397,
+        "medianWait": 784.5,
+        "p95Wait": 1586.75,
+        "maxWait": 1646
+      },
+      "emergency": {
+        "count": 44,
+        "averageWait": 860.5454545454545,
+        "p95Wait": 1588.05
+      },
+      "routine": {
+        "count": 56,
+        "averageWait": 788.5535714285714,
+        "p95Wait": 1536.5,
+        "maxWait": 1633
+      },
+      "starvationIncidents": 54,
+      "throughput": 4.632469592808039,
+      "doctorUtilization": 99.84135378106822,
+      "totalTime": 1891
+    },
+    "Priority": {
+      "overall": {
+        "averageWait": 768.3561643835617,
+        "medianWait": 808.5,
+        "p95Wait": 1580.25,
+        "maxWait": 1647
+      },
+      "emergency": {
+        "count": 44,
+        "averageWait": 136.20454545454547,
+        "p95Wait": 283.55
+      },
+      "routine": {
+        "count": 56,
+        "averageWait": 1352.1785714285713,
+        "p95Wait": 1634,
+        "maxWait": 1647
+      },
+      "starvationIncidents": 56,
+      "throughput": 4.632469592808039,
+      "doctorUtilization": 99.84135378106822,
+      "totalTime": 1891
+    },
+    "ACPA": {
+      "overall": {
+        "averageWait": 787.2739726027397,
+        "medianWait": 773,
+        "p95Wait": 1594.75,
+        "maxWait": 1658
+      },
+      "emergency": {
+        "count": 44,
+        "averageWait": 436.8863636363636,
+        "p95Wait": 1279.65
+      },
+      "routine": {
+        "count": 56,
+        "averageWait": 980.1964285714286,
+        "p95Wait": 1624.75,
+        "maxWait": 1658
+      },
+      "starvationIncidents": 56,
+      "throughput": 4.632469592808039,
+      "doctorUtilization": 99.84135378106822,
+      "totalTime": 1891
+    }
+  }
+}

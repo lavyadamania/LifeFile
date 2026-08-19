@@ -5,6 +5,7 @@ import { ArrowLeft, Activity, FileText, Plus, Trash2, Save, Lock, Search, UserPl
 import nlp from 'compromise';
 import ReactMarkdown from 'react-markdown';
 import PrescriptionPreview from '../../components/PrescriptionPreview';
+import DoctorMemoryPanel from '../../components/DoctorMemoryPanel';
 import type { PrescriptionTemplate } from '../../components/PrescriptionPreview';
 import { createPrescription, searchPatients, registerUser, createWalkinAppointment, getDoctors, updateDoctor, getPatientPrescriptions, uploadAttachment, getAppointments, updateAppointmentStatus, getPatientAISummary } from '../../lib/api';
 import useAccessStore from '../../store/useAccessStore';
@@ -657,6 +658,13 @@ export default function DoctorConsultation() {
                 ) : (
                   <p className="text-sm text-slate-500 italic">No AI summary available.</p>
                 )}
+              </div>
+            )}
+
+            {/* LifeFile Patient Longitudinal Memory Layer */}
+            {(selectedPatient?._id || (patientId && patientId !== 'new')) && (
+              <div className="mb-6">
+                <DoctorMemoryPanel patientId={selectedPatient?._id || patientId!} patientName={currentPatientName} />
               </div>
             )}
 

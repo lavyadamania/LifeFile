@@ -1,0 +1,84 @@
+{
+  "experimentId": "EXP-1787098909785",
+  "scenario": "high-load",
+  "seed": 20260819,
+  "config": {
+    "name": "High Load (Stress Test)",
+    "patientCount": 5000,
+    "doctorCount": 10,
+    "emergencyRate": 0.15,
+    "noShowRate": 0.1,
+    "seed": 20260819
+  },
+  "results": {
+    "FIFO": {
+      "overall": {
+        "averageWait": 0.03708668453976765,
+        "medianWait": 0,
+        "p95Wait": 0,
+        "maxWait": 6
+      },
+      "emergency": {
+        "count": 670,
+        "averageWait": 0.050746268656716415,
+        "p95Wait": 0
+      },
+      "routine": {
+        "count": 2466,
+        "averageWait": 0.032846715328467155,
+        "p95Wait": 0,
+        "maxWait": 6
+      },
+      "starvationIncidents": 0,
+      "throughput": 26.79437294223286,
+      "doctorUtilization": 56.059064152449366,
+      "totalTime": 10023
+    },
+    "Priority": {
+      "overall": {
+        "averageWait": 0.03731009830205541,
+        "medianWait": 0,
+        "p95Wait": 0,
+        "maxWait": 7
+      },
+      "emergency": {
+        "count": 670,
+        "averageWait": 0.028358208955223882,
+        "p95Wait": 0
+      },
+      "routine": {
+        "count": 2466,
+        "averageWait": 0.04460665044606651,
+        "p95Wait": 0,
+        "maxWait": 7
+      },
+      "starvationIncidents": 0,
+      "throughput": 26.79437294223286,
+      "doctorUtilization": 56.059064152449366,
+      "totalTime": 10023
+    },
+    "ACPA": {
+      "overall": {
+        "averageWait": 0.03686327077747989,
+        "medianWait": 0,
+        "p95Wait": 0,
+        "maxWait": 7
+      },
+      "emergency": {
+        "count": 670,
+        "averageWait": 0.028358208955223882,
+        "p95Wait": 0
+      },
+      "routine": {
+        "count": 2466,
+        "averageWait": 0.0413625304136253,
+        "p95Wait": 0,
+        "maxWait": 7
+      },
+      "starvationIncidents": 0,
+      "throughput": 26.79437294223286,
+      "doctorUtilization": 56.059064152449366,
+      "totalTime": 10023
+    }
+  }
+}

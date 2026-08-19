@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "seed": "node seed.js"
+    "seed": "node seed.js",
+    "benchmark": "node sih-validation/cli.js",
+    "benchmark:all": "node sih-validation/cli.js --scenario high-load --seed 20260819"
   },
   "dependencies": {
     "@google/genai": "^2.17.1",

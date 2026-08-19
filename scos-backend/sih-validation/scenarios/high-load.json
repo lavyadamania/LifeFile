@@ -1,0 +1,7 @@
+{
+  "name": "High Load (Stress Test)",
+  "patientCount": 500,
+  "doctorCount": 5,
+  "emergencyRate": 0.15,
+  "noShowRate": 0.10
+}

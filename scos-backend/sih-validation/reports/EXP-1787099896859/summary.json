@@ -1,0 +1,84 @@
+{
+  "experimentId": "EXP-1787099896859",
+  "scenario": "high-load",
+  "seed": 20260819,
+  "config": {
+    "name": "High Load (Stress Test)",
+    "patientCount": 500,
+    "doctorCount": 5,
+    "emergencyRate": 0.15,
+    "noShowRate": 0.1,
+    "seed": 20260819
+  },
+  "results": {
+    "FIFO": {
+      "overall": {
+        "averageWait": 430.5349344978166,
+        "medianWait": 430.5,
+        "p95Wait": 837.15,
+        "maxWait": 864
+      },
+      "emergency": {
+        "count": 71,
+        "averageWait": 432.32394366197184,
+        "p95Wait": 824
+      },
+      "routine": {
+        "count": 253,
+        "averageWait": 430.1304347826087,
+        "p95Wait": 840.8,
+        "maxWait": 864
+      },
+      "starvationIncidents": 236,
+      "throughput": 23.937282229965156,
+      "doctorUtilization": 99.66898954703831,
+      "totalTime": 1148
+    },
+    "Priority": {
+      "overall": {
+        "averageWait": 440.910480349345,
+        "medianWait": 531.5,
+        "p95Wait": 847.15,
+        "maxWait": 869
+      },
+      "emergency": {
+        "count": 71,
+        "averageWait": 6.436619718309859,
+        "p95Wait": 20
+      },
+      "routine": {
+        "count": 253,
+        "averageWait": 689.5177865612649,
+        "p95Wait": 859.1999999999999,
+        "maxWait": 869
+      },
+      "starvationIncidents": 251,
+      "throughput": 23.979057591623036,
+      "doctorUtilization": 99.84293193717276,
+      "totalTime": 1146
+    },
+    "ACPA": {
+      "overall": {
+        "averageWait": 440.9410480349345,
+        "medianWait": 458,
+        "p95Wait": 885.3,
+        "maxWait": 928
+      },
+      "emergency": {
+        "count": 71,
+        "averageWait": 22.112676056338028,
+        "p95Wait": 125
+      },
+      "routine": {
+        "count": 253,
+        "averageWait": 563.6086956521739,
+        "p95Wait": 897.4,
+        "maxWait": 928
+      },
+      "starvationIncidents": 248,
+      "throughput": 24.041994750656166,
+      "doctorUtilization": 100.10498687664042,
+      "totalTime": 1143
+    }
+  }
+}

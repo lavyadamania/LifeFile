@@ -29,6 +29,7 @@ import HospitalRecords from './pages/patient/HospitalRecords';
 import AIPredictor from './pages/patient/AIPredictor';
 import SymptomTriage from './pages/patient/SymptomTriage';
 import PatientAnalytics from './pages/patient/PatientAnalytics';
+import PatientMemoryView from './pages/patient/PatientMemoryView';
 
 // Doctor Pages
 import DoctorProfile from './pages/doctor/DoctorProfile';
@@ -48,6 +49,7 @@ import AdminAuditLogs from './pages/admin/AdminAuditLogs';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminManageHospitals from './pages/admin/AdminManageHospitals';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
+import BenchmarkDashboard from './pages/admin/BenchmarkDashboard';
 
 // Hospital Pages
 import HospitalDashboard from './pages/hospital/HospitalDashboard';
@@ -88,6 +90,7 @@ function App() {
                 <Route path="/patient/ai-predictor" element={<AIPredictor />} />
                 <Route path="/patient/ai-triage" element={<SymptomTriage />} />
                 <Route path="/patient/analytics" element={<PatientAnalytics />} />
+                <Route path="/patient/memory" element={<PatientMemoryView />} />
                 <Route path="/patient/settings" element={<PatientProfile />} />
                 <Route path="/patient/history" element={<Navigate to="/patient/timeline" replace />} />
               </Route>
@@ -117,6 +120,7 @@ function App() {
                 <Route path="/admin/hospitals" element={<AdminManageHospitals />} />
                 <Route path="/admin/settings" element={<AdminSettings />} />
                 <Route path="/admin/analytics" element={<AdminAnalytics />} />
+                <Route path="/admin/benchmark" element={<BenchmarkDashboard />} />
               </Route>
             </Route>
 

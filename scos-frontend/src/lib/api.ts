@@ -80,6 +80,17 @@ export const skipPatient = (data: { doctorId: string; patientId: string; appoint
 export const callNextPatient = (data: { doctorId: string; patientId: string; appointmentId: string; hospitalId?: string; hospitalName?: string }) => api.post('/queue/call-next', data);
 export const completeConsultation = (data: { doctorId: string; patientId: string; appointmentId: string; hospitalId?: string; hospitalName?: string }) => api.post('/queue/complete', data);
 
+// Patient Memory Layer
+export const getPatientMemories = (patientId: string) => api.get(`/memory/patient/${patientId}`);
+export const getMemorySources = (memoryId: string) => api.get(`/memory/${memoryId}/sources`);
+export const extractPatientMemories = (patientId: string, prescriptionId?: string) => api.post(`/memory/extract/${patientId}`, { prescriptionId });
+export const submitMemoryCorrection = (memoryId: string, patientNote: string) => api.post(`/memory/${memoryId}/correction`, { patientNote });
+export const reviewPatientMemory = (memoryId: string, data: { status?: string; confidence?: string; conflictNotes?: string }) => api.patch(`/memory/${memoryId}/review`, data);
+
+// Benchmark API
+export const getBenchmarkScenarios = () => api.get('/benchmark/scenarios');
+export const runBenchmark = (data: any) => api.post('/benchmark/run', data);
+
 // Prescriptions
 export const getPrescriptions = (params?: { hospitalId?: string }) => api.get('/prescriptions', { params });
 export const createPrescription = (data: any) => api.post('/prescriptions', data);

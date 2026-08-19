@@ -1,0 +1,7 @@
+{
+  "name": "Starvation Scenario",
+  "patientCount": 200,
+  "doctorCount": 1,
+  "emergencyRate": 0.60,
+  "noShowRate": 0.01
+}

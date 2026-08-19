@@ -1,0 +1,84 @@
+{
+  "experimentId": "EXP-1787098934114",
+  "scenario": "high-load",
+  "seed": 20260819,
+  "config": {
+    "name": "High Load (Stress Test)",
+    "patientCount": 5000,
+    "doctorCount": 10,
+    "emergencyRate": 0.15,
+    "noShowRate": 0.1,
+    "seed": 20260819
+  },
+  "results": {
+    "FIFO": {
+      "overall": {
+        "averageWait": 1563.5759606791778,
+        "medianWait": 1567,
+        "p95Wait": 2977.25,
+        "maxWait": 3127
+      },
+      "emergency": {
+        "count": 670,
+        "averageWait": 1505.4970149253732,
+        "p95Wait": 2909.2
+      },
+      "routine": {
+        "count": 2466,
+        "averageWait": 1579.360097323601,
+        "p95Wait": 2991,
+        "maxWait": 3127
+      },
+      "starvationIncidents": 2422,
+      "throughput": 47.7524893314367,
+      "doctorUtilization": 99.90753911806543,
+      "totalTime": 5624
+    },
+    "Priority": {
+      "overall": {
+        "averageWait": 1561.9392314566578,
+        "medianWait": 2578.5,
+        "p95Wait": 3068,
+        "maxWait": 3131
+      },
+      "emergency": {
+        "count": 670,
+        "averageWait": 1.0865671641791044,
+        "p95Wait": 4
+      },
+      "routine": {
+        "count": 2466,
+        "averageWait": 2793.9229521492293,
+        "p95Wait": 3091,
+        "maxWait": 3131
+      },
+      "starvationIncidents": 2454,
+      "throughput": 47.7524893314367,
+      "doctorUtilization": 99.90753911806544,
+      "totalTime": 5624
+    },
+    "ACPA": {
+      "overall": {
+        "averageWait": 1563.8869526362823,
+        "medianWait": 1563,
+        "p95Wait": 2983,
+        "maxWait": 3149
+      },
+      "emergency": {
+        "count": 670,
+        "averageWait": 1444.7268656716417,
+        "p95Wait": 2852.6499999999996
+      },
+      "routine": {
+        "count": 2466,
+        "averageWait": 1592.5340632603406,
+        "p95Wait": 3000.75,
+        "maxWait": 3149
+      },
+      "starvationIncidents": 2432,
+      "throughput": 47.760981682375956,
+      "doctorUtilization": 99.9253067757425,
+      "totalTime": 5623
+    }
+  }
+}

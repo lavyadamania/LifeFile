@@ -1,0 +1,7 @@
+{
+  "name": "Normal OPD",
+  "patientCount": 100,
+  "doctorCount": 1,
+  "emergencyRate": 0.05,
+  "noShowRate": 0.05
+}
