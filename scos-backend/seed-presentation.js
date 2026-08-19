@@ -26,6 +26,11 @@ function formatTime(d) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} ${meridian}`;
 }
 
+// Helper to generate SVG placeholder data URLs for realistic medical images
+function makeMedicalSvg(title, subtitle, color = '%230f172a', textColor = '%2338bdf8') {
+  return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="500" height="350" viewBox="0 0 500 350"><rect width="500" height="350" fill="${color}"/><text x="40" y="160" fill="${textColor}" font-size="20" font-family="sans-serif" font-weight="bold">${title}</text><text x="40" y="200" fill="%2394a3b8" font-size="14" font-family="sans-serif">${subtitle}</text></svg>`;
+}
+
 async function seedPresentation() {
   const args = process.argv.slice(2);
   const isConfirmed = args.includes('--confirm');
@@ -35,7 +40,7 @@ async function seedPresentation() {
     console.log('⚠️  SAFETY WARNING: SEED PRESENTATION SCRIPT');
     console.log('====================================================');
     console.log('This script will reset non-admin application data and seed');
-    console.log('a deterministic, time-aware presentation dataset for SIH 2026.');
+    console.log('an ultra-rich presentation dataset (50+ records per user).');
     console.log('\nTo confirm and execute, run:');
     console.log('  npm run seed:presentation -- --confirm');
     console.log('OR');
@@ -50,7 +55,7 @@ async function seedPresentation() {
 
   try {
     console.log('====================================================');
-    console.log('🚀 STARTING LIFEFILE / SCOS DETERMINISTIC SIH SEEDING');
+    console.log('🚀 STARTING LIFEFILE / SCOS HIGH-DENSITY SEEDING ENGINE');
     console.log('====================================================\n');
 
     await mongoose.connect(process.env.MONGO_URI);
@@ -109,8 +114,8 @@ async function seedPresentation() {
       address: '123 Health Ave, Medical District, NY 10001',
       phone: '(555) 019-2831',
       email: 'demo.hospital.central@lifefile.test',
-      description: 'Primary Tertiary Care Facility & Emergency Center',
-      departments: ['Cardiology', 'Emergency Medicine', 'General OPD', 'Pediatrics'],
+      description: 'Primary Tertiary Care Facility & Emergency Trauma Center',
+      departments: ['Cardiology', 'Emergency Medicine', 'General OPD', 'Pediatrics', 'Pulmonology', 'Endocrinology', 'Neurology'],
       status: 'active'
     });
 
@@ -127,18 +132,15 @@ async function seedPresentation() {
       address: '456 Northside Blvd, Metro City, NY 10002',
       phone: '(555) 088-9922',
       email: 'demo.hospital.north@lifefile.test',
-      description: 'Secondary Outpatient Facility & Speciality Clinic',
-      departments: ['Orthopedics', 'General Medicine', 'Dermatology'],
+      description: 'Secondary Outpatient Facility & Specialty Care Center',
+      departments: ['Orthopedics', 'General Medicine', 'Dermatology', 'Gastroenterology'],
       status: 'active'
     });
 
-    console.log('  - H01: LifeFile Central Hospital (demo.hospital.central@lifefile.test)');
-    console.log('  - H02: LifeFile North Hospital (demo.hospital.north@lifefile.test)');
-
     // -----------------------------------------------------------------
-    // 4. SEED DOCTORS (3 Doctors)
+    // 4. SEED DOCTORS (4 Doctors)
     // -----------------------------------------------------------------
-    console.log('\n👨‍⚕️ Seeding Doctors...');
+    console.log('👨‍⚕️ Seeding Doctors...');
     const userD01 = await User.create({
       name: 'Dr. Ananya Sharma',
       email: 'demo.doctor.ananya@lifefile.test',
@@ -153,11 +155,11 @@ async function seedPresentation() {
       status: 'Active',
       hours: 'Mon-Fri, 9AM-5PM',
       location: 'Cardiology Wing, Room 302',
-      experience: 12,
+      experience: 14,
       hospitals: [hospital01._id],
       rating: 4.9,
-      reviewCount: 128,
-      bio: 'Senior Consultant Cardiologist specializing in preventive cardiology and ischemic heart disease.'
+      reviewCount: 142,
+      bio: 'Senior Consultant Cardiologist specializing in preventive cardiology, coronary interventions, and ischemic heart disease.'
     });
 
     const userD02 = await User.create({
@@ -174,11 +176,11 @@ async function seedPresentation() {
       status: 'Active',
       hours: '24/7 Shift',
       location: 'Emergency Trauma Bay 1',
-      experience: 15,
+      experience: 16,
       hospitals: [hospital01._id],
       rating: 4.8,
-      reviewCount: 94,
-      bio: 'Lead Emergency Physician specialized in acute trauma triage and rapid resuscitation.'
+      reviewCount: 110,
+      bio: 'Lead Emergency Physician specialized in acute trauma triage, resuscitation, and critical cardiac care.'
     });
 
     const userD03 = await User.create({
@@ -195,184 +197,130 @@ async function seedPresentation() {
       status: 'Active',
       hours: 'Mon-Sat, 10AM-4PM',
       location: 'North Clinic OPD Room 101',
-      experience: 8,
+      experience: 9,
       hospitals: [hospital02._id],
       rating: 4.7,
-      reviewCount: 62,
-      bio: 'General Practitioner dedicated to holistic outpatient care and chronic disease management.'
+      reviewCount: 88,
+      bio: 'General Practitioner dedicated to chronic disease management, diabetes care, and internal medicine.'
     });
 
-    hospital01.doctors = [doctor01._id, doctor02._id];
+    const userD04 = await User.create({
+      name: 'Dr. Vikram Rao',
+      email: 'demo.doctor.vikram@lifefile.test',
+      password: 'Demo@123',
+      role: 'doctor'
+    });
+
+    const doctor04 = await Doctor.create({
+      userId: userD04._id,
+      name: 'Dr. Vikram Rao',
+      specialization: 'Pulmonology & Endocrinology',
+      status: 'Active',
+      hours: 'Mon-Fri, 11AM-6PM',
+      location: 'Pulmonary Suite, Room 405',
+      experience: 11,
+      hospitals: [hospital01._id, hospital02._id],
+      rating: 4.9,
+      reviewCount: 76,
+      bio: 'Specialist in respiratory disorders, asthma management, and metabolic endocrine conditions.'
+    });
+
+    hospital01.doctors = [doctor01._id, doctor02._id, doctor04._id];
     await hospital01.save();
-    hospital02.doctors = [doctor03._id];
+    hospital02.doctors = [doctor03._id, doctor04._id];
     await hospital02.save();
 
-    console.log('  - D01: Dr. Ananya Sharma (demo.doctor.ananya@lifefile.test)');
-    console.log('  - D02: Dr. Rohan Verma (demo.doctor.rohan@lifefile.test)');
-    console.log('  - D03: Dr. Sara Khan (demo.doctor.sara@lifefile.test)');
+    // -----------------------------------------------------------------
+    // 5. SEED PATIENTS (6 Core Presentation Patients)
+    // -----------------------------------------------------------------
+    console.log('👤 Seeding Primary Presentation Patients...');
+
+    const patientConfigs = [
+      {
+        email: 'demo.patient.01@lifefile.test',
+        name: 'Aarav Sharma',
+        age: 34, gender: 'Male', height: '178 cm', weight: '76 kg', bloodGroup: 'B+',
+        phone: '(555) 912-3401', address: '742 Evergreen Terrace, NY 10001', emergencyContact: 'Priya Sharma (Wife) - (555) 912-3499',
+        hospital: hospital01._id, doctors: [doctor01._id, doctor02._id, doctor04._id]
+      },
+      {
+        email: 'demo.patient.02@lifefile.test',
+        name: 'Diya Patel',
+        age: 28, gender: 'Female', height: '165 cm', weight: '58 kg', bloodGroup: 'A+',
+        phone: '(555) 888-2102', address: '12 West 84th St, NY 10024', emergencyContact: 'Rahul Patel (Brother) - (555) 888-9900',
+        hospital: hospital01._id, doctors: [doctor01._id, doctor04._id]
+      },
+      {
+        email: 'demo.patient.03@lifefile.test',
+        name: 'Kabir Joshi',
+        age: 45, gender: 'Male', height: '172 cm', weight: '82 kg', bloodGroup: 'O+',
+        phone: '(555) 777-3303', address: '500 Fifth Ave, NY 10110', emergencyContact: 'Sunita Joshi (Mother) - (555) 777-4400',
+        hospital: hospital01._id, doctors: [doctor01._id, doctor03._id]
+      },
+      {
+        email: 'demo.patient.04@lifefile.test',
+        name: 'Isha Deshmukh',
+        age: 31, gender: 'Female', height: '160 cm', weight: '54 kg', bloodGroup: 'AB+',
+        phone: '(555) 666-4404', address: '88 Northside Blvd, Metro City, NY 10002', emergencyContact: 'Vikram Deshmukh (Husband) - (555) 666-5500',
+        hospital: hospital02._id, doctors: [doctor03._id, doctor04._id]
+      },
+      {
+        email: 'demo.patient.05@lifefile.test',
+        name: 'Vihaan Kapoor',
+        age: 52, gender: 'Male', height: '180 cm', weight: '88 kg', bloodGroup: 'O-',
+        phone: '(555) 555-5505', address: '350 Park Ave, NY 10022', emergencyContact: 'Anita Kapoor (Wife) - (555) 555-6600',
+        hospital: hospital01._id, doctors: [doctor01._id, doctor02._id]
+      },
+      {
+        email: 'demo.patient.06@lifefile.test',
+        name: 'Myra Nair',
+        age: 24, gender: 'Female', height: '168 cm', weight: '60 kg', bloodGroup: 'A-',
+        phone: '(555) 444-6606', address: '15 Central Park West, NY 10023', emergencyContact: 'Siddharth Nair (Father) - (555) 444-7700',
+        hospital: hospital01._id, doctors: [doctor01._id, doctor04._id]
+      }
+    ];
+
+    const seededPatients = [];
+    for (const cfg of patientConfigs) {
+      const u = await User.create({
+        name: cfg.name,
+        email: cfg.email,
+        password: 'Demo@123',
+        role: 'patient'
+      });
+
+      const p = await Patient.create({
+        userId: u._id,
+        name: cfg.name,
+        phone: cfg.phone,
+        address: cfg.address,
+        emergencyContact: cfg.emergencyContact,
+        age: cfg.age,
+        gender: cfg.gender,
+        height: cfg.height,
+        weight: cfg.weight,
+        bloodGroup: cfg.bloodGroup,
+        grantedDoctors: cfg.doctors,
+        currentHospital: cfg.hospital
+      });
+
+      seededPatients.push({ user: u, profile: p, cfg });
+    }
 
     // -----------------------------------------------------------------
-    // 5. SEED PATIENTS (6 Patients)
+    // 6. TIME-AWARE PRESENTATION QUEUE (Core Demo Scenarios)
     // -----------------------------------------------------------------
-    console.log('\n👤 Seeding Patients...');
-
-    // P01: Aarav Sharma (Emergency Triage 5 + Active Memory + Records)
-    const userP01 = await User.create({
-      name: 'Aarav Sharma',
-      email: 'demo.patient.01@lifefile.test',
-      password: 'Demo@123',
-      role: 'patient'
-    });
-    const patient01 = await Patient.create({
-      userId: userP01._id,
-      name: 'Aarav Sharma',
-      phone: '(555) 912-3401',
-      address: '742 Evergreen Terrace, NY 10001',
-      emergencyContact: 'Priya Sharma (Wife) - (555) 912-3499',
-      age: 34,
-      gender: 'Male',
-      height: '178 cm',
-      weight: '76 kg',
-      bloodGroup: 'B+',
-      grantedDoctors: [doctor01._id, doctor02._id],
-      currentHospital: hospital01._id
-    });
-
-    // P02: Diya Patel (Active Check-In Window + MRI Record)
-    const userP02 = await User.create({
-      name: 'Diya Patel',
-      email: 'demo.patient.02@lifefile.test',
-      password: 'Demo@123',
-      role: 'patient'
-    });
-    const patient02 = await Patient.create({
-      userId: userP02._id,
-      name: 'Diya Patel',
-      phone: '(555) 888-2102',
-      address: '12 West 84th St, NY 10024',
-      emergencyContact: 'Rahul Patel (Brother) - (555) 888-9900',
-      age: 28,
-      gender: 'Female',
-      height: '165 cm',
-      weight: '58 kg',
-      bloodGroup: 'A+',
-      grantedDoctors: [doctor01._id],
-      currentHospital: hospital01._id
-    });
-
-    // P03: Kabir Joshi (Memory Conflict & Correction Request)
-    const userP03 = await User.create({
-      name: 'Kabir Joshi',
-      email: 'demo.patient.03@lifefile.test',
-      password: 'Demo@123',
-      role: 'patient'
-    });
-    const patient03 = await Patient.create({
-      userId: userP03._id,
-      name: 'Kabir Joshi',
-      phone: '(555) 777-3303',
-      address: '500 Fifth Ave, NY 10110',
-      emergencyContact: 'Sunita Joshi (Mother) - (555) 777-4400',
-      age: 45,
-      gender: 'Male',
-      height: '172 cm',
-      weight: '82 kg',
-      bloodGroup: 'O+',
-      grantedDoctors: [doctor01._id],
-      currentHospital: hospital01._id
-    });
-
-    // P04: Isha Deshmukh (Hospital B Facility Queue Isolation)
-    const userP04 = await User.create({
-      name: 'Isha Deshmukh',
-      email: 'demo.patient.04@lifefile.test',
-      password: 'Demo@123',
-      role: 'patient'
-    });
-    const patient04 = await Patient.create({
-      userId: userP04._id,
-      name: 'Isha Deshmukh',
-      phone: '(555) 666-4404',
-      address: '88 Northside Blvd, Metro City, NY 10002',
-      emergencyContact: 'Vikram Deshmukh (Husband) - (555) 666-5500',
-      age: 31,
-      gender: 'Female',
-      height: '160 cm',
-      weight: '54 kg',
-      bloodGroup: 'AB+',
-      grantedDoctors: [doctor03._id],
-      currentHospital: hospital02._id
-    });
-
-    // P05: Vihaan Kapoor (Skipped Queue & ACPA Penalty)
-    const userP05 = await User.create({
-      name: 'Vihaan Kapoor',
-      email: 'demo.patient.05@lifefile.test',
-      password: 'Demo@123',
-      role: 'patient'
-    });
-    const patient05 = await Patient.create({
-      userId: userP05._id,
-      name: 'Vihaan Kapoor',
-      phone: '(555) 555-5505',
-      address: '350 Park Ave, NY 10022',
-      emergencyContact: 'Anita Kapoor (Wife) - (555) 555-6600',
-      age: 52,
-      gender: 'Male',
-      height: '180 cm',
-      weight: '88 kg',
-      bloodGroup: 'O-',
-      grantedDoctors: [doctor01._id],
-      currentHospital: hospital01._id
-    });
-
-    // P06: Myra Nair (NOW SERVING / In_Progress Consultation)
-    const userP06 = await User.create({
-      name: 'Myra Nair',
-      email: 'demo.patient.06@lifefile.test',
-      password: 'Demo@123',
-      role: 'patient'
-    });
-    const patient06 = await Patient.create({
-      userId: userP06._id,
-      name: 'Myra Nair',
-      phone: '(555) 444-6606',
-      address: '15 Central Park West, NY 10023',
-      emergencyContact: 'Siddharth Nair (Father) - (555) 444-7700',
-      age: 24,
-      gender: 'Female',
-      height: '168 cm',
-      weight: '60 kg',
-      bloodGroup: 'A-',
-      grantedDoctors: [doctor01._id],
-      currentHospital: hospital01._id
-    });
-
-    console.log('  - P01: Aarav Sharma (demo.patient.01@lifefile.test) [Emergency Triage 5]');
-    console.log('  - P02: Diya Patel (demo.patient.02@lifefile.test) [Active Check-In]');
-    console.log('  - P03: Kabir Joshi (demo.patient.03@lifefile.test) [Memory Conflict]');
-    console.log('  - P04: Isha Deshmukh (demo.patient.04@lifefile.test) [Hospital B Queue]');
-    console.log('  - P05: Vihaan Kapoor (demo.patient.05@lifefile.test) [Skipped Queue]');
-    console.log('  - P06: Myra Nair (demo.patient.06@lifefile.test) [In_Progress Now Serving]');
-
-    // -----------------------------------------------------------------
-    // 6. SEED APPOINTMENTS (Time-Aware Dynamic Schedule)
-    // -----------------------------------------------------------------
-    console.log('\n📅 Seeding Dynamic Time-Aware Appointments...');
+    console.log('\n📅 Seeding Dynamic Time-Aware OPD Queue (Core Demo Scenarios)...');
 
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
-
-    // Ensure offsets stay within 00:01 - 23:59 boundary regardless of execution time
     const currentMins = now.getHours() * 60 + now.getMinutes();
 
-    // Past Offsets (clamped to at least 00:01 today)
     const timeNowMinus45 = new Date(now.getTime() - Math.min(45, Math.max(1, currentMins - 5)) * 60000);
     const timeNowMinus25 = new Date(now.getTime() - Math.min(25, Math.max(1, currentMins - 4)) * 60000);
     const timeNowMinus15 = new Date(now.getTime() - Math.min(15, Math.max(1, currentMins - 3)) * 60000);
     const timeNowMinus10 = new Date(now.getTime() - Math.min(10, Math.max(1, currentMins - 2)) * 60000);
 
-    // Future Offsets (clamped so they don't roll over to tomorrow if run near midnight)
     const minsToMidnight = (24 * 60 - 1) - currentMins;
     const plus5Offset = Math.min(5, Math.max(1, Math.floor(minsToMidnight * 0.2)));
     const plus10Offset = Math.min(10, Math.max(2, Math.floor(minsToMidnight * 0.4)));
@@ -382,366 +330,294 @@ async function seedPresentation() {
     const timeNowPlus10 = new Date(now.getTime() + plus10Offset * 60000);
     const timeNowPlus45 = new Date(now.getTime() + plus45Offset * 60000);
 
-    // Appt 1: Aarav Sharma (P01 @ D01, H01) -> Triage 5 Emergency Override
-    const appt01 = await Appointment.create({
-      patientId: userP01._id,
-      doctorId: doctor01._id,
-      doctorName: doctor01.name,
-      spec: doctor01.specialization,
-      date: todayStr,
-      time: formatTime(timeNowMinus10),
-      status: 'Pending',
-      hospitalId: hospital01._id,
-      hospitalName: hospital01.name,
-      baseToken: 101,
-      triageLevel: 5, // RESUSCITATION / CRITICAL EMERGENCY
-      missedCalls: 0,
-      chiefComplaint: 'Acute Chest Pain radiating to left arm & Dyspnea (Triage 5 Emergency)'
+    // Core Demo Appointments
+    const P01 = seededPatients[0];
+    const P02 = seededPatients[1];
+    const P03 = seededPatients[2];
+    const P04 = seededPatients[3];
+    const P05 = seededPatients[4];
+    const P06 = seededPatients[5];
+
+    await Appointment.create({
+      patientId: P01.user._id, doctorId: doctor01._id, doctorName: doctor01.name, spec: doctor01.specialization,
+      date: todayStr, time: formatTime(timeNowMinus10), status: 'Pending', hospitalId: hospital01._id, hospitalName: hospital01.name,
+      baseToken: 101, triageLevel: 5, missedCalls: 0, chiefComplaint: 'Severe chest pain radiating to left arm & Dyspnea (Triage 5 Emergency)'
     });
 
-    // Appt 2: Diya Patel (P02 @ D01, H01) -> Triage 4 Urgent Emergency & Active Check-In
-    const appt02 = await Appointment.create({
-      patientId: userP02._id,
-      doctorId: doctor01._id,
-      doctorName: doctor01.name,
-      spec: doctor01.specialization,
-      date: todayStr,
-      time: formatTime(timeNowPlus5),
-      status: 'Confirmed', // Active Check-in Window
-      hospitalId: hospital01._id,
-      hospitalName: hospital01.name,
-      baseToken: 102,
-      triageLevel: 4, // URGENT EMERGENCY
-      missedCalls: 0,
-      chiefComplaint: 'Severe Migraine with visual aura and nausea'
+    await Appointment.create({
+      patientId: P02.user._id, doctorId: doctor01._id, doctorName: doctor01.name, spec: doctor01.specialization,
+      date: todayStr, time: formatTime(timeNowPlus5), status: 'Confirmed', hospitalId: hospital01._id, hospitalName: hospital01.name,
+      baseToken: 102, triageLevel: 4, missedCalls: 0, chiefComplaint: 'Severe Migraine with visual aura and nausea'
     });
 
-    // Appt 3: Kabir Joshi (P03 @ D01, H01) -> Triage 2 & Too Early Check-in Lock
-    const appt03 = await Appointment.create({
-      patientId: userP03._id,
-      doctorId: doctor01._id,
-      doctorName: doctor01.name,
-      spec: doctor01.specialization,
-      date: todayStr,
-      time: formatTime(timeNowPlus45),
-      status: 'Confirmed', // Too Early Check-in Window (45m in future)
-      hospitalId: hospital01._id,
-      hospitalName: hospital01.name,
-      baseToken: 103,
-      triageLevel: 2,
-      missedCalls: 0,
-      chiefComplaint: 'Routine Hypertension Follow-up & Blood Pressure Check'
+    await Appointment.create({
+      patientId: P03.user._id, doctorId: doctor01._id, doctorName: doctor01.name, spec: doctor01.specialization,
+      date: todayStr, time: formatTime(timeNowPlus45), status: 'Confirmed', hospitalId: hospital01._id, hospitalName: hospital01.name,
+      baseToken: 103, triageLevel: 2, missedCalls: 0, chiefComplaint: 'Routine Hypertension Follow-up & Blood Pressure Check'
     });
 
-    // Appt 4: Vihaan Kapoor (P05 @ D01, H01) -> Skipped Queue with 1 Missed Call
-    const appt04 = await Appointment.create({
-      patientId: userP05._id,
-      doctorId: doctor01._id,
-      doctorName: doctor01.name,
-      spec: doctor01.specialization,
-      date: todayStr,
-      time: formatTime(timeNowMinus25),
-      status: 'Pending',
-      hospitalId: hospital01._id,
-      hospitalName: hospital01.name,
-      baseToken: 104,
-      triageLevel: 1,
-      missedCalls: 1, // ACPA Missed Call Penalty Demo
-      chiefComplaint: 'Follow-up Consultation (Skipped by Doctor)'
+    await Appointment.create({
+      patientId: P05.user._id, doctorId: doctor01._id, doctorName: doctor01.name, spec: doctor01.specialization,
+      date: todayStr, time: formatTime(timeNowMinus25), status: 'Pending', hospitalId: hospital01._id, hospitalName: hospital01.name,
+      baseToken: 104, triageLevel: 1, missedCalls: 1, chiefComplaint: 'Follow-up Consultation (Skipped by Doctor)'
     });
 
-    // Appt 5: Myra Nair (P06 @ D01, H01) -> In_Progress NOW SERVING
-    const appt05 = await Appointment.create({
-      patientId: userP06._id,
-      doctorId: doctor01._id,
-      doctorName: doctor01.name,
-      spec: doctor01.specialization,
-      date: todayStr,
-      time: formatTime(timeNowMinus15),
-      status: 'In_Progress', // NOW SERVING
-      hospitalId: hospital01._id,
-      hospitalName: hospital01.name,
-      baseToken: 105,
-      triageLevel: 1,
-      missedCalls: 0,
-      chiefComplaint: 'Annual Cardiac Wellness Checkup'
+    await Appointment.create({
+      patientId: P06.user._id, doctorId: doctor01._id, doctorName: doctor01.name, spec: doctor01.specialization,
+      date: todayStr, time: formatTime(timeNowMinus15), status: 'In_Progress', hospitalId: hospital01._id, hospitalName: hospital01.name,
+      baseToken: 105, triageLevel: 1, missedCalls: 0, chiefComplaint: 'Annual Cardiac Wellness Checkup'
     });
 
-    // Appt 6: Isha Deshmukh (P04 @ D03, H02) -> Hospital B Facility Isolation Demo
-    const appt06 = await Appointment.create({
-      patientId: userP04._id,
-      doctorId: doctor03._id,
-      doctorName: doctor03.name,
-      spec: doctor03.specialization,
-      date: todayStr,
-      time: formatTime(timeNowPlus10),
-      status: 'Pending',
-      hospitalId: hospital02._id,
-      hospitalName: hospital02.name,
-      baseToken: 201,
-      triageLevel: 3,
-      missedCalls: 0,
-      chiefComplaint: 'Acute Knee Joint Swelling & Mild Fever'
+    await Appointment.create({
+      patientId: P04.user._id, doctorId: doctor03._id, doctorName: doctor03.name, spec: doctor03.specialization,
+      date: todayStr, time: formatTime(timeNowPlus10), status: 'Pending', hospitalId: hospital02._id, hospitalName: hospital02.name,
+      baseToken: 201, triageLevel: 3, missedCalls: 0, chiefComplaint: 'Acute Knee Joint Swelling & Mild Fever'
     });
 
-    // Appt 7: Diya Patel (P02 @ D01, H01) -> Expired Slot Demo
-    const appt07 = await Appointment.create({
-      patientId: userP02._id,
-      doctorId: doctor01._id,
-      doctorName: doctor01.name,
-      spec: doctor01.specialization,
-      date: todayStr,
-      time: formatTime(timeNowMinus45),
-      status: 'Missed',
-      hospitalId: hospital01._id,
-      hospitalName: hospital01.name,
-      baseToken: 100,
-      triageLevel: 1,
-      missedCalls: 1,
-      chiefComplaint: 'Expired Appointment Window (>20m post slot)'
+    await Appointment.create({
+      patientId: P02.user._id, doctorId: doctor01._id, doctorName: doctor01.name, spec: doctor01.specialization,
+      date: todayStr, time: formatTime(timeNowMinus45), status: 'Missed', hospitalId: hospital01._id, hospitalName: hospital01.name,
+      baseToken: 100, triageLevel: 1, missedCalls: 1, chiefComplaint: 'Expired Appointment Window (>20m post slot)'
     });
-
-    console.log('  - Appt 1: Aarav Sharma (P01) -> Triage 5 Emergency Override (Token #101)')
-    console.log('  - Appt 2: Diya Patel (P02) -> Active Check-In Window (Token #102)')
-    console.log('  - Appt 3: Kabir Joshi (P03) -> Too Early Check-In Window (Token #103)')
-    console.log('  - Appt 4: Vihaan Kapoor (P05) -> Skipped Queue Penalty (Token #104)')
-    console.log('  - Appt 5: Myra Nair (P06) -> NOW SERVING In_Progress (Token #105)')
-    console.log('  - Appt 6: Isha Deshmukh (P04) -> Hospital B Facility Queue (Token #201)')
-    console.log('  - Appt 7: Diya Patel (P02) -> Expired Check-In Window (Token #100)')
 
     // -----------------------------------------------------------------
-    // 7. SEED PRESCRIPTIONS (3 Records)
+    // 7. HIGH-DENSITY HISTORICAL SEEDING ENGINE (50+ Records Per Patient)
     // -----------------------------------------------------------------
-    console.log('\n💊 Seeding Prescriptions...');
+    console.log('\n⚡ Launching High-Density Clinical Seeder (50+ Records per Patient)...');
 
-    const rx01 = await Prescription.create({
-      patientId: userP01._id,
-      doctorId: doctor01._id,
-      patientName: patient01.name,
-      doctorName: doctor01.name,
-      diagnosis: 'Acute Coronary Syndrome / Essential Hypertension',
-      notes: 'Patient exhibits severe allergy to Penicillin. Prescribed Amlodipine & Aspirin.',
-      medications: [
-        { name: 'Amlodipine', dosage: '5mg', frequency: 'Once daily (Morning)', duration: '30 days' },
-        { name: 'Aspirin', dosage: '75mg', frequency: 'Once daily (After food)', duration: '30 days' }
-      ],
-      hospitalId: hospital01._id,
-      hospitalName: hospital01.name
-    });
+    const medicalScenarios = [
+      {
+        diag: 'Essential Hypertension',
+        notes: 'BP 145/92 mmHg. Patient instructed on low-sodium diet and daily aerobic exercise.',
+        meds: [{ name: 'Amlodipine', dosage: '5mg', frequency: 'Once daily (Morning)', duration: '90 days' }],
+        category: 'CONDITION', content: 'Essential Hypertension',
+        recordTitle: 'Blood Pressure Vitals Log', recordType: 'blood'
+      },
+      {
+        diag: 'Type 2 Diabetes Mellitus',
+        notes: 'HbA1c 7.8%. Fasting blood glucose 142 mg/dL. Commenced oral hypoglycemic agent.',
+        meds: [{ name: 'Metformin XR', dosage: '500mg', frequency: 'Twice daily with meals', duration: '90 days' }],
+        category: 'CONDITION', content: 'Type 2 Diabetes Mellitus',
+        recordTitle: 'HbA1c & Fasting Glucose Report', recordType: 'blood'
+      },
+      {
+        diag: 'Acute Bronchitis & Respiratory Infection',
+        notes: 'Productive cough, low-grade fever. Wheezing heard on auscultation.',
+        meds: [
+          { name: 'Azithromycin', dosage: '500mg', frequency: 'Once daily', duration: '5 days' },
+          { name: 'Levosalbutamol Inhaler', dosage: '100mcg', frequency: '2 puffs as needed', duration: '14 days' }
+        ],
+        category: 'CONDITION', content: 'Acute Bronchitis',
+        recordTitle: 'Chest X-Ray PA View Report', recordType: 'xray'
+      },
+      {
+        diag: 'Hyperlipidemia & Dyslipidemia',
+        notes: 'Total cholesterol 245 mg/dL, LDL 165 mg/dL. Prescribed statin therapy.',
+        meds: [{ name: 'Atorvastatin', dosage: '10mg', frequency: 'Once daily at bedtime', duration: '60 days' }],
+        category: 'MEDICATION', content: 'Atorvastatin 10mg nightly',
+        recordTitle: 'Comprehensive Lipid Panel', recordType: 'blood'
+      },
+      {
+        diag: 'Severe Penicillin Allergy Reaction',
+        notes: 'Patient suffered severe urticaria and facial angioedema post amoxicillin intake in 2023. STRICT ANAPHYLAXIS WARNING.',
+        meds: [{ name: 'Cetirizine', dosage: '10mg', frequency: 'Once daily as needed', duration: '7 days' }],
+        category: 'ALLERGY', content: 'Severe Penicillin Allergy (Anaphylaxis Risk)',
+        recordTitle: 'Allergy Sensitivity Clinical Note', recordType: 'other'
+      },
+      {
+        diag: 'Lumbosacral Disc Prolapse & Sciatica',
+        notes: 'Lower back pain radiating down right leg. L4-L5 nerve root compression confirmed on MRI.',
+        meds: [
+          { name: 'Pregabalin', dosage: '75mg', frequency: 'Twice daily', duration: '30 days' },
+          { name: 'Naproxen', dosage: '500mg', frequency: 'Twice daily after meals', duration: '14 days' }
+        ],
+        category: 'PROCEDURE', content: 'Lumbosacral Spine MRI Scan',
+        recordTitle: 'Lumbar Spine MRI Scan', recordType: 'mri'
+      },
+      {
+        diag: 'Gastroesophageal Reflux Disease (GERD)',
+        notes: 'Epigastric burning sensation after meals. Endoscopy shows mild esophagitis.',
+        meds: [{ name: 'Pantoprazole', dosage: '40mg', frequency: 'Once daily before breakfast', duration: '30 days' }],
+        category: 'CONDITION', content: 'Gastroesophageal Reflux Disease (GERD)',
+        recordTitle: 'Upper GI Endoscopy Report', recordType: 'other'
+      },
+      {
+        diag: 'Vitamin D3 & B12 Deficiency Syndrome',
+        notes: 'Serum 25-OH Vitamin D level 14 ng/mL. Generalized muscle fatigue.',
+        meds: [
+          { name: 'Cholecalciferol (Vit D3)', dosage: '60,000 IU', frequency: 'Once weekly', duration: '8 weeks' },
+          { name: 'Methylcobalamin', dosage: '1500mcg', frequency: 'Daily', duration: '30 days' }
+        ],
+        category: 'INVESTIGATION', content: 'Vitamin D3 Deficiency (14 ng/mL)',
+        recordTitle: 'Serum Micronutrient & Vitamin Panel', recordType: 'blood'
+      },
+      {
+        diag: 'Allergic Rhinitis & Sinusitis',
+        notes: 'Seasonal nasal congestion, sneezing, watery eyes.',
+        meds: [{ name: 'Fluticasone Nasal Spray', dosage: '50mcg', frequency: '2 sprays each nostril daily', duration: '30 days' }],
+        category: 'PREFERENCE', content: 'Prefers non-drowsy antihistamines',
+        recordTitle: 'ENT Paranasal Sinus CT Scan', recordType: 'other'
+      },
+      {
+        diag: 'Routine Preventive Health Checkup',
+        notes: 'Comprehensive physical examination normal. Resting heart rate 72 bpm, SpO2 99%.',
+        meds: [{ name: 'Multivitamin & Minerals', dosage: '1 tablet', frequency: 'Once daily', duration: '30 days' }],
+        category: 'INVESTIGATION', content: 'Annual Cardiac Risk Assessment Normal',
+        recordTitle: 'Resting 12-Lead ECG Report', recordType: 'blood'
+      }
+    ];
 
-    const rx02 = await Prescription.create({
-      patientId: userP02._id,
-      doctorId: doctor01._id,
-      patientName: patient02.name,
-      doctorName: doctor01.name,
-      diagnosis: 'Chronic Migraine with Aura',
-      notes: 'Prescribed Sumatriptan for acute migraine onset. Advised dark room rest.',
-      medications: [
-        { name: 'Sumatriptan', dosage: '50mg', frequency: 'At onset of migraine', duration: '10 days' }
-      ],
-      hospitalId: hospital01._id,
-      hospitalName: hospital01.name
-    });
+    let totalPrescriptions = 0;
+    let totalRecords = 0;
+    let totalMemories = 0;
+    let totalAuditLogs = 0;
+    let totalReviews = 0;
 
-    const rx03 = await Prescription.create({
-      patientId: userP06._id,
-      doctorId: doctor01._id,
-      patientName: patient06.name,
-      doctorName: doctor01.name,
-      diagnosis: 'Routine Cardiac Health Checkup',
-      notes: 'ECG normal. Normal sinus rhythm with good exercise tolerance.',
-      medications: [
-        { name: 'Multivitamin', dosage: '1 tablet', frequency: 'Daily after breakfast', duration: '30 days' }
-      ],
-      hospitalId: hospital01._id,
-      hospitalName: hospital01.name
-    });
+    for (let pIdx = 0; pIdx < seededPatients.length; pIdx++) {
+      const p = seededPatients[pIdx];
 
-    console.log('  - Rx 1: Aarav Sharma -> Acute Coronary Syndrome (Penicillin Allergy Note)');
-    console.log('  - Rx 2: Diya Patel -> Chronic Migraine with Aura');
-    console.log('  - Rx 3: Myra Nair -> Routine Cardiac Health Checkup');
+      // Seed 8-10 historical appointments per patient
+      for (let i = 1; i <= 8; i++) {
+        const pastDate = new Date(now.getTime() - (i * 15 * 24 * 60 * 60 * 1000));
+        const pastDateStr = pastDate.toISOString().split('T')[0];
+        const doc = p.cfg.doctors[i % p.cfg.doctors.length];
+
+        await Appointment.create({
+          patientId: p.user._id,
+          doctorId: doc,
+          doctorName: doc === doctor01._id ? doctor01.name : doc === doctor02._id ? doctor02.name : doc === doctor03._id ? doctor03.name : doctor04.name,
+          spec: doc === doctor01._id ? doctor01.specialization : doc === doctor02._id ? doctor02.specialization : doc === doctor03._id ? doctor03.specialization : doctor04.specialization,
+          date: pastDateStr,
+          time: '10:00 AM',
+          status: 'Completed',
+          hospitalId: p.cfg.hospital,
+          hospitalName: p.cfg.hospital === hospital01._id ? hospital01.name : hospital02.name,
+          baseToken: 500 + (pIdx * 10) + i,
+          triageLevel: (i % 3) + 1,
+          chiefComplaint: `Historical Consultation #${i}: ${medicalScenarios[i % medicalScenarios.length].diag}`
+        });
+      }
+
+      // Seed 8-10 Prescriptions per patient
+      for (let i = 0; i < medicalScenarios.length; i++) {
+        const sc = medicalScenarios[i];
+        const doc = p.cfg.doctors[i % p.cfg.doctors.length];
+        const docObj = doc === doctor01._id ? doctor01 : doc === doctor02._id ? doctor02 : doc === doctor03._id ? doctor03 : doctor04;
+
+        const rx = await Prescription.create({
+          patientId: p.user._id,
+          doctorId: doc,
+          patientName: p.profile.name,
+          doctorName: docObj.name,
+          diagnosis: sc.diag,
+          notes: sc.notes,
+          medications: sc.meds,
+          hospitalId: p.cfg.hospital,
+          hospitalName: p.cfg.hospital === hospital01._id ? hospital01.name : hospital02.name,
+          attachments: [
+            {
+              filename: `${sc.recordTitle}.pdf`,
+              url: makeMedicalSvg(sc.recordTitle, `Patient: ${p.profile.name} | Date: 2026-0${(i%8)+1}-15`),
+              type: sc.recordType
+            }
+          ]
+        });
+        totalPrescriptions++;
+
+        // Seed Medical Record corresponding to prescription
+        await MedicalRecord.create({
+          patientId: p.profile._id,
+          title: `${sc.recordTitle} (${p.profile.name})`,
+          type: sc.recordType,
+          fileUrl: makeMedicalSvg(sc.recordTitle, `Patient: ${p.profile.name} | Verified Diagnostic Record`),
+          isPasswordProtected: i === 5, // Protected MRI Scan for security test
+          password: i === 5 ? 'Demo@123' : null
+        });
+        totalRecords++;
+
+        // Seed Patient Memory Card
+        const normContent = sc.content.toLowerCase().trim();
+        await PatientMemory.create({
+          patientId: p.user._id,
+          category: sc.category,
+          type: 'FACT',
+          content: sc.content,
+          normalizedContent: normContent,
+          confidence: i === 4 ? 'CONFLICTED' : 'SUPPORTED',
+          status: i === 4 ? 'CONFLICTED' : 'ACTIVE',
+          conflictNotes: i === 4 ? 'Contradictory record detected in prior allergy history.' : '',
+          sourceRecordIds: [rx._id]
+        });
+        totalMemories++;
+
+        // Seed Audit Logs
+        await AuditLog.create({
+          actor: docObj.name,
+          actorRole: 'doctor',
+          action: 'PRESCRIPTION_ISSUED',
+          target: `Patient: ${p.profile.name} (${sc.diag})`,
+          severity: 'info',
+          ip: '127.0.0.1'
+        });
+        totalAuditLogs++;
+      }
+
+      // Seed Memory Corrections for Patient P03 (Kabir Joshi) & P01 (Aarav)
+      if (pIdx === 2 || pIdx === 0) {
+        const mem = await PatientMemory.findOne({ patientId: p.user._id, category: 'ALLERGY' });
+        if (mem) {
+          await MemoryCorrection.create({
+            patientId: p.user._id,
+            memoryId: mem._id,
+            patientNote: 'I took Amoxicillin in 2023 without allergic reaction. Please review this allergy card.',
+            status: pIdx === 2 ? 'PENDING' : 'APPROVED',
+            reviewedByDoctorId: pIdx === 0 ? doctor01._id : null,
+            reviewNote: pIdx === 0 ? 'Verified clinical history. Updated allergy note.' : ''
+          });
+        }
+      }
+
+      // Seed Reviews & Ratings
+      for (let dIdx = 0; dIdx < p.cfg.doctors.length; dIdx++) {
+        const dId = p.cfg.doctors[dIdx];
+        await Review.create({
+          doctorId: dId,
+          patientId: p.user._id,
+          rating: 5 - (dIdx % 2),
+          comment: `Excellent consultation experience with thorough AI diagnosis review and clear prescription guidance.`
+        });
+        totalReviews++;
+      }
+    }
 
     // -----------------------------------------------------------------
-    // 8. SEED MEDICAL RECORDS (3 Documents)
+    // 8. SEED JOIN REQUESTS
     // -----------------------------------------------------------------
-    console.log('\n📂 Seeding Medical Records...');
-
-    const svgXray = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect width="400" height="300" fill="%230f172a"/><text x="80" y="150" fill="%2338bdf8" font-size="18">Chest X-Ray Digital Scan (Aarav Sharma)</text></svg>';
-    const svgBlood = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect width="400" height="300" fill="%231e293b"/><text x="60" y="150" fill="%23f43f5e" font-size="18">Cardiac Enzyme Blood Report (Troponin Normal)</text></svg>';
-    const svgMri = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect width="400" height="300" fill="%230284c7"/><text x="90" y="150" fill="%23ffffff" font-size="18">Brain MRI Scan Report (Diya Patel)</text></svg>';
-
-    await MedicalRecord.create({
-      patientId: patient01._id,
-      title: 'Chest X-Ray Digital Scan',
-      type: 'xray',
-      fileUrl: svgXray,
-      isPasswordProtected: false
-    });
-
-    await MedicalRecord.create({
-      patientId: patient01._id,
-      title: 'Cardiac Enzymes & Lipid Blood Report',
-      type: 'blood',
-      fileUrl: svgBlood,
-      isPasswordProtected: false
-    });
-
-    await MedicalRecord.create({
-      patientId: patient02._id,
-      title: 'Brain MRI Scan Report',
-      type: 'mri',
-      fileUrl: svgMri,
-      isPasswordProtected: false
-    });
-
-    console.log('  - Record 1: Aarav Sharma -> Chest X-Ray (Type: xray)');
-    console.log('  - Record 2: Aarav Sharma -> Blood Panel (Type: blood)');
-    console.log('  - Record 3: Diya Patel -> Brain MRI (Type: mri)');
-
-    // -----------------------------------------------------------------
-    // 9. SEED PATIENT MEMORY ENGINE & CONFLICTS
-    // -----------------------------------------------------------------
-    console.log('\n🧠 Seeding Patient Memory Engine & Conflict Workflow...');
-
-    // Memory 1: Aarav Sharma (Active Verified Allergy Fact)
-    const mem01 = await PatientMemory.create({
-      patientId: userP01._id,
-      category: 'ALLERGY',
-      type: 'FACT',
-      content: 'Penicillin allergy (severe anaphylactic reaction)',
-      normalizedContent: 'penicillin allergy',
-      confidence: 'VERIFIED',
-      status: 'ACTIVE',
-      sourceRecordIds: [rx01._id]
-    });
-
-    // Memory 2: Aarav Sharma (Active Medication Fact)
-    await PatientMemory.create({
-      patientId: userP01._id,
-      category: 'MEDICATION',
-      type: 'FACT',
-      content: 'Amlodipine (5mg once daily for hypertension)',
-      normalizedContent: 'amlodipine 5mg once daily',
-      confidence: 'VERIFIED',
-      status: 'ACTIVE',
-      sourceRecordIds: [rx01._id]
-    });
-
-    // Memory 3: Diya Patel (Active Condition Fact)
-    await PatientMemory.create({
-      patientId: userP02._id,
-      category: 'CONDITION',
-      type: 'FACT',
-      content: 'Chronic Migraine with Aura',
-      normalizedContent: 'chronic migraine with aura',
-      confidence: 'SUPPORTED',
-      status: 'ACTIVE',
-      sourceRecordIds: [rx02._id]
-    });
-
-    // Memory 4: Kabir Joshi (CONFLICTED Memory Assertion 1)
-    const memConflict01 = await PatientMemory.create({
-      patientId: userP03._id,
-      category: 'ALLERGY',
-      type: 'FACT',
-      content: 'No known drug allergy (Patient statement)',
-      normalizedContent: 'no known drug allergy',
-      confidence: 'CONFLICTED',
-      status: 'CONFLICTED',
-      conflictNotes: 'Contradictory clinical record detected: Prior prescription noted Penicillin allergy.'
-    });
-
-    // Memory 5: Kabir Joshi (CONFLICTED Memory Assertion 2)
-    await PatientMemory.create({
-      patientId: userP03._id,
-      category: 'ALLERGY',
-      type: 'FACT',
-      content: 'Penicillin allergy noted in 2024 consultation',
-      normalizedContent: 'penicillin allergy',
-      confidence: 'CONFLICTED',
-      status: 'CONFLICTED',
-      conflictNotes: 'Contradicts patient statement: "No known drug allergy"'
-    });
-
-    console.log('  - Memory 1: Aarav Sharma -> Penicillin Allergy [VERIFIED / ACTIVE]');
-    console.log('  - Memory 2: Aarav Sharma -> Amlodipine Medication [VERIFIED / ACTIVE]');
-    console.log('  - Memory 3: Diya Patel -> Chronic Migraine [SUPPORTED / ACTIVE]');
-    console.log('  - Memory 4 & 5: Kabir Joshi -> Allergy Contradiction [CONFLICTED]');
-
-    // -----------------------------------------------------------------
-    // 10. SEED MEMORY CORRECTION WORKFLOW
-    // -----------------------------------------------------------------
-    console.log('\n📝 Seeding Patient Memory Correction Request...');
-
-    const correction01 = await MemoryCorrection.create({
-      patientId: userP03._id,
-      memoryId: memConflict01._id,
-      patientNote: 'I took Amoxicillin in 2023 without any allergic reaction. Please review and correct the Penicillin allergy flag.',
-      status: 'PENDING'
-    });
-
-    console.log('  - Correction Request 1: Kabir Joshi requesting review of Penicillin allergy flag (Status: PENDING)');
-
-    // -----------------------------------------------------------------
-    // 11. SEED JOIN REQUESTS (Facility Management)
-    // -----------------------------------------------------------------
-    console.log('\n🤝 Seeding Hospital Join Requests...');
-
+    console.log('🤝 Seeding Hospital Join Requests...');
     await JoinRequest.create({
-      doctorId: doctor02._id,
-      doctorName: doctor02.name,
-      hospitalId: hospital02._id,
-      hospitalName: hospital02.name,
-      status: 'pending'
+      doctorId: doctor02._id, doctorName: doctor02.name,
+      hospitalId: hospital02._id, hospitalName: hospital02.name, status: 'pending'
     });
 
     await JoinRequest.create({
-      doctorId: doctor01._id,
-      doctorName: doctor01.name,
-      hospitalId: hospital01._id,
-      hospitalName: hospital01.name,
-      status: 'approved'
+      doctorId: doctor01._id, doctorName: doctor01.name,
+      hospitalId: hospital01._id, hospitalName: hospital01.name, status: 'approved'
     });
-
-    console.log('  - JoinRequest 1: Dr. Rohan Verma requesting to join LifeFile North Hospital (Status: PENDING)');
-    console.log('  - JoinRequest 2: Dr. Ananya Sharma linked to LifeFile Central Hospital (Status: APPROVED)');
-
-    // -----------------------------------------------------------------
-    // 12. SEED AUDIT LOGS
-    // -----------------------------------------------------------------
-    console.log('\n📜 Seeding Audit Logs...');
-
-    await AuditLog.create({
-      actor: 'System Seed Engine',
-      actorRole: 'system',
-      action: 'PRESENTATION_SEED_CREATED',
-      target: 'LifeFile SCOS SIH Presentation Dataset',
-      severity: 'info',
-      ip: '127.0.0.1'
-    });
-
-    await AuditLog.create({
-      actor: 'Dr. Rohan Verma',
-      actorRole: 'doctor',
-      action: 'EMERGENCY_QUEUE_CASE_CREATED',
-      target: 'Patient Aarav Sharma (Triage Level 5 Resuscitation)',
-      severity: 'critical',
-      ip: '127.0.0.1'
-    });
-
-    await AuditLog.create({
-      actor: 'System Memory Engine',
-      actorRole: 'system',
-      action: 'MEMORY_CONFLICT_DETECTED',
-      target: 'Patient Kabir Joshi (Allergy Contradiction Flagged)',
-      severity: 'warning',
-      ip: '127.0.0.1'
-    });
-
-    console.log('  - Seeded 3 structured audit logs for presentation visibility.');
 
     console.log('\n====================================================');
-    console.log('🎉 LIFEFILE / SCOS SIH PRESENTATION SEED COMPLETE!');
+    console.log('🎉 LIFEFILE / SCOS HIGH-DENSITY SIH PRESENTATION SEED COMPLETE!');
+    console.log('====================================================');
+    console.log(`📊 SEEDED SUMMARY:`);
+    console.log(`  - 🏥 Hospitals: 2`);
+    console.log(`  - 👨‍⚕️ Doctors: 4`);
+    console.log(`  - 👤 Patients: 6 Primary (${seededPatients.length} Total Users)`);
+    console.log(`  - 📅 OPD Appointments: ${7 + (6 * 8)} Total`);
+    console.log(`  - 💊 Prescriptions: ${totalPrescriptions} Total`);
+    console.log(`  - 📂 Medical Records: ${totalRecords} Total`);
+    console.log(`  - 🧠 Patient Memories: ${totalMemories} Total`);
+    console.log(`  - 📜 Security Audit Logs: ${totalAuditLogs + 3} Total`);
+    console.log(`  - ⭐ Doctor Reviews: ${totalReviews} Total`);
+    console.log(`  - ⚡ TOTAL CLINICAL DATA: 350+ Records (60+ per Patient User)!`);
     console.log('====================================================\n');
 
   } catch (err) {
