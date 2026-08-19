@@ -3,8 +3,8 @@
 **Frontend URL:** `http://localhost:5173`  
 **Backend URL:** `http://localhost:5000`  
 **Database:** MongoDB (`process.env.MONGO_URI`)  
-**Real-Time Bus:** Apache Kafka + Socket.IO  
-**Seeding Engine:** 100% Dynamic 24/7 Time-Aware Offset Engine  
+**Real-Time Bus:** Apache Kafka + Socket.IO (with 4s HTTP polling failsafe resilience)  
+**Seeding Engine:** Mega-Scale Direct OPD Queue Seeding Engine (50 Patients, 15 Doctors, 5 Hospitals)  
 
 ---
 
@@ -12,15 +12,15 @@
 
 > Run all commands directly from the project root folder (`cd "e:\ie proj"`).
 
-### 🛠️ Pre-Presentation Setup (Run before live demo):
+### 🛠️ Pre-Presentation Setup (Run 2 Minutes Before Judges Arrive):
 ```powershell
-# 1. Stop old background processes
+# 1. Stop old background node processes
 npm run stop:all
 
-# 2. Clear all database collections completely (Optional Fresh Start)
+# 2. Clear all database collections completely (Fresh Start)
 npm run clear-db
 
-# 3. Reset database with 24/7 time-aware presentation offsets
+# 3. Seed 50+ UNIQUE Patients, 15 Doctors, 5 Hospitals DIRECTLY into Active Queues
 npm run seed:presentation -- --confirm
 
 # 4. Start Frontend & Backend concurrently
@@ -35,20 +35,26 @@ npm run clear-db
 
 ### 📊 Live Database CLI Inspector (To show technical judges raw backend data):
 ```powershell
+# Displays clean ASCII tables of Users, 50 Active Queue Tokens, AI Memories, & Audit Logs
 npm run inspect:db
 ```
 
 ---
 
-## 🕒 2. 24/7 TIME-INDEPENDENCE GUARANTEE
+## 🕒 2. 24/7 TIME-INDEPENDENCE & MEGA-SCALE QUEUE GUARANTEE
 
 The presentation seed engine calculates all appointment slots dynamically relative to your **current clock**:
 
-* **Patient 1 (Aarav Sharma - Emergency Override):** Scheduled for `NOW - 10m` (Triage Level 5 Red Code).
-* **Patient 2 (Diya Patel - Active Check-In Window):** Scheduled for `NOW + 5m` (Check-In button is **ACTIVE**).
-* **Patient 3 (Kabir Joshi - Locked Check-In Window):** Scheduled for `NOW + 45m` (Check-In button is **LOCKED**).
-* **Patient 5 (Vihaan Kapoor - Skipped Penalty):** Scheduled for `NOW - 25m` (1 Missed Call Penalty applied).
-* **Patient 6 (Myra Nair - NOW SERVING):** Scheduled for `NOW - 15m` (`In_Progress Consultation`).
+* **50+ UNIQUE Patients Placed Directly in Active Queues:**
+  * **Position #1 for EVERY Doctor:** Status is set to **`In_Progress`** (NOW SERVING in doctor consultation dashboard).
+  * **Position #2 for EVERY Doctor:** Status is set to **`Confirmed`** with active check-in window ($T_{\text{now}} + 5\text{m}$).
+  * **Positions #3 to #4 for EVERY Doctor:** Status is set to **`Confirmed`** / **`Pending`** queued up for appointment slots today.
+* **5 Hospitals & 15 Doctors Seeded at Once:**
+  * **LifeFile Central Hospital:** Tokens `#101` to `#115` assigned across Cardiology, Emergency Trauma, Pulmonology.
+  * **LifeFile North Hospital:** Tokens `#201` to `#215` assigned across Orthopedics, General OPD, Gastroenterology, Rheumatology.
+  * **Metro City Trauma Institute:** Tokens `#301` to `#315` assigned across Neurology, Nephrology.
+  * **Apex Suburb Specialty Care:** Tokens `#401` to `#415` assigned across ENT, Endocrinology, Oncology, Psychiatry.
+  * **St. Jude Children & Family:** Tokens `#501` to `#515` assigned across Pediatrics, Dermatology, Allergy.
 
 ---
 
@@ -64,9 +70,10 @@ The presentation seed engine calculates all appointment slots dynamically relati
 | **Doctor 1** | Dr. Ananya Sharma | `demo.doctor.ananya@lifefile.test` | `Demo@123` | Senior Cardiologist. ACPA Queue & Emergency Override. |
 | **Doctor 2** | Dr. Rohan Verma | `demo.doctor.rohan@lifefile.test` | `Demo@123` | Emergency Specialist. Pending affiliation to North Hospital. |
 | **Doctor 3** | Dr. Sara Khan | `demo.doctor.sara@lifefile.test` | `Demo@123` | General Medicine @ North Hospital (Isolated Queue). |
-| **Patient 1** | Aarav Sharma | `demo.patient.01@lifefile.test` | `Demo@123` | Triage Level 5, Medical Memory, Allergy Conflict. |
+| **Patient 1** | Aarav Sharma | `demo.patient.01@lifefile.test` | `Demo@123` | Triage Level 5 Emergency, Cardiology Profile, Penicillin Allergy Conflict. |
 | **Patient 2** | Diya Patel | `demo.patient.02@lifefile.test` | `Demo@123` | Active Check-In Window (`NOW + 5m`), Brain MRI report. |
 | **Patient 3** | Kabir Joshi | `demo.patient.03@lifefile.test` | `Demo@123` | Check-In Locked (`NOW + 45m`), Memory Contradiction. |
+| **Patients 4-50** | Isha, Vihaan, Myra, Rohan, Ananya, etc. | `demo.patient.04@lifefile.test` $\rightarrow$ `demo.patient.50@lifefile.test` | `Demo@123` | 50 UNIQUE Patient Accounts across 15 medical specialties, all directly in active queues! |
 
 ---
 
@@ -123,15 +130,15 @@ The presentation seed engine calculates all appointment slots dynamically relati
 * **Action:** In Doctor Consultation view for Aarav Sharma, view the **AI Clinical Memory** panel.
 * **What to Show Judges:** Highlight the red **CONFLICTED / ALLERGY WARNING** badge on Penicillin.
 * **Verbatim Script:**
-  > *"LifeFile features an AI-powered Patient Clinical Memory Engine. It aggregates medical history across past visits. Here, it flags an active Penicillin allergy conflict before the doctor prescribes medication, preventing dangerous drug interaction errors."*
+  > *"LifeFile features an AI-powered Patient Clinical Memory Engine powered by Google Gemini 1.5 Flash. It aggregates medical history across past visits. Here, it flags an active Penicillin allergy conflict before the doctor prescribes medication, preventing dangerous drug interaction errors."*
 
 ---
 
-### 📍 STEP 6: Multi-Facility Data Isolation
+### 📍 STEP 6: Multi-Facility Data Isolation Across 5 Hospitals
 * **Action:** Log in as **Doctor 3 (Dr. Sara Khan)** at **LifeFile North Hospital**.
-* **What to Show Judges:** Her queue contains **only Isha Deshmukh (P04)**. Zero data from Central Hospital.
+* **What to Show Judges:** Her queue contains **only North Hospital patients**. Zero data from Central Hospital.
 * **Verbatim Script:**
-  > *"LifeFile enforces strict multi-tenant facility isolation at the database layer. Doctor queues and patient lists are strictly scoped to the active hospital facility context, ensuring zero data leakage across hospital networks."*
+  > *"LifeFile enforces strict multi-tenant facility isolation at the database layer. Doctor queues and patient lists are strictly scoped to the active hospital facility context across all 5 hospitals, ensuring zero data leakage across network boundaries."*
 
 ---
 
@@ -140,9 +147,9 @@ The presentation seed engine calculates all appointment slots dynamically relati
   ```powershell
   npm run inspect:db
   ```
-* **What to Show Judges:** Point out the clean ASCII tabular output displaying Users, Queue Tokens, Clinical Memory, and Audit Trail.
+* **What to Show Judges:** Point out the clean ASCII tabular output displaying 50 Active Queue Tokens, Users, Clinical Memory, and Audit Trail.
 * **Verbatim Script:**
-  > *"For complete system transparency, our CLI database inspection tool gives technical judges an instant, real-time audit matrix of database state, queue priority scores, and security audit logs."*
+  > *"For complete system transparency, our CLI database inspection tool gives technical judges an instant, real-time audit matrix of database state, 50 active queue priority scores, and security audit logs."*
 
 ---
 
@@ -176,7 +183,7 @@ If technical judges ask *"Can you show us the backend code, ACPA scoring formula
   npm run inspect:db
   ```
 * **What to Point Out:**
-  * **Queue Table:** Show calculated CEP Priority Scores, Triage Levels (1-5), and Missed Call Penalties.
+  * **Queue Table:** Show calculated CEP Priority Scores for 50 active patients across 15 doctors.
   * **Patient Memory Table:** Show extracted facts and `CONFLICTED` status flags.
   * **Audit Trail Table:** Show real-time security logs and emergency overrides.
 
@@ -230,6 +237,7 @@ If technical judges ask *"Can you show us the backend code, ACPA scoring formula
 
 | Feature | Udhay 2025 (Last Year) | LifeFile / SCOS (SIH 2026) |
 | :--- | :--- | :--- |
+| **Queue Scale** | Single Doctor static list | **Mega-Scale Engine:** 50 Patients, 15 Doctors across 5 Hospitals in active queues at once |
 | **Queue Logic** | Basic FIFO (First-In, First-Out) static list | **ACPA Engine:** Dynamic Triage Level (1-5) + Wait Aging + Skip Penalty |
 | **Triage** | Manual checkbox input | **Real-Time NLP Symptom Classifier** during booking |
 | **Crowd Control** | Unrestricted check-in anytime | **Dynamic Time-Lock Check-In Window** (Opens 15m pre-slot) |
@@ -260,4 +268,3 @@ If technical judges ask *"Can you show us the backend code, ACPA scoring formula
 * **How to WIN:** **Deliver the exact built-in defense answers:**
   * **Anti-Starvation Answer:** *"ACPA includes an exponential wait-aging multiplier ($\text{waitMinutes}^{1.2} \times 0.1$), guaranteeing routine patients wait within bounds."*
   * **Network Resilience Answer:** *"Apache Kafka + Socket.IO streaming with an automated 4-second HTTP polling fallback ensures zero UI lag."*
-
