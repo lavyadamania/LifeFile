@@ -210,18 +210,50 @@ router.get('/:id/ai-summary', auth, async (req, res) => {
       return res.json({ summary: "⚠️ **AI Not Configured**: Please add a `GEMINI_API_KEY` to the backend `.env` file to enable AI Summarization." });
     }
 
-    const { GoogleGenAI } = require('@google/genai');
-    const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
-      contents: prompt,
-    });
+    let summaryText = "";
+    try {
+      const { GoogleGenAI } = require('@google/genai');
+      const ai = new GoogleGenAI({ apiKey });
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.6-flash',
+        contents: prompt,
+      });
+      summaryText = response.text;
+    } catch (aiErr) {
+      console.warn(`⚠️ Gemini API Notice (${aiErr.status || 'Rate Limit'}): Falling back to Deterministic Summary Engine.`);
+      
+      // Deterministic Fallback Summary when Gemini API is rate-limited (429) or unavailable (503)
+      summaryText = `### 📋 Clinical Summary (Deterministic Engine)\n\n`;
+      summaryText += `*Note: Generated via SCOS Deterministic Summary Engine (Gemini API quota paused).* \n\n`;
+      summaryText += `**Patient Name:** ${patient.name}\n\n`;
+      
+      summaryText += `#### 💊 Diagnoses & Prescriptions (${prescriptions.length} Records)\n`;
+      if (prescriptions.length === 0) {
+        summaryText += `- No recorded prescription history.\n`;
+      } else {
+        prescriptions.forEach(p => {
+          const dateStr = new Date(p.createdAt).toLocaleDateString();
+          summaryText += `- **${dateStr}** (Dr. ${p.doctorName}): **${p.diagnosis}**\n`;
+          if (p.medications && p.medications.length > 0) {
+            summaryText += `  - *Medications:* ${p.medications.map(m => `${m.name} (${m.dosage})`).join(', ')}\n`;
+          }
+        });
+      }
 
-    res.json({ summary: response.text });
+      summaryText += `\n#### 📂 Uploaded Medical Records (${records.length} Documents)\n`;
+      if (records.length === 0) {
+        summaryText += `- No external medical records uploaded.\n`;
+      } else {
+        records.forEach(r => {
+          summaryText += `- **${r.title}** (${r.type})\n`;
+        });
+      }
+    }
+
+    res.json({ summary: summaryText });
   } catch (err) {
-    console.log("AI summary patientId:", req.params.id);
-    console.error("AI SUMMARY ERROR:", err);
-    res.status(500).json({ error: err.message });
+    console.error("Patient summary route error:", err.message);
+    res.status(500).json({ error: "Failed to generate patient summary." });
   }
 });
 

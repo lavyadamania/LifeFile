@@ -1,5 +1,7 @@
 const router = require('express').Router();
+const mongoose = require('mongoose');
 const { auth, requireRole } = require('../middleware/auth');
+const User = require('../models/User');
 const PatientMemory = require('../models/PatientMemory');
 const MemoryCorrection = require('../models/MemoryCorrection');
 const Prescription = require('../models/Prescription');
@@ -12,45 +14,83 @@ const { extractDeterministicMemories, extractAIMemoryCandidates } = require('../
  * Authorization helper to verify if req.user can access patientId's memory
  */
 async function authorizeMemoryAccess(reqUser, patientId) {
+  if (!reqUser || !patientId) return false;
+  
   const reqUserIdStr = reqUser._id.toString();
-  const targetPatientIdStr = patientId.toString();
+  const targetIdStr = patientId.toString();
 
-  // 1. Patient requesting their own memory -> ALLOWED
+  // 1. PATIENT ROLE: Can ONLY access their own memory
   if (reqUser.role === 'patient') {
-    if (reqUserIdStr === targetPatientIdStr) return true;
-    
-    // Check if targetPatientIdStr is Patient profile ID linked to User
-    const patientProfile = await Patient.findOne({ userId: reqUser._id });
-    if (patientProfile && patientProfile._id.toString() === targetPatientIdStr) return true;
+    // Direct User ID match
+    if (reqUserIdStr === targetIdStr) return true;
 
-    return false; // Cross-patient access forbidden!
+    // Check if targetIdStr matches Patient profile linked to reqUser
+    const patientProfile = await Patient.findOne({ userId: reqUser._id });
+    if (patientProfile && patientProfile._id.toString() === targetIdStr) return true;
+
+    // Check if targetIdStr is User document and reqUser is Patient profile linked to it
+    const targetUser = await User.findById(targetIdStr);
+    if (targetUser && targetUser._id.toString() === reqUserIdStr) return true;
+
+    return false; // STRICT DENIAL: Patient A attempting to access Patient B's memory
   }
 
-  // 2. Doctor requesting patient memory -> Check clinical relationship
+  // 2. DOCTOR ROLE: Must have verified clinical relationship with patient
   if (reqUser.role === 'doctor') {
     const doctorProfile = await Doctor.findOne({ userId: reqUser._id });
-    if (!doctorProfile) return false;
+    const doctorProfileId = doctorProfile ? doctorProfile._id : null;
 
-    // Check if doctor is granted access or patient belongs to doctor
-    const patientDoc = await Patient.findOne({ 
+    // Find target patient document (by Patient _id or User _id)
+    const patientDoc = await Patient.findOne({
       $or: [
-        { _id: targetPatientIdStr },
-        { userId: targetPatientIdStr }
+        { _id: targetIdStr },
+        { userId: targetIdStr }
       ]
     });
 
-    if (!patientDoc) return true; // Fallback for seeded test patients
+    const targetPatientId = patientDoc ? patientDoc._id : (mongoose.Types.ObjectId.isValid(targetIdStr) ? targetIdStr : null);
+    const targetUserId = patientDoc ? patientDoc.userId : targetIdStr;
 
-    // Check grantedDoctors list
-    const isGranted = patientDoc.grantedDoctors?.some(id => id.toString() === doctorProfile._id.toString());
-    if (isGranted) return true;
+    // Check if explicit permission granted
+    if (patientDoc && patientDoc.grantedDoctors && doctorProfileId) {
+      if (patientDoc.grantedDoctors.some(id => id.toString() === doctorProfileId.toString())) {
+        return true;
+      }
+    }
 
-    // Allow doctors with clinical role
-    return true;
+    // Check assigned doctor
+    if (patientDoc && patientDoc.assignedDoctor && doctorProfileId) {
+      if (patientDoc.assignedDoctor.toString() === doctorProfileId.toString()) {
+        return true;
+      }
+    }
+
+    // Check prior prescriptions written by this doctor for target patient
+    const docIds = [reqUser._id, doctorProfileId].filter(Boolean);
+    const patIds = [targetPatientId, targetUserId].filter(Boolean);
+
+    if (docIds.length > 0 && patIds.length > 0) {
+      const hasPrescription = await Prescription.exists({
+        doctorId: { $in: docIds },
+        patientId: { $in: patIds }
+      });
+      if (hasPrescription) return true;
+
+      const Appointment = require('../models/Appointment');
+      const hasAppointment = await Appointment.exists({
+        doctorId: { $in: docIds },
+        patientId: { $in: patIds }
+      });
+      if (hasAppointment) return true;
+    }
+
+    return false; // DENY: Unauthorized doctor with no clinical relationship
   }
 
-  // 3. Admin / Hospital staff
-  if (['admin', 'hospital'].includes(reqUser.role)) return true;
+  // 3. ADMIN / HOSPITAL STAFF: System-wide clinical audit access
+  if (['admin', 'hospital'].includes(reqUser.role)) {
+    return true;
+  }
 
   return false;
 }
