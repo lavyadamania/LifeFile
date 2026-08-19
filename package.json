@@ -9,6 +9,7 @@
     "seed:presentation": "npm run seed:presentation --prefix scos-backend --",
     "stop:all": "taskkill /F /IM node.exe || exit 0",
     "clear-db": "npm run clear-db --prefix scos-backend",
+    "inspect:db": "npm run inspect:db --prefix scos-backend",
     "benchmark:all": "npm run benchmark:all --prefix scos-backend"
   },
   "devDependencies": {
