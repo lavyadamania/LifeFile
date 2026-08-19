@@ -10,6 +10,12 @@
 
 ## 1. QUICK START COMMANDS
 
+### Step 0: Stop / Kill All Old Node Processes (Emergency Cleanup)
+To ensure no duplicate background servers compete for port 5000 or Kafka connections:
+```powershell
+taskkill /F /IM node.exe
+```
+
 ### Step A: Seed / Reset the Presentation Database
 Run this single command right before your presentation (at any hour of the day or night) to initialize the dynamic time-aware dataset:
 ```powershell

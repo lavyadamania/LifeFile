@@ -9,6 +9,7 @@
     "seed": "node seed.js",
     "seed:presentation": "node seed-presentation.js",
     "clear-db": "node clear-db.js",
+    "stop:all": "taskkill /F /IM node.exe || exit 0",
     "benchmark": "node sih-validation/cli.js",
     "benchmark:all": "node sih-validation/cli.js --scenario high-load --seed 20260819"
   },
