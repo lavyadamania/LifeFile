@@ -7,6 +7,7 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "seed": "node seed.js",
+    "seed:presentation": "node seed-presentation.js",
     "clear-db": "node clear-db.js",
     "benchmark": "node sih-validation/cli.js",
     "benchmark:all": "node sih-validation/cli.js --scenario high-load --seed 20260819"
