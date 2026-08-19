@@ -363,14 +363,24 @@ async function seedPresentation() {
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
 
-    // Helper date offsets
-    const timeNowMinus25 = new Date(now.getTime() - 25 * 60000);
-    const timeNowMinus15 = new Date(now.getTime() - 15 * 60000);
-    const timeNowMinus10 = new Date(now.getTime() - 10 * 60000);
-    const timeNowPlus5 = new Date(now.getTime() + 5 * 60000);
-    const timeNowPlus10 = new Date(now.getTime() + 10 * 60000);
-    const timeNowPlus45 = new Date(now.getTime() + 45 * 60000);
-    const timeNowMinus45 = new Date(now.getTime() - 45 * 60000);
+    // Ensure offsets stay within 00:01 - 23:59 boundary regardless of execution time
+    const currentMins = now.getHours() * 60 + now.getMinutes();
+
+    // Past Offsets (clamped to at least 00:01 today)
+    const timeNowMinus45 = new Date(now.getTime() - Math.min(45, Math.max(1, currentMins - 5)) * 60000);
+    const timeNowMinus25 = new Date(now.getTime() - Math.min(25, Math.max(1, currentMins - 4)) * 60000);
+    const timeNowMinus15 = new Date(now.getTime() - Math.min(15, Math.max(1, currentMins - 3)) * 60000);
+    const timeNowMinus10 = new Date(now.getTime() - Math.min(10, Math.max(1, currentMins - 2)) * 60000);
+
+    // Future Offsets (clamped so they don't roll over to tomorrow if run near midnight)
+    const minsToMidnight = (24 * 60 - 1) - currentMins;
+    const plus5Offset = Math.min(5, Math.max(1, Math.floor(minsToMidnight * 0.2)));
+    const plus10Offset = Math.min(10, Math.max(2, Math.floor(minsToMidnight * 0.4)));
+    const plus45Offset = Math.min(45, Math.max(15, Math.floor(minsToMidnight * 0.9)));
+
+    const timeNowPlus5 = new Date(now.getTime() + plus5Offset * 60000);
+    const timeNowPlus10 = new Date(now.getTime() + plus10Offset * 60000);
+    const timeNowPlus45 = new Date(now.getTime() + plus45Offset * 60000);
 
     // Appt 1: Aarav Sharma (P01 @ D01, H01) -> Triage 5 Emergency Override
     const appt01 = await Appointment.create({

@@ -273,4 +273,38 @@ router.post('/complete', auth, async (req, res) => {
   }
 });
 
+// POST /api/queue/resync-demo — Recalibrate demo appointment timestamps to current clock time
+router.post('/resync-demo', async (req, res) => {
+  try {
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const formatTime = (d) => {
+      let h = d.getHours(), m = d.getMinutes();
+      const meridian = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} ${meridian}`;
+    };
+
+    const currentMins = now.getHours() * 60 + now.getMinutes();
+    const timeNowMinus10 = new Date(now.getTime() - Math.min(10, Math.max(1, currentMins - 2)) * 60000);
+    const minsToMidnight = (24 * 60 - 1) - currentMins;
+    const plus5Offset = Math.min(5, Math.max(1, Math.floor(minsToMidnight * 0.2)));
+    const plus45Offset = Math.min(45, Math.max(15, Math.floor(minsToMidnight * 0.9)));
+    const timeNowPlus5 = new Date(now.getTime() + plus5Offset * 60000);
+    const timeNowPlus45 = new Date(now.getTime() + plus45Offset * 60000);
+
+    // Update Token 101 (Emergency Triage 5)
+    await Appointment.updateMany({ baseToken: 101 }, { date: todayStr, time: formatTime(timeNowMinus10), status: 'Pending' });
+    // Update Token 102 (Active Check-In Window)
+    await Appointment.updateMany({ baseToken: 102 }, { date: todayStr, time: formatTime(timeNowPlus5), status: 'Confirmed' });
+    // Update Token 103 (Locked Too Early Window)
+    await Appointment.updateMany({ baseToken: 103 }, { date: todayStr, time: formatTime(timeNowPlus45), status: 'Confirmed' });
+
+    await produceEvent('scos.queue.updates', { action: 'DEMO_RESYNC', timestamp: now.toISOString() });
+    res.json({ message: 'Demo presentation clock resynced to current time', date: todayStr, now: formatTime(now) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
