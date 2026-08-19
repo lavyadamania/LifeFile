@@ -27,7 +27,7 @@ export default function PatientLayout() {
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
             <Activity className="w-5 h-5 text-white" />
           </div>
-          <span className="text-xl font-bold text-slate-800">SCOS Patient Portal</span>
+          <span className="text-xl font-bold text-slate-800">LifeFile Patient Portal</span>
         </div>
         
         <nav className="flex-1 px-4 space-y-1 overflow-y-auto">

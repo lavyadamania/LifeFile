@@ -12,7 +12,7 @@ async function inspectDatabase() {
   try {
     await mongoose.connect(process.env.MONGO_URI);
     console.log('\n====================================================');
-    console.log('📊 SCOS (Smart Clinic OS) — LIVE DATABASE INSPECTION MATRIX');
+    console.log('📊 LIFEFILE — LIVE DATABASE INSPECTION MATRIX');
     console.log('====================================================\n');
 
     // 1. User Summary
