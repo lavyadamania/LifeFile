@@ -77,6 +77,7 @@ router.get('/list', auth, async (req, res) => {
 });
 
 // GET /api/queue/patient/:appointmentId — specific patient ETA tracking
+// GET /api/queue/patient/:appointmentId — Zomato-style Live Queue Tracker
 router.get('/patient/:appointmentId', auth, async (req, res) => {
   try {
     const { appointmentId } = req.params;
@@ -87,40 +88,61 @@ router.get('/patient/:appointmentId', auth, async (req, res) => {
       return res.json({ status: targetAppt.status, eta: null });
     }
 
-    const today = targetAppt.date;
+    // If status is In_Progress (Currently in consultation room)
+    if (targetAppt.status === 'In_Progress') {
+      return res.json({
+        status: 'In_Progress',
+        patientName: targetAppt.patientName,
+        tokenNumber: targetAppt.baseToken,
+        nowServingToken: targetAppt.baseToken,
+        queuePosition: 1,
+        estimatedWait: { min: 0, max: 0 },
+        updatedAt: new Date().toISOString()
+      });
+    }
+
     const doctorId = targetAppt.doctorId;
 
+    // Fetch all active appointments for this doctor
     const appointments = await Appointment.find({
       doctorId,
-      date: today,
-      status: { $in: ['Pending', 'Confirmed'] }
+      status: { $in: ['Pending', 'Confirmed', 'Rescheduled', 'In_Progress'] }
     });
 
     const currentTime = new Date();
     
-    const queue = appointments.map(appt => ({
-      _id: appt._id,
-      patientName: appt.patientName,
-      baseToken: appt.baseToken,
-      priority: calculateCEP(appt, currentTime)
-    }));
+    // Calculate ACPA CEP priority score for each appointment
+    const queue = appointments
+      .filter(a => a.status !== 'In_Progress')
+      .map(appt => ({
+        _id: appt._id,
+        patientName: appt.patientName,
+        baseToken: appt.baseToken,
+        priority: calculateCEP(appt, currentTime)
+      }));
 
     queue.sort((a, b) => b.priority.score - a.priority.score);
 
-    const etaDetails = getPatientETA(queue, appointmentId);
+    // Find currently serving token
+    const inProgressAppt = appointments.find(a => a.status === 'In_Progress');
+    const nowServingToken = inProgressAppt ? inProgressAppt.baseToken : (queue[0] ? queue[0].baseToken : targetAppt.baseToken);
 
+    let etaDetails = getPatientETA(queue, appointmentId);
+
+    // Dynamic fallback if appointment is active but not in the sorted pending array
     if (!etaDetails) {
-      return res.status(404).json({ error: 'Patient not currently in dynamic queue' });
+      etaDetails = {
+        queuePosition: 1,
+        estimatedWait: { min: 0, max: 5 },
+        topTokenInQueue: nowServingToken
+      };
     }
-
-    const topToken = etaDetails.topTokenInQueue;
-    const targetPatientInQueue = queue[etaDetails.queuePosition - 1];
 
     res.json({
       status: targetAppt.status,
-      patientName: targetPatientInQueue ? targetPatientInQueue.patientName : targetAppt.patientName,
+      patientName: targetAppt.patientName,
       tokenNumber: targetAppt.baseToken,
-      nowServingToken: topToken,
+      nowServingToken: nowServingToken,
       queuePosition: etaDetails.queuePosition,
       estimatedWait: etaDetails.estimatedWait,
       updatedAt: new Date().toISOString()
