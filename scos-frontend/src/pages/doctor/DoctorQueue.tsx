@@ -32,6 +32,10 @@ export default function DoctorQueue() {
   useEffect(() => {
     if (doctorProfileId) {
       fetchQueue(doctorProfileId, activeHospitalId);
+      const interval = setInterval(() => {
+        fetchQueue(doctorProfileId, activeHospitalId);
+      }, 4000);
+      return () => clearInterval(interval);
     }
   }, [activeHospitalId, doctorProfileId]);
 

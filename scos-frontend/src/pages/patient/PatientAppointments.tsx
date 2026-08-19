@@ -34,7 +34,11 @@ export default function PatientAppointments() {
     }).catch(() => setMissed([]));
   };
 
-  useEffect(() => { fetchAppointments(); }, []);
+  useEffect(() => { 
+    fetchAppointments(); 
+    const interval = setInterval(fetchAppointments, 4000);
+    return () => clearInterval(interval);
+  }, []);
 
   const confirmCancel = async () => {
     if (!cancelTarget) return;
