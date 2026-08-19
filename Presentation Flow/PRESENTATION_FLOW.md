@@ -166,6 +166,10 @@ The seed engine dynamically calculates all appointment slots relative to the **e
 
 ## 5. WHY LIFEFILE / SCOS BEATS SIH 2025 WINNER (UDHAY 2025) — KEY ARCHITECTURAL DIFFERENTIATORS
 
+### 📊 Live Benchmark Comparison Graph (Generated from Seeded Data)
+![Emergency Wait Time Graph](file:///e:/ie%20proj/docs/sih-validation/graph_emergency_wait.svg)
+![Starvation Incidents Graph](file:///e:/ie%20proj/docs/sih-validation/graph_starvation.svg)
+
 | Feature Dimension | Udhay 2025 (Last Year's Winner) | LifeFile / SCOS (SIH 2026 Platform) | Judge Impact / Technical Advantage |
 | :--- | :--- | :--- | :--- |
 | **Queue Management** | Basic FIFO (First-In, First-Out) token queue or rigid static priority lists. Emergency cases wait behind routine checkups. | **ACPA Engine (Adaptive Clinical Priority Allocation):** Dynamic multi-factor scoring combining Triage Level 1-5 + Wait Time Aging (+1.5/m) + Missed Call Penalties (`-30pts`). | Triage Level 5 emergency cases instantly jump to Position #1 without losing token numbers or causing queue starvation. |

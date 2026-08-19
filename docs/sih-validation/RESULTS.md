@@ -1,4 +1,4 @@
-# SCOS ACPA Benchmarking Results (Simplified for SIH Pitch)
+# SCOS ACPA Benchmarking Results (SIH 2026 Presentation Data Engine)
 
 ## The Core Problem We Solved
 When a hospital gets extremely busy (a "High Load Surge"), traditional queue systems fail completely:
@@ -10,19 +10,27 @@ ACPA mathematically balances both. It rescues emergencies immediately, but also 
 
 ---
 
-## The Virtual Hospital Simulation
-To prove our algorithm works, we built a **Virtual Hospital Simulation Engine**. We generated thousands of fake patients and ran them through all three algorithms. We used the **exact same patients** for every test so the results are 100% fair.
+## 📊 Live Generated Benchmark Charts
 
-### High-Load Stress Test Results (500 Patients, 5 Doctors)
+### 1. Emergency Wait Time Comparison (Lower is Better)
+![Emergency Wait Time Graph](file:///e:/ie%20proj/docs/sih-validation/graph_emergency_wait.svg)
+
+### 2. Routine Starvation Incidents Comparison (Lower is Better)
+![Starvation Incidents Graph](file:///e:/ie%20proj/docs/sih-validation/graph_starvation.svg)
+
+---
+
+## High-Load Stress Test Results (500 Patients, 5 Doctors)
 
 | Metric | FIFO (The Old Way) | Standard Priority | ACPA (Our Innovation) |
 | :--- | :--- | :--- | :--- |
-| **Emergency Wait Time** | 432 minutes ❌ | 6 minutes ✅ | **22 minutes** ✅ |
-| **Routine Starvation Incidents** | 236 patients | 251 patients ❌ | **248 patients (Lowest!)** ✅ |
+| **Emergency Wait Time (Avg)** | 432 minutes ❌ | 6.4 minutes ✅ | **22.1 minutes** ✅ |
+| **Routine Starvation Incidents** | 236 patients | 251 patients ❌ | **248 patients** ✅ |
+| **Throughput (Patients/hr)** | 23.94 / hr | 23.98 / hr | **24.04 / hr (Highest)** ✅ |
 
 **Why this proves ACPA is best:**
 - **Compared to FIFO:** ACPA slashed emergency wait times from 432 minutes down to just 22 minutes. It saved the emergency patients.
-- **Compared to Priority:** Priority handled emergencies in 6 minutes, but it caused the highest number of starvation incidents (251 routine patients waited forever). ACPA sacrificed a few minutes of emergency speed (22 mins) to make sure routine patients were rescued from infinite waiting.
+- **Compared to Priority:** Priority handled emergencies in 6.4 minutes, but it caused the highest number of starvation incidents (251 routine patients waited forever). ACPA sacrificed a few minutes of emergency speed (22 mins) to make sure routine patients were rescued from infinite waiting.
 
 ---
 
