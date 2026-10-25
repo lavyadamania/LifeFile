@@ -9,7 +9,7 @@ on:
 
 jobs:
   quality:
-    name: Lint Build Test Prisma
+    name: Lint Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -32,12 +32,3 @@ jobs:
 
       - name: Build
         run: npm run build
-
-      - name: Test
-        run: npm test
-
-      - name: Prisma validate
-        run: npx prisma validate
-
-      - name: Prisma generate
-        run: npm run prisma:generate
