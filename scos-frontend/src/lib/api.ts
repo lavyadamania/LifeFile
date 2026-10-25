@@ -3,7 +3,7 @@ import axios from 'axios';
 // Detect if we're running locally on a network IP (e.g. 192.168.x.x) or localhost
 // This allows the SIH judges to test it on their mobile phones connected to the same WiFi
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 
-  (window.location.hostname === 'localhost' ? 'http://localhost:5000' : `http://${window.location.hostname}:5000`);
+  (window.location.hostname === 'localhost' ? 'http://localhost:8080' : `http://${window.location.hostname}:8080`);
 
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
@@ -19,11 +19,31 @@ api.interceptors.request.use((config) => {
       const token = parsed?.state?.token;
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+      } else {
+        delete config.headers.Authorization;
       }
-    } catch {}
+    } catch {
+      delete config.headers.Authorization;
+    }
+  } else {
+    delete config.headers.Authorization;
   }
   return config;
 });
+
+// Response interceptor to handle token expiry / invalidation
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('scos-auth-storage');
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Auth
 export const loginUser = (data: { email: string; password: string; role: string }) =>
@@ -33,6 +53,9 @@ export const registerUser = (data: { name: string; email: string; password: stri
   api.post('/auth/register', data);
 
 export const getMe = () => api.get('/auth/me');
+
+// Demo reset is intentionally public so it can be used from the login page.
+export const resetDemoData = () => api.post('/demo/reset');
 
 // Doctors
 export const getDoctorProfile = () => api.get('/doctors/me');

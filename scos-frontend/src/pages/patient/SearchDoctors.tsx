@@ -80,7 +80,7 @@ export default function SearchDoctors() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {doctors.map((doctor: any) => (
-              <div key={doctor._id} className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row gap-6">
+              <div key={doctor._id || doctor.id} className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row gap-6">
                 
                 <div className="flex-shrink-0 flex justify-center">
                   <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center border-4 border-white shadow-sm">
@@ -121,7 +121,7 @@ export default function SearchDoctors() {
                   </div>
 
                   <button 
-                    onClick={() => navigate(`/patient/doctor/${doctor._id}`)}
+                    onClick={() => navigate(`/patient/doctor/${doctor._id || doctor.id}`)}
                     className="w-full py-2.5 bg-slate-900 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors"
                   >
                     View Profile

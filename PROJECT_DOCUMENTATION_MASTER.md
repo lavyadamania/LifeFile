@@ -14,6 +14,9 @@ The **LifeFile / SCOS (Smart Clinic Operating System)** is an enterprise-grade, 
 4. **Doctor Action Safety:** Eliminates client-side array index race conditions where doctors accidentally start the wrong patient.
 5. **Uncontrolled Check-In Clutter:** Enforces strict 15-minute pre-slot check-in window locking to eliminate ghost queues.
 6. **Multi-Facility Data Isolation:** Segregates queues strictly by active hospital facility context (*LifeFile Central Hospital* vs *LifeFile North Hospital*).
+7. **Doctor-Linked Private Clinics:** Gives every seeded doctor a private clinic record while preserving hospital affiliations as separate facilities.
+8. **Operational Healthcare Analytics:** Provides role-specific hospital, private-clinic, doctor, patient, and admin analytics from live MongoDB data.
+9. **Patient Feedback & BI:** Captures post-appointment doctor reviews and exposes real LifeFile data to five BI practicals, Streamlit, and Metabase.
 
 ---
 
@@ -36,11 +39,15 @@ flowchart TD
         SocketServer[Socket.io Real-Time WebSocket Server]
     end
 
-    subgraph Service Engine Layer [Backend - Express.js REST API]
+    subgraph Service Engine Layer [Backend - Spring Boot 3.4.13 REST API]
         ACPA[Adaptive Clinical Priority Algorithm - ACPA]
         QueueCtrl[Queue Controller /routes/queue.js]
         ApptCtrl[Appointment Controller /routes/appointments.js]
         DoctorCtrl[Doctor Roster Controller /routes/doctors.js]
+        HospitalCtrl[Hospital Controller /api/hospitals]
+        AnalyticsCtrl[Role Analytics /api/analytics]
+        ReviewCtrl[Doctor Reviews /api/reviews]
+        ClinicCtrl[Private Clinic Controller /api/clinics]
         NLPTriage[Real-Time NLP Symptom Triage Classifier]
         InspectDB[CLI Database Inspector Matrix Engine]
     end
@@ -50,6 +57,8 @@ flowchart TD
         DB_User[(Users & Patients Collection)]
         DB_Doc[(Doctors Collection)]
         DB_Hosp[(Hospitals Collection)]
+        DB_Clinic[(Doctor-Linked Clinics Collection)]
+        DB_Review[(Doctor Reviews Collection)]
         DB_Mem[(Patient Clinical Memories)]
         DB_Audit[(Security Audit Logs)]
     end
@@ -65,6 +74,10 @@ flowchart TD
     QueueCtrl --> ACPA
     QueueCtrl --> DB_Appt
     ApptCtrl --> DB_Appt
+    HospitalCtrl --> DB_Hosp
+    ClinicCtrl --> DB_Clinic
+    ReviewCtrl --> DB_Review
+    AnalyticsCtrl --> DB_Appt & DB_Doc & DB_Hosp & DB_Clinic & DB_Review
 
     QueueCtrl -->|Produce Event: scos.queue.updates| Kafka
     Kafka --> SocketServer
@@ -225,7 +238,9 @@ When technical judges request to see the backend logic, ACPA mathematical formul
 
 ---
 
-## 🛠️ 8. Database Schema & Data Models (Mongoose)
+## 🛠️ 8. Database Schema & Data Models
+
+The active production path is Spring Boot with Spring Data MongoDB. The original Node/Mongoose models remain compatible with the same `scos` collections for scripts, seeders, and migration support.
 
 ### Appointment Model (`models/Appointment.js`)
 ```javascript
@@ -251,14 +266,67 @@ const appointmentSchema = new mongoose.Schema({
 }, { timestamps: true });
 ```
 
+### Doctor-Linked Private Clinic Model
+
+Each private clinic is linked to one real doctor and is created by `seed-clinics.js` or the presentation seeder. Hospital affiliations are stored separately on the doctor and hospital documents.
+
+```javascript
+const clinicSchema = new mongoose.Schema({
+    name: String,                 // e.g. "Dr. Ananya Sharma Private Clinic"
+    doctorId: ObjectId,           // ref Doctor
+    doctorName: String,
+    address: String,
+    phone: String,
+    doctors: { type: Number, default: 0 },
+    status: { type: String, enum: ['active', 'maintenance'], default: 'active' }
+}, { timestamps: true });
+```
+
+### Doctor Reviews
+
+Completed appointments can produce a one-time patient review containing a rating and public comment. Doctor profiles expose the aggregated rating, review count, and public review list.
+
+### Analytics API
+
+The Spring analytics controller exposes role-specific live aggregates:
+
+* `GET /api/analytics/admin` — system KPIs, hospital load, private-clinic load, status, peak hours, and walk-in/booked ratios.
+* `GET /api/analytics/doctor` — doctor workload, hospital distribution, prescriptions, and linked private-clinic activity.
+* `GET /api/analytics/hospital` — hospital doctors, patients, appointments, prescriptions, department load, status, walk-ins, and peak hours.
+* `GET /api/analytics/patient` — appointment history, doctors visited, hospitals visited, and medications.
+
+Private-clinic appointments are identified by the absence of a `hospitalId` and are grouped through the appointment's `doctorId` and the linked clinic record.
+
+## 📈 9. Healthcare BI Practicals & Metabase
+
+The `bi-labs` module operates on real LifeFile MongoDB collections; it does not generate unrelated sample sales data. `pipeline.py` performs five practicals:
+
+1. Plotly visualizations for appointments, doctors, hospitals, and reviews.
+2. Pandas cleaning, duplicate removal, status normalization, and triage validation.
+3. Streamlit dashboard filters for hospital, specialization, status, and walk-ins.
+4. SQLite warehouse tables and SQL reports for patient, doctor, hospital, appointment, and review facts/dimensions.
+5. TextBlob sentiment scoring for real patient review comments.
+
+Run the BI pipeline from `bi-labs`:
+
+```powershell
+python pipeline.py
+streamlit run dashboard.py
+docker compose -f docker-compose.metabase.yml up -d
+```
+
+Metabase runs at `http://localhost:3000` and connects to MongoDB through `host.docker.internal:27017`, database `scos`. The Streamlit dashboard links directly to Metabase.
+
 ---
 
-## 🚀 9. Quick Start & Presentation Execution Commands
+## 🚀 10. Quick Start & Presentation Execution Commands
 
-### 1. Launch Dev Ecosystem (Backend + Frontend)
+### 1. Launch Dev Ecosystem (Spring Backend + Frontend)
 ```bash
 npm run dev
 ```
+
+The root `dev` command seeds the live Ananya presentation data and starts Spring Boot on port `8080` plus Vite on port `5173`. To run the legacy Node backend separately, use `npm run dev:backend:node`.
 
 ### 2. Seed 24/7 Time-Aware Presentation Data
 ```bash
@@ -270,7 +338,18 @@ npm run seed:presentation -- --confirm
 npm run inspect:db
 ```
 
-### 4. Stop / Cleanup Background Processes
+### 4. Synchronize Doctor-Linked Private Clinics
+```powershell
+npm run seed:clinics --prefix scos-backend
+```
+
+This non-destructive seeder removes unlinked clinic records and upserts one private clinic per existing doctor.
+
+### 5. Reset Demo Data from Login
+
+The local demo reset control calls the protected demo-data endpoint and reseeds the presentation dataset. Use it only when a full demo reset is acceptable.
+
+### 6. Stop / Cleanup Background Processes
 ```bash
 npm run stop:all
 ```
@@ -278,7 +357,8 @@ npm run stop:all
 ---
 
 ### 📄 Document Metadata & Versioning
-* **Document Version:** `3.0.0-FINAL`
+* **Document Version:** `4.0.0-FINAL`
 * **System Code:** `LifeFile / SCOS Clinical Operating System`
-* **Build Verification:** TypeScript 0 errors (`npx tsc --noEmit`)
-* **Git Commit Reference:** `0f2f31c`
+* **Build Verification:** Spring Maven compile and frontend TypeScript/Vite build pass
+* **Data Store:** MongoDB database `scos` at `mongodb://localhost:27017/scos`
+* **Runtime Ports:** Spring `8080`, Vite `5173`, Streamlit `8511`, Metabase `3000`

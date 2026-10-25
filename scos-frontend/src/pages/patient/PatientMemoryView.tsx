@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Brain, AlertTriangle, ShieldCheck, FileText, Send, CheckCircle2, X } from 'lucide-react';
+import { Brain, AlertTriangle, ShieldCheck, FileText, Send, CheckCircle2, X, Activity, FlaskConical, Stethoscope, HelpCircle } from 'lucide-react';
 import { getPatientMemories, getMemorySources, submitMemoryCorrection } from '../../lib/api';
+import useAuthStore from '../../store/useAuthStore';
 
 export default function PatientMemoryView() {
   const [loading, setLoading] = useState(true);
@@ -18,10 +19,12 @@ export default function PatientMemoryView() {
   const [sources, setSources] = useState<any[]>([]);
   const [sourcesLoading, setSourcesLoading] = useState(false);
 
-  // Fetch current patient's memories
-  const userStr = localStorage.getItem('user');
-  const user = userStr ? JSON.parse(userStr) : null;
-  const patientId = user?.id || user?._id;
+  // Fetch current patient's memories from useAuthStore
+  const { user } = useAuthStore();
+  const storedAuth = typeof window !== 'undefined' ? localStorage.getItem('scos-auth-storage') : null;
+  const parsedUser = storedAuth ? JSON.parse(storedAuth)?.state?.user : null;
+  const currentUser = user || parsedUser;
+  const patientId = currentUser?.id || currentUser?._id;
 
   const fetchMemories = async () => {
     if (!patientId) return;
@@ -198,6 +201,96 @@ export default function PatientMemoryView() {
             </div>
           )}
         </div>
+
+        {/* Investigations & Labs */}
+        {grouped.INVESTIGATION && grouped.INVESTIGATION.length > 0 && (
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-3">
+            <h2 className="text-sm font-black uppercase text-amber-600 tracking-wider flex items-center gap-2">
+              <FlaskConical className="w-4 h-4" /> Lab Investigations ({grouped.INVESTIGATION.length})
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {grouped.INVESTIGATION.map((m: any) => (
+                <div key={m._id} className="p-3.5 bg-amber-50/50 border border-amber-200 rounded-xl space-y-2">
+                  <div className="flex justify-between items-start">
+                    <span className="font-bold text-slate-800 text-sm">{m.content}</span>
+                    <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+                      {m.sourceRecordIds?.length || 1} sources
+                    </span>
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button onClick={() => handleViewSources(m)} className="text-[11px] font-bold text-indigo-600 hover:underline">
+                      View Sources
+                    </button>
+                    <span className="text-slate-300">•</span>
+                    <button onClick={() => setCorrectionTarget(m)} className="text-[11px] font-bold text-slate-500 hover:text-slate-700">
+                      Report Incorrect
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Procedures & Surgeries */}
+        {grouped.PROCEDURE && grouped.PROCEDURE.length > 0 && (
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-3">
+            <h2 className="text-sm font-black uppercase text-teal-600 tracking-wider flex items-center gap-2">
+              <Activity className="w-4 h-4" /> Procedures & Surgeries ({grouped.PROCEDURE.length})
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {grouped.PROCEDURE.map((m: any) => (
+                <div key={m._id} className="p-3.5 bg-teal-50/50 border border-teal-200 rounded-xl space-y-2">
+                  <div className="flex justify-between items-start">
+                    <span className="font-bold text-slate-800 text-sm">{m.content}</span>
+                    <span className="text-[10px] font-bold bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full">
+                      {m.sourceRecordIds?.length || 1} sources
+                    </span>
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button onClick={() => handleViewSources(m)} className="text-[11px] font-bold text-indigo-600 hover:underline">
+                      View Sources
+                    </button>
+                    <span className="text-slate-300">•</span>
+                    <button onClick={() => setCorrectionTarget(m)} className="text-[11px] font-bold text-slate-500 hover:text-slate-700">
+                      Report Incorrect
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Uncategorized / Clinical Notes */}
+        {grouped.UNCATEGORIZED && grouped.UNCATEGORIZED.length > 0 && (
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-3">
+            <h2 className="text-sm font-black uppercase text-slate-500 tracking-wider flex items-center gap-2">
+              <HelpCircle className="w-4 h-4" /> Uncategorized Medical Notes ({grouped.UNCATEGORIZED.length})
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {grouped.UNCATEGORIZED.map((m: any) => (
+                <div key={m._id} className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                  <div className="flex justify-between items-start">
+                    <span className="font-bold text-slate-800 text-sm">{m.content}</span>
+                    <span className="text-[10px] font-bold bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">
+                      {m.sourceRecordIds?.length || 1} sources
+                    </span>
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button onClick={() => handleViewSources(m)} className="text-[11px] font-bold text-indigo-600 hover:underline">
+                      View Sources
+                    </button>
+                    <span className="text-slate-300">•</span>
+                    <button onClick={() => setCorrectionTarget(m)} className="text-[11px] font-bold text-slate-500 hover:text-slate-700">
+                      Report Incorrect
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Source Viewer Modal */}

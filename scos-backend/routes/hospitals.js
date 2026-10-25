@@ -32,9 +32,28 @@ router.get('/', async (req, res) => {
 // GET /api/hospitals/me — get my hospital profile
 router.get('/me', auth, requireRole('hospital'), async (req, res) => {
   try {
-    const hospital = await Hospital.findOne({ userId: req.user.id })
+    let hospital = await Hospital.findOne({ userId: req.user.id })
       .populate('doctors', 'name specialization rating reviewCount status hours location bio experience schedule hospitals');
-    if (!hospital) return res.status(404).json({ error: 'Hospital not found' });
+    if (!hospital && req.user.email) {
+      hospital = await Hospital.findOne({ email: req.user.email })
+        .populate('doctors', 'name specialization rating reviewCount status hours location bio experience schedule hospitals');
+      if (hospital && (!hospital.userId || hospital.userId.toString() !== req.user.id.toString())) {
+        hospital.userId = req.user.id;
+        await hospital.save();
+      }
+    }
+    if (!hospital) {
+      hospital = await Hospital.create({
+        userId: req.user.id,
+        name: req.user.name || 'Hospital Facility',
+        address: 'Address pending',
+        phone: 'Phone pending',
+        email: req.user.email || '',
+        description: 'Full Service Clinical Facility',
+        departments: ['General Medicine', 'Emergency Medicine'],
+        status: 'active'
+      });
+    }
     res.json(hospital);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -44,11 +63,18 @@ router.get('/me', auth, requireRole('hospital'), async (req, res) => {
 // PUT /api/hospitals/me — update my hospital profile
 router.put('/me', auth, requireRole('hospital'), async (req, res) => {
   try {
-    const hospital = await Hospital.findOneAndUpdate(
+    let hospital = await Hospital.findOneAndUpdate(
       { userId: req.user.id },
       req.body,
       { new: true }
     );
+    if (!hospital && req.user.email) {
+      hospital = await Hospital.findOneAndUpdate(
+        { email: req.user.email },
+        { ...req.body, userId: req.user.id },
+        { new: true }
+      );
+    }
     if (!hospital) return res.status(404).json({ error: 'Hospital not found' });
     res.json(hospital);
   } catch (err) {

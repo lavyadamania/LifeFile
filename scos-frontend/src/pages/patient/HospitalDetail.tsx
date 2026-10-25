@@ -77,25 +77,41 @@ export default function HospitalDetail() {
           <div className="p-12 text-center text-slate-500">No doctors affiliated yet.</div>
         ) : (
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            {hospital.doctors.map((doc: any) => (
-              <div key={doc._id} className="border border-slate-200 rounded-xl p-4 hover:border-indigo-200 hover:shadow-sm transition-all">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center border-2 border-white shadow-sm flex-shrink-0"><span className="text-lg font-bold text-indigo-600">{doc.name?.charAt(0)}</span></div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-bold text-slate-800 truncate">{doc.name}</h3>
-                      <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded text-xs flex-shrink-0"><Star className="w-3 h-3 fill-amber-400 text-amber-400" /><span className="font-bold text-amber-700">{doc.rating || 'New'}</span></div>
+            {hospital.doctors.map((doc: any) => {
+              const docId = typeof doc === 'object' ? (doc._id || doc.id) : doc;
+              const docName = typeof doc === 'object' ? doc.name : 'Doctor';
+              const docSpec = typeof doc === 'object' ? doc.specialization : 'Specialist';
+              const docRating = typeof doc === 'object' ? (doc.rating || 'New') : 'New';
+              const docHours = typeof doc === 'object' ? (doc.hours || 'Mon-Fri, 9AM-5PM') : 'Mon-Fri, 9AM-5PM';
+              const hospId = hospital._id || hospital.id;
+
+              return (
+                <div key={docId} className="border border-slate-200 rounded-xl p-4 hover:border-indigo-200 hover:shadow-sm transition-all">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center border-2 border-white shadow-sm flex-shrink-0">
+                      <span className="text-lg font-bold text-indigo-600">{docName?.charAt(0) || 'D'}</span>
                     </div>
-                    <p className="text-indigo-600 text-sm font-medium mb-1">{doc.specialization}</p>
-                    <div className="flex items-center gap-1 text-xs text-slate-500 mb-3"><Clock className="w-3 h-3" />{doc.hours || 'Mon-Fri, 9AM-5PM'}</div>
-                    <div className="flex gap-2">
-                      <button onClick={() => navigate(`/patient/doctor/${doc._id}`)} className="text-xs font-medium px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors">View Profile</button>
-                      <button onClick={() => navigate(`/patient/book/${doc._id}?hospitalId=${hospital._id}&hospitalName=${encodeURIComponent(hospital.name)}`)} className="text-xs font-medium px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-1">Book <ArrowRight className="w-3 h-3" /></button>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-bold text-slate-800 truncate">{docName}</h3>
+                        <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded text-xs flex-shrink-0">
+                          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                          <span className="font-bold text-amber-700">{docRating}</span>
+                        </div>
+                      </div>
+                      <p className="text-indigo-600 text-sm font-medium mb-1">{docSpec}</p>
+                      <div className="flex items-center gap-1 text-xs text-slate-500 mb-3">
+                        <Clock className="w-3 h-3" />{docHours}
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => navigate(`/patient/doctor/${docId}`)} className="text-xs font-medium px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors">View Profile</button>
+                        <button onClick={() => navigate(`/patient/book/${docId}?hospitalId=${hospId}&hospitalName=${encodeURIComponent(hospital.name || '')}`)} className="text-xs font-medium px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-1">Book <ArrowRight className="w-3 h-3" /></button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

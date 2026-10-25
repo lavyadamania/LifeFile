@@ -1,10 +1,16 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Shield, Users, ActivitySquare, Settings, LogOut, Building2, Hospital, BarChart3 } from 'lucide-react';
 import useAuthStore from '../store/useAuthStore';
 
 export default function AdminLayout() {
   const { user, logout } = useAuthStore();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true, state: null });
+  };
 
   const navigation = [
     { name: 'System Overview', href: '/admin', icon: ActivitySquare },
@@ -54,7 +60,7 @@ export default function AdminLayout() {
 
         <div className="p-4 bg-slate-950">
           <button
-            onClick={logout}
+            onClick={handleLogout}
             className="flex items-center gap-3 px-3 py-2 w-full rounded-md text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
           >
             <LogOut className="w-4 h-4" />

@@ -85,9 +85,9 @@ async function seedPresentation() {
       role: 'admin'
     });
     console.log('👑 Created default Admin account: lavya@admin / Demo@123');
-
+    
     // -----------------------------------------------------------------
-    // 3. SEED HOSPITALS (5 Distinct Facilities)
+      // 3. SEED HOSPITALS (5 Distinct Facilities)
     // -----------------------------------------------------------------
     console.log('🏥 Seeding 5 Hospitals...');
     const hospitalData = [
@@ -109,7 +109,7 @@ async function seedPresentation() {
     }
 
     // -----------------------------------------------------------------
-    // 4. SEED DOCTORS (15 Doctors across 15 Specialties)
+      // 4. SEED DOCTORS (15 Doctors across 15 Specialties)
     // -----------------------------------------------------------------
     console.log('👨‍⚕️ Seeding 15 Doctors across 15 Specialties...');
     const doctorConfigs = [
@@ -143,6 +143,17 @@ async function seedPresentation() {
       await hosp.save();
       seededDoctors.push(doc);
     }
+
+    console.log('🏥 Seeding doctor-linked private clinics...');
+    await Clinic.create(seededDoctors.map(doctor => ({
+      name: `${doctor.name} Private Clinic`,
+      doctorId: doctor._id,
+      doctorName: doctor.name,
+      address: doctor.location || 'Private consultation room',
+      phone: '(555) 010-2025',
+      doctors: 1,
+      status: 'active'
+    })));
 
     // -----------------------------------------------------------------
     // 5. SEED 50 UNIQUE PATIENTS WITH 50 DISTINCT MEDICAL HISTORIES

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, MapPin, Phone } from 'lucide-react';
+import { Plus, Search, MapPin, Phone, Stethoscope } from 'lucide-react';
 import { getClinics, addClinic, updateClinic } from '../../lib/api';
 
 export default function AdminManageClinics() {
@@ -80,6 +80,11 @@ export default function AdminManageClinics() {
                   </span>
                 </div>
                 <h2 className="text-xl font-bold text-slate-800">{clinic.name}</h2>
+                {clinic.doctorName && (
+                  <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-indigo-600">
+                    <Stethoscope className="h-4 w-4" /> {clinic.doctorName}
+                  </p>
+                )}
               </div>
               <div className="p-6 flex-1 space-y-4">
                 <div className="flex items-start gap-3">

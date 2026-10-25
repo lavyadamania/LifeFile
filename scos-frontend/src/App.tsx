@@ -1,8 +1,9 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ErrorBoundary from './components/ErrorBoundary';
 import ProtectedRoute from './components/ProtectedRoute';
 import GlobalToaster from './components/GlobalToaster';
+import useAuthStore from './store/useAuthStore';
 
 // Layouts
 import PatientLayout from './layouts/PatientLayout';
@@ -60,7 +61,41 @@ const queryClient = new QueryClient();
 
 // Dummy route components
 const DashboardRedirect = () => <Navigate to="/login" replace />;
-const Unauthorized = () => <div className="p-4 flex items-center justify-center min-h-screen"><h1 className="text-2xl font-bold text-red-600">403 - Unauthorized Access</h1></div>;
+const Unauthorized = () => {
+  const { role, logout } = useAuthStore();
+  const navigate = useNavigate();
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
+      <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4 shadow-sm">
+        <span className="text-2xl font-bold text-red-600">403</span>
+      </div>
+      <h1 className="text-2xl font-bold text-slate-900 mb-2">Access Denied</h1>
+      <p className="text-slate-600 max-w-md mb-6 text-sm">
+        You are currently logged in{role ? ` as a ${role}` : ''}, but this section requires different permissions.
+      </p>
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        {role && (
+          <button
+            onClick={() => navigate(`/${role}`, { replace: true })}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors"
+          >
+            Go to My Dashboard
+          </button>
+        )}
+        <button
+          onClick={() => {
+            logout();
+            navigate('/login', { replace: true, state: null });
+          }}
+          className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 text-sm font-medium rounded-lg transition-colors"
+        >
+          Switch Account / Log Out
+        </button>
+      </div>
+    </div>
+  );
+};
 
 function App() {
   return (

@@ -49,6 +49,7 @@ export default function AdminAnalytics() {
     { title: 'Total Patients', value: kpis.totalPatients, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
     { title: 'Active Doctors', value: kpis.totalDoctors, icon: UserCheck, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
     { title: 'Hospitals', value: kpis.totalHospitals, icon: Building2, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
+    { title: 'Private Clinics', value: kpis.totalPrivateClinics, icon: Building2, color: 'text-cyan-600', bg: 'bg-cyan-50', border: 'border-cyan-100' },
     { title: 'Total Appointments', value: kpis.totalAppointments, icon: Calendar, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
     { title: 'Prescriptions', value: kpis.totalPrescriptions, icon: FileText, color: 'text-teal-600', bg: 'bg-teal-50', border: 'border-teal-100' },
     { title: "Today's Appointments", value: kpis.todayAppointments, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
@@ -81,6 +82,11 @@ export default function AdminAnalytics() {
   }));
 
   const hospitalData = (data.hospitalLoad || []).map((d: any) => ({
+    name: d._id?.length > 18 ? d._id.slice(0, 18) + '…' : d._id,
+    appointments: d.count,
+  }));
+
+  const privateClinicData = (data.privateClinicLoad || []).map((d: any) => ({
     name: d._id?.length > 18 ? d._id.slice(0, 18) + '…' : d._id,
     appointments: d.count,
   }));
@@ -246,6 +252,25 @@ export default function AdminAnalytics() {
               <Bar dataKey="appointments" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
+        </div>
+
+        {/* Private Clinic Load */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+          <h2 className="text-lg font-bold text-slate-800 mb-1">Private Clinic Load</h2>
+          <p className="text-xs text-slate-400 mb-4">Appointments by doctor-linked clinic</p>
+          {privateClinicData.length === 0 ? (
+            <div className="flex items-center justify-center h-48 text-slate-400 text-sm">No private clinic appointments yet</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={privateClinicData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis dataKey="name" tick={{ fontSize: 9, fill: '#94a3b8' }} />
+                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} allowDecimals={false} />
+                <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: 13 }} />
+                <Bar dataKey="appointments" fill="#06b6d4" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
         {/* Peak Hours */}

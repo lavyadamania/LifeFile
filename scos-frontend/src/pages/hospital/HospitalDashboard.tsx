@@ -21,22 +21,37 @@ export default function HospitalDashboard() {
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
+    setLoading(true);
     try {
-      const [hRes, dRes, rRes] = await Promise.all([getMyHospital(), getDoctors(), getHospitalRequests()]);
-      setHospital(hRes.data);
-      setAllDoctors(dRes.data);
-      setRequests(rRes.data);
-      setForm({
-        name: hRes.data.name,
-        address: hRes.data.address,
-        phone: hRes.data.phone,
-        email: hRes.data.email || '',
-        description: hRes.data.description || '',
-        departments: (hRes.data.departments || []).join(', '),
-        status: hRes.data.status,
-      });
+      const hRes = await getMyHospital();
+      if (hRes?.data) {
+        setHospital(hRes.data);
+        setForm({
+          name: hRes.data.name || '',
+          address: hRes.data.address || '',
+          phone: hRes.data.phone || '',
+          email: hRes.data.email || '',
+          description: hRes.data.description || '',
+          departments: (hRes.data.departments || []).join(', '),
+          status: hRes.data.status || 'active',
+        });
+      }
     } catch (err) {
-      console.error(err);
+      console.error('Failed to load hospital profile:', err);
+    }
+
+    try {
+      const dRes = await getDoctors();
+      setAllDoctors(dRes?.data || []);
+    } catch (err) {
+      console.error('Failed to load doctors:', err);
+    }
+
+    try {
+      const rRes = await getHospitalRequests();
+      setRequests(rRes?.data || []);
+    } catch (err) {
+      console.error('Failed to load hospital requests:', err);
     } finally {
       setLoading(false);
     }
@@ -61,7 +76,7 @@ export default function HospitalDashboard() {
 
   const handleAddDoctor = async (doctorId: string) => {
     try {
-      await updateHospitalDoctors(hospital._id, { doctorId, action: 'add' });
+      await updateHospitalDoctors(hospital._id || hospital.id, { doctorId, action: 'add' });
       setMsg('Doctor added to roster!');
       loadData();
     } catch {
@@ -72,7 +87,7 @@ export default function HospitalDashboard() {
 
   const handleRemoveDoctor = async (doctorId: string) => {
     try {
-      await updateHospitalDoctors(hospital._id, { doctorId, action: 'remove' });
+      await updateHospitalDoctors(hospital._id || hospital.id, { doctorId, action: 'remove' });
       setMsg('Doctor removed from roster');
       loadData();
     } catch {
@@ -84,7 +99,7 @@ export default function HospitalDashboard() {
   const handleHire = async () => {
     setSaving(true);
     try {
-      await hireHospitalDoctor(hospital._id, hireForm);
+      await hireHospitalDoctor(hospital._id || hospital.id, hireForm);
       setMsg('Doctor hired & affiliated!');
       setShowHire(false);
       setHireForm({ name: '', email: '', password: '', specialization: 'General Practice' });
@@ -134,7 +149,7 @@ export default function HospitalDashboard() {
     if (!unavailForm.doctorId || !unavailForm.date) return;
     setSaving(true);
     try {
-      await markDoctorUnavailable(hospital._id, unavailForm.doctorId, { date: unavailForm.date, reason: unavailForm.reason });
+      await markDoctorUnavailable(hospital._id || hospital.id, unavailForm.doctorId, { date: unavailForm.date, reason: unavailForm.reason });
       setMsg('Doctor marked unavailable for that date.');
       setShowUnavailModal(false);
       setUnavailForm({ doctorId: '', date: '', reason: '' });
@@ -152,9 +167,16 @@ export default function HospitalDashboard() {
 
   if (!hospital) {
     return (
-      <div className="max-w-4xl mx-auto text-center py-12">
+      <div className="max-w-4xl mx-auto text-center py-12 bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+        <Building2 className="w-12 h-12 text-slate-400 mx-auto mb-3" />
         <h2 className="text-2xl font-bold text-slate-800">Hospital Profile Not Found</h2>
-        <p className="text-slate-600 mt-2">There was an issue loading your hospital details. Please contact support.</p>
+        <p className="text-slate-600 mt-2">There was an issue loading your hospital details. Please contact support or try reloading.</p>
+        <button
+          onClick={loadData}
+          className="mt-6 px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-xl transition shadow-sm"
+        >
+          Retry Loading
+        </button>
       </div>
     );
   }

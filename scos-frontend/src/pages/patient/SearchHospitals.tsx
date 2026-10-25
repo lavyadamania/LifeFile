@@ -89,8 +89,8 @@ export default function SearchHospitals() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {hospitals.map((hospital: any) => (
               <div
-                key={hospital._id}
-                onClick={() => navigate(`/patient/hospital/${hospital._id}`)}
+                key={hospital._id || hospital.id}
+                onClick={() => navigate(`/patient/hospital/${hospital._id || hospital.id}`)}
                 className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-indigo-200 transition-all cursor-pointer group"
               >
                 <div className="flex items-start justify-between mb-4">

@@ -1,3 +1,17 @@
+/**
+ * ============================================================================
+ * [TEMPORARILY DISABLED] LifeFile Node.js Backend
+ * ============================================================================
+ * The Node.js Express backend is disabled. The system is operating exclusively
+ * on the Spring Boot backend (scos-backend-spring) running on port 8080.
+ * To re-enable the Node backend, uncomment the code below.
+ * ============================================================================
+ */
+
+console.log('ℹ️ [LifeFile] Node.js backend is temporarily disabled.');
+console.log('ℹ️ [LifeFile] Running Spring Boot version exclusively on http://localhost:8080');
+
+/*
 require('dotenv').config(); // LifeFile Server Entrypoint - Gemini 3.6 Fix
 const express = require('express');
 const mongoose = require('mongoose');
@@ -84,3 +98,4 @@ mongoose.connect(process.env.MONGO_URI)
     console.error('❌ MongoDB connection error:', err.message);
     process.exit(1);
   });
+*/

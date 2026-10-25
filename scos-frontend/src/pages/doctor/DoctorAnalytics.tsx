@@ -47,6 +47,7 @@ export default function DoctorAnalytics() {
   const kpiCards = [
     { title: 'Total Patients', value: kpis.uniquePatients, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
     { title: 'Total Appointments', value: kpis.totalAppointments, icon: Calendar, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
+    { title: 'Private Clinic Appts', value: data.privateClinic?.totalAppointments || 0, icon: Stethoscope, color: 'text-cyan-600', bg: 'bg-cyan-50', border: 'border-cyan-100' },
     { title: 'Prescriptions', value: kpis.totalPrescriptions, icon: FileText, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
     { title: "Today's Appts", value: kpis.todayAppts, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
     { title: 'Completion Rate', value: `${kpis.completionRate}%`, icon: TrendingUp, color: kpis.completionRate >= 70 ? 'text-emerald-600' : 'text-red-600', bg: kpis.completionRate >= 70 ? 'bg-emerald-50' : 'bg-red-50', border: kpis.completionRate >= 70 ? 'border-emerald-100' : 'border-red-100' },
@@ -210,6 +211,16 @@ export default function DoctorAnalytics() {
               </BarChart>
             </ResponsiveContainer>
           )}
+        </div>
+      </div>
+
+      <div className="bg-cyan-50 border border-cyan-100 rounded-2xl p-6">
+        <h2 className="text-lg font-bold text-slate-800">{data.privateClinic?.name || 'Private Clinic'}</h2>
+        <p className="text-sm text-slate-500 mt-1">Private clinic activity is separated from hospital appointments.</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+          <div><p className="text-xs font-semibold text-slate-500 uppercase">Appointments</p><p className="text-2xl font-extrabold text-cyan-700">{data.privateClinic?.totalAppointments || 0}</p></div>
+          <div><p className="text-xs font-semibold text-slate-500 uppercase">Completed</p><p className="text-2xl font-extrabold text-emerald-600">{data.privateClinic?.completedAppointments || 0}</p></div>
+          <div><p className="text-xs font-semibold text-slate-500 uppercase">Patients</p><p className="text-2xl font-extrabold text-blue-600">{data.privateClinic?.uniquePatients || 0}</p></div>
         </div>
       </div>
 

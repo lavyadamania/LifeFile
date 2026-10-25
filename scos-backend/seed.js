@@ -8,7 +8,7 @@ async function seed() {
     await mongoose.connect(process.env.MONGO_URI);
     console.log('Connected to MongoDB');
 
-    const hashedPassword = await bcrypt.hash('123456', 10);
+    const hashedPassword = await bcrypt.hash('Demo@123', 10);
 
     // Find admin by any old email variant
     const existingOld = await User.findOne({ 
@@ -21,7 +21,7 @@ async function seed() {
         { _id: existingOld._id },
         { $set: { email: 'lavya@admin', password: hashedPassword } }
       );
-      console.log('✅ Admin updated: lavya@admin / 123456');
+      console.log('✅ Admin updated: lavya@admin / Demo@123');
       process.exit(0);
     }
 
@@ -32,7 +32,7 @@ async function seed() {
         { _id: existing._id },
         { $set: { password: hashedPassword } }
       );
-      console.log('✅ Admin password reset: lavya@admin / 123456');
+      console.log('✅ Admin password reset: lavya@admin / Demo@123');
       process.exit(0);
     }
 
@@ -40,11 +40,11 @@ async function seed() {
     await User.create({
       name: 'Lavya',
       email: 'lavya@admin',
-      password: '123456',
+      password: 'Demo@123',
       role: 'admin',
     });
 
-    console.log('✅ Admin seeded: lavya@admin / 123456');
+    console.log('✅ Admin seeded: lavya@admin / Demo@123');
     process.exit(0);
   } catch (err) {
     console.error('❌ Seed error:', err.message);

@@ -1,9 +1,15 @@
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { Stethoscope } from 'lucide-react';
 import useAuthStore from '../store/useAuthStore';
 
 export default function BaseLayout() {
   const { role, logout } = useAuthStore();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true, state: null });
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -35,7 +41,7 @@ export default function BaseLayout() {
                   <span className="text-sm font-medium px-2.5 py-1 bg-slate-100 text-slate-700 rounded-full capitalize">
                     {role}
                   </span>
-                  <button onClick={logout} className="text-sm font-medium text-red-600 hover:text-red-700">Logout</button>
+                  <button onClick={handleLogout} className="text-sm font-medium text-red-600 hover:text-red-700">Logout</button>
                 </div>
               ) : (
                 <div className="text-sm text-slate-500 italic">Not logged in</div>

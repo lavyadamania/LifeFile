@@ -1,0 +1,14 @@
+services:
+  metabase:
+    image: metabase/metabase:v0.56.13
+    container_name: lifefile-metabase
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - metabase-data:/metabase.db
+
+volumes:
+  metabase-data:

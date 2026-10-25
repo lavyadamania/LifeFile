@@ -3,10 +3,10 @@ const { Kafka, Partitioners, logLevel } = require('kafkajs');
 const kafka = new Kafka({
   clientId: 'scos-backend',
   brokers: [process.env.KAFKA_BROKER || 'localhost:9092'],
-  logLevel: logLevel.WARN,
+  logLevel: logLevel.NOTHING,
   retry: {
     initialRetryTime: 300,
-    retries: 8
+    retries: 3
   }
 });
 

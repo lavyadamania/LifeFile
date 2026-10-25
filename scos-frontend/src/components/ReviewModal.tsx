@@ -1,33 +1,43 @@
 import { useState } from 'react';
 import { Star, X } from 'lucide-react';
+import { submitReview } from '../lib/api';
 
 interface ReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   doctorName: string;
+  doctorId: string;
+  appointmentId: string;
+  onSubmitted?: () => void;
 }
 
-export default function ReviewModal({ isOpen, onClose, doctorName }: ReviewModalProps) {
+export default function ReviewModal({ isOpen, onClose, doctorName, doctorId, appointmentId, onSubmitted }: ReviewModalProps) {
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
+    setError('');
+    try {
+      await submitReview({ doctorId, appointmentId, rating, comment });
       setIsSubmitting(false);
       setIsSuccess(true);
       setTimeout(() => {
         setIsSuccess(false);
         onClose();
+        onSubmitted?.();
       }, 2000);
-    }, 1000);
+    } catch (err: any) {
+      setIsSubmitting(false);
+      setError(err.response?.data?.error || 'Unable to submit your review.');
+    }
   };
 
   return (
@@ -83,6 +93,8 @@ export default function ReviewModal({ isOpen, onClose, doctorName }: ReviewModal
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
                 />
               </div>
+
+              {error && <p className="text-sm text-red-600">{error}</p>}
 
               <button 
                 type="submit"

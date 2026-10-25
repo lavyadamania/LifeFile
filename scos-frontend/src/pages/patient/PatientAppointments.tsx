@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, MapPin, CalendarDays, AlertTriangle, ArrowRightLeft, XCircle, Building2, Lock, UserCheck, Bell } from 'lucide-react';
+import { Clock, MapPin, CalendarDays, AlertTriangle, ArrowRightLeft, XCircle, Building2, Lock, UserCheck, Bell, Trash2, Star } from 'lucide-react';
 import { getAppointments, cancelAppointment, rescheduleAppointment, getMissedAppointments, updateAppointmentStatus, addToQueue } from '../../lib/api';
+import ReviewModal from '../../components/ReviewModal';
 
 export default function PatientAppointments() {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ export default function PatientAppointments() {
   const [newDate, setNewDate] = useState('');
   const [newTime, setNewTime] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [reviewTarget, setReviewTarget] = useState<any | null>(null);
 
   // Postpone modal (for missed)
   const [postponeTarget, setPostponeTarget] = useState<any | null>(null);
@@ -42,7 +44,7 @@ export default function PatientAppointments() {
 
   const confirmCancel = async () => {
     if (!cancelTarget) return;
-    await cancelAppointment(cancelTarget._id);
+    await cancelAppointment(cancelTarget._id || cancelTarget.id);
     setCancelTarget(null);
     setSuccessMsg('Appointment cancelled successfully.');
     setTimeout(() => setSuccessMsg(''), 3000);
@@ -51,7 +53,7 @@ export default function PatientAppointments() {
 
   const confirmReschedule = async () => {
     if (!rescheduleTarget || !newDate || !newTime) return;
-    await rescheduleAppointment(rescheduleTarget._id, { date: newDate, time: newTime, status: 'Rescheduled' });
+    await rescheduleAppointment(rescheduleTarget._id || rescheduleTarget.id, { date: newDate, time: newTime, status: 'Rescheduled' });
     setRescheduleTarget(null);
     setNewDate('');
     setNewTime('');
@@ -63,7 +65,7 @@ export default function PatientAppointments() {
   const handlePostpone = async () => {
     if (!postponeTarget || !postponeDate || !postponeTime) return;
     try {
-      await updateAppointmentStatus(postponeTarget._id, {
+      await updateAppointmentStatus(postponeTarget._id || postponeTarget.id, {
         status: 'Postponed',
         postponedDate: postponeDate,
         postponedTime: postponeTime,
@@ -88,6 +90,18 @@ export default function PatientAppointments() {
       fetchAppointments();
     } catch {
       setSuccessMsg('Failed to expire appointment.');
+      setTimeout(() => setSuccessMsg(''), 3000);
+    }
+  };
+
+  const handleDeleteMissed = async (id: string) => {
+    try {
+      await cancelAppointment(id);
+      setSuccessMsg('Missed appointment removed from your records.');
+      setTimeout(() => setSuccessMsg(''), 3000);
+      fetchAppointments();
+    } catch {
+      setSuccessMsg('Failed to delete appointment.');
       setTimeout(() => setSuccessMsg(''), 3000);
     }
   };
@@ -292,7 +306,7 @@ export default function PatientAppointments() {
                     {checkInInfo.canCheckIn && <UserCheck className="w-4 h-4" />}
                     {checkInInfo.buttonText}
                   </button>
-                  <button onClick={() => navigate(`/patient/queue-status/${apt._id}`)} className="px-4 py-2.5 bg-blue-50 text-blue-700 font-bold rounded-xl hover:bg-blue-100 transition-colors text-sm border border-blue-200">
+                  <button onClick={() => navigate(`/patient/queue-status/${apt._id || apt.id}`)} className="px-4 py-2.5 bg-blue-50 text-blue-700 font-bold rounded-xl hover:bg-blue-100 transition-colors text-sm border border-blue-200">
                     Live ETA Tracker
                   </button>
                   <button onClick={() => setRescheduleTarget(apt)} className="px-3 py-2 bg-slate-100 text-slate-700 rounded-xl font-medium text-xs hover:bg-slate-200 transition-colors">Reschedule</button>
@@ -302,7 +316,7 @@ export default function PatientAppointments() {
 
               {/* Actions for missed */}
               {tab === 'missed' && (
-                <div className="flex gap-2 mt-4 pt-4 border-t border-amber-100">
+                <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-amber-100">
                   <button
                     onClick={() => setPostponeTarget(apt)}
                     className="flex items-center gap-1.5 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-medium text-sm hover:bg-blue-100 transition-colors border border-blue-200"
@@ -310,10 +324,34 @@ export default function PatientAppointments() {
                     <ArrowRightLeft className="w-4 h-4" /> Postpone to New Date
                   </button>
                   <button
-                    onClick={() => handleExpire(apt._id)}
+                    onClick={() => handleDeleteMissed(apt._id || apt.id)}
                     className="flex items-center gap-1.5 px-4 py-2 bg-red-50 text-red-600 rounded-lg font-medium text-sm hover:bg-red-100 transition-colors border border-red-200"
                   >
-                    <XCircle className="w-4 h-4" /> Let Expire
+                    <Trash2 className="w-4 h-4" /> Delete from Records
+                  </button>
+                </div>
+              )}
+
+              {/* Actions for past missed appointments */}
+              {tab === 'past' && apt.status === 'Completed' && (
+                <div className="flex justify-end mt-4 pt-4 border-t border-slate-100">
+                  <button
+                    onClick={() => setReviewTarget(apt)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg font-bold text-xs hover:bg-amber-100 transition-colors border border-amber-200"
+                  >
+                    <Star className="w-3.5 h-3.5 fill-amber-400" /> Rate Doctor
+                  </button>
+                </div>
+              )}
+
+              {/* Actions for past missed appointments */}
+              {tab === 'past' && apt.status === 'Missed' && (
+                <div className="flex justify-end mt-4 pt-4 border-t border-slate-100">
+                  <button
+                    onClick={() => handleDeleteMissed(apt._id || apt.id)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg font-medium text-xs hover:bg-red-100 transition-colors border border-red-200"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Delete from Records
                   </button>
                 </div>
               )}
@@ -393,6 +431,21 @@ export default function PatientAppointments() {
             </div>
           </div>
         </div>
+      )}
+
+      {reviewTarget && (
+        <ReviewModal
+          isOpen={Boolean(reviewTarget)}
+          onClose={() => setReviewTarget(null)}
+          doctorName={reviewTarget.doctorName}
+          doctorId={reviewTarget.doctorId?._id || reviewTarget.doctorId}
+          appointmentId={reviewTarget._id || reviewTarget.id}
+          onSubmitted={() => {
+            setReviewTarget(null);
+            setSuccessMsg('Your review was submitted successfully.');
+            setTimeout(() => setSuccessMsg(''), 3000);
+          }}
+        />
       )}
     </div>
   );

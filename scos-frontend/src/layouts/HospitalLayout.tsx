@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Building2, LayoutDashboard, Users, Search, LogOut, BarChart3 } from 'lucide-react';
 import useAuthStore from '../store/useAuthStore';
 import NotificationPanel from '../components/NotificationPanel';
@@ -6,6 +6,12 @@ import NotificationPanel from '../components/NotificationPanel';
 export default function HospitalLayout() {
   const { user, logout } = useAuthStore();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true, state: null });
+  };
 
   const navigation = [
     { name: 'Dashboard & Staff', href: '/hospital', icon: LayoutDashboard },
@@ -41,7 +47,7 @@ export default function HospitalLayout() {
               {user?.name || 'Hospital Admin'}
             </span>
             <button
-              onClick={logout}
+              onClick={handleLogout}
               className="p-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-800 transition-colors"
               title="Logout"
             >

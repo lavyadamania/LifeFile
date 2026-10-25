@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Star, Clock, Calendar, CheckCircle, Loader2, Building2, Activity, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Star, Clock, Calendar, CheckCircle, Loader2, Building2, Activity, AlertTriangle, Stethoscope, CheckCircle2 } from 'lucide-react';
 import { getDoctors, createAppointment } from '../../lib/api';
 import useAuthStore from '../../store/useAuthStore';
 
@@ -9,8 +9,18 @@ export default function DoctorBooking() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuthStore();
-  const hospitalId = searchParams.get('hospitalId') || null;
-  const hospitalName = searchParams.get('hospitalName') || '';
+  // preselected via URL params (e.g. coming from hospital page)
+  const preselectedHospitalId = searchParams.get('hospitalId') || null;
+  const preselectedHospitalName = searchParams.get('hospitalName') || '';
+
+  // User-selected booking location
+  const [bookingType, setBookingType] = useState<'private' | 'hospital'>(preselectedHospitalId ? 'hospital' : 'private');
+  const [selectedHospitalId, setSelectedHospitalId] = useState<string | null>(preselectedHospitalId);
+  const [selectedHospitalName, setSelectedHospitalName] = useState(preselectedHospitalName);
+
+  // backward-compat: exposed as hospitalId
+  const hospitalId = bookingType === 'private' ? null : selectedHospitalId;
+  const hospitalName = bookingType === 'private' ? '' : selectedHospitalName;
   
   const [doctor, setDoctor] = useState<any>(null);
   const [availableDates, setAvailableDates] = useState<{date: Date, display: string}[]>([]);
@@ -57,7 +67,7 @@ export default function DoctorBooking() {
   useEffect(() => {
     if (!doctorId) return;
     getDoctors().then(res => {
-      const match = res.data.find((d: any) => d._id === doctorId);
+      const match = res.data.find((d: any) => (d._id || d.id) === doctorId);
       if (match) setDoctor(match);
     }).catch(console.error);
   }, [doctorId]);
@@ -72,7 +82,7 @@ export default function DoctorBooking() {
       
       await createAppointment({
         patientId: user.id,
-        doctorId: doctor._id,
+        doctorId: doctor._id || doctor.id,
         patientName: user.name,
         doctorName: doctor.name,
         date: dateStr,
@@ -80,6 +90,7 @@ export default function DoctorBooking() {
         type: 'Consultation',
         hospitalId: hospitalId || undefined,
         hospitalName: hospitalName || undefined,
+        bookingType: bookingType,
         chiefComplaint: chiefComplaint || 'General OPD Consultation',
         triageLevel: classifiedTriage,
       });
@@ -211,10 +222,16 @@ export default function DoctorBooking() {
             </div>
           </div>
           <p className="text-blue-600 font-medium mb-3">{doctor.specialization}</p>
-          {hospitalName && (
+          {bookingType === 'hospital' && selectedHospitalName && (
             <div className="flex items-center gap-2 mb-3 bg-indigo-50 border border-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-sm font-medium w-max">
               <Building2 className="w-4 h-4" />
-              Booking appointment at {hospitalName}
+              Booking at {selectedHospitalName}
+            </div>
+          )}
+          {bookingType === 'private' && (
+            <div className="flex items-center gap-2 mb-3 bg-emerald-50 border border-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg text-sm font-medium w-max">
+              <Stethoscope className="w-4 h-4" />
+              Booking at Private Clinic
             </div>
           )}
           <p className="text-slate-600 leading-relaxed text-sm max-w-2xl">{doctor.bio || 'No summary available.'}</p>
@@ -262,6 +279,56 @@ export default function DoctorBooking() {
           />
         </div>
       </div>
+
+      {/* === Booking Location Selector === */}
+      {doctor.hospitals && doctor.hospitals.length > 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+          <h2 className="text-lg font-bold text-slate-800 mb-1">Where would you like to book?</h2>
+          <p className="text-slate-400 text-sm mb-4">Choose whether to book at the hospital or at the doctor's private clinic</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Private Clinic */}
+            <button
+              onClick={() => { setBookingType('private'); setSelectedHospitalId(null); setSelectedHospitalName(''); }}
+              className={`relative rounded-xl p-4 text-left border-2 transition-all ${bookingType === 'private' ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 hover:border-emerald-200'}`}
+            >
+              {bookingType === 'private' && <CheckCircle2 className="absolute top-3 right-3 w-5 h-5 text-emerald-500" />}
+              <div className="flex items-center gap-3 mb-2">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${bookingType === 'private' ? 'bg-emerald-100' : 'bg-slate-100'}`}>
+                  <Stethoscope className={`w-5 h-5 ${bookingType === 'private' ? 'text-emerald-600' : 'text-slate-400'}`} />
+                </div>
+                <div>
+                  <p className={`font-bold text-sm ${bookingType === 'private' ? 'text-emerald-700' : 'text-slate-700'}`}>Private Clinic</p>
+                  <p className="text-xs text-slate-400">{doctor.location || 'Doctor\'s private practice'}</p>
+                </div>
+              </div>
+            </button>
+            {/* Hospitals */}
+            {doctor.hospitals.map((h: any) => {
+              const hId = h._id || h;
+              const hName = h.name || 'Hospital';
+              const isActive = bookingType === 'hospital' && selectedHospitalId === hId;
+              return (
+                <button
+                  key={hId}
+                  onClick={() => { setBookingType('hospital'); setSelectedHospitalId(hId); setSelectedHospitalName(hName); }}
+                  className={`relative rounded-xl p-4 text-left border-2 transition-all ${isActive ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-blue-200'}`}
+                >
+                  {isActive && <CheckCircle2 className="absolute top-3 right-3 w-5 h-5 text-blue-500" />}
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isActive ? 'bg-blue-100' : 'bg-slate-100'}`}>
+                      <Building2 className={`w-5 h-5 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
+                    </div>
+                    <div>
+                      <p className={`font-bold text-sm ${isActive ? 'text-blue-700' : 'text-slate-700'}`}>{hName}</p>
+                      <p className="text-xs text-slate-400">Hospital appointment</p>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Booking Selector */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">

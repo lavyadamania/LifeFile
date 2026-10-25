@@ -59,6 +59,8 @@ interface StreamingState {
   skipAppt: (doctorId: string, appointmentId: string) => Promise<void>;
 }
 
+let healthPollTimer: any = null;
+
 const useStreamingStore = create<StreamingState>((set, get) => ({
   isConnected: false,
   lastEvent: null,
@@ -116,44 +118,78 @@ const useStreamingStore = create<StreamingState>((set, get) => ({
   },
 
   connect: () => {
+    // 1. Dual-check backend health (verifies Spring Boot or Node backend connectivity)
+    const checkHealth = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/health`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.status === 'ok') {
+            set({ isConnected: true });
+            return;
+          }
+        }
+      } catch {
+        if (!get().socket?.connected) {
+          set({ isConnected: false });
+        }
+      }
+    };
+
+    checkHealth();
+    if (!healthPollTimer) {
+      healthPollTimer = setInterval(checkHealth, 4000);
+    }
+
+    // 2. Also attempt Socket.io stream (when running on Node.js backend)
     const existing = get().socket;
     if (existing?.connected) return;
 
-    const socket = io(API_BASE_URL, {
-      transports: ['polling', 'websocket'],
-    });
+    try {
+      const socket = io(API_BASE_URL, {
+        transports: ['polling', 'websocket'],
+        reconnectionAttempts: 3,
+        timeout: 3000,
+      });
 
-    socket.on('connect', () => {
-      set({ isConnected: true, socket });
-      console.log('[Socket.io] Connected to backend');
-    });
+      socket.on('connect', () => {
+        set({ isConnected: true, socket });
+        console.log('[Streaming] Connected to backend');
+      });
 
-    socket.on('disconnect', () => {
-      set({ isConnected: false });
-      console.log('[Socket.io] Disconnected');
-    });
+      socket.on('disconnect', () => {
+        // If socket disconnects, check health before marking offline
+        checkHealth();
+      });
 
-    socket.on('kafka-event', (event: KafkaEvent) => {
-      console.log(`[Kafka Event] ${event.topic}:`, event.data);
-      
-      set((state) => ({
-        lastEvent: event,
-        events: [event, ...state.events].slice(0, 50),
-      }));
+      socket.on('kafka-event', (event: KafkaEvent) => {
+        console.log(`[Kafka Event] ${event.topic}:`, event.data);
+        
+        set((state) => ({
+          lastEvent: event,
+          events: [event, ...state.events].slice(0, 50),
+        }));
 
-      // Refetch authoritative backend queue state on socket event
-      const doctorId = get().activeDoctorId;
-      const hospitalId = get().activeHospitalId;
-      if (doctorId && (event.topic === 'lifefile.queue.updates' || event.topic === 'scos.queue.updates')) {
-        const { action } = event.data;
-        if (['ADD_TO_QUEUE', 'CALL_NEXT', 'SKIP_PATIENT', 'CONSULTATION_COMPLETE'].includes(action)) {
-          get().fetchQueue(doctorId, hospitalId);
+        // Refetch authoritative backend queue state on socket event
+        const doctorId = get().activeDoctorId;
+        const hospitalId = get().activeHospitalId;
+        if (doctorId && (event.topic === 'lifefile.queue.updates' || event.topic === 'scos.queue.updates')) {
+          const { action } = event.data;
+          if (['ADD_TO_QUEUE', 'CALL_NEXT', 'SKIP_PATIENT', 'CONSULTATION_COMPLETE'].includes(action)) {
+            get().fetchQueue(doctorId, hospitalId);
+          }
         }
-      }
-    });
+      });
+    } catch (e) {
+      console.warn('[Streaming] Socket connection skipped:', e);
+    }
   },
 
   disconnect: () => {
+    if (healthPollTimer) {
+      clearInterval(healthPollTimer);
+      healthPollTimer = null;
+    }
     const socket = get().socket;
     if (socket) {
       socket.disconnect();

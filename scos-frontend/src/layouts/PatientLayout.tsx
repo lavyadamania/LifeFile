@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Activity, Calendar, Clock, Settings, LogOut, User, Building2, BrainCircuit, HeartPulse, BarChart3 } from 'lucide-react';
 import useAuthStore from '../store/useAuthStore';
 import NotificationPanel from '../components/NotificationPanel';
@@ -7,6 +7,12 @@ import PatientAIAssistant from '../components/PatientAIAssistant';
 export default function PatientLayout() {
   const { user, logout } = useAuthStore();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true, state: null });
+  };
 
   const navigation = [
     { name: 'Dashboard', href: '/patient', icon: Activity },
@@ -52,7 +58,7 @@ export default function PatientLayout() {
 
         <div className="p-4 border-t border-slate-200">
           <button
-            onClick={logout}
+            onClick={handleLogout}
             className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg font-medium text-red-600 hover:bg-red-50 transition-colors"
           >
             <LogOut className="w-5 h-5" />

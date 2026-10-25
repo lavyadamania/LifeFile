@@ -15,10 +15,10 @@ export default function PublicDoctorProfile() {
     
     // Fetch doctor by ID (assuming getDoctors handles single ID or we filter)
     getDoctors().then(res => {
-      const match = res.data.find((d: any) => d._id === id);
+      const match = res.data.find((d: any) => (d._id || d.id) === id);
       if (match) {
         setDoctorDetails(match);
-        getReviews(match._id).then(r => setReviews(r.data)).catch(() => {});
+        getReviews(match._id || match.id).then(r => setReviews(r.data)).catch(() => {});
       }
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -51,7 +51,7 @@ export default function PublicDoctorProfile() {
               <span className="text-5xl font-extrabold text-blue-900 relative z-10 shadow-sm">{doctorDetails.name?.charAt(0) || 'D'}</span>
             </div>
             <button 
-              onClick={() => navigate(`/patient/book/${doctorDetails._id}`)}
+              onClick={() => navigate(`/patient/book/${doctorDetails._id || doctorDetails.id}`)}
               className="mt-20 px-6 py-2.5 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 transition-colors shadow-md flex items-center gap-2"
             >
               <Calendar className="w-5 h-5" /> Book Appointment
