@@ -9,6 +9,7 @@
     "dev:metabase": "docker compose -f bi-labs/docker-compose.metabase.yml up",
     "seed:ananya": "node scos-backend/seed-ananya-live.js",
     "dev": "npm run seed:ananya && concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:bi\" \"npm run dev:metabase\"",
+    "lint": "npm run lint --prefix scos-frontend",
     "start": "mvn -f scos-backend-spring/pom.xml spring-boot:run",
     "seed:presentation": "npm run seed:presentation --prefix scos-backend --",
     "stop:all": "taskkill /F /IM node.exe || exit 0",
