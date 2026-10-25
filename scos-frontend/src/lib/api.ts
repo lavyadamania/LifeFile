@@ -72,6 +72,8 @@ export const getClinics = (params?: { search?: string }) =>
 
 export const addClinic = (data: any) => api.post('/clinics', data);
 export const updateClinic = (id: string, data: any) => api.put(`/clinics/${id}`, data);
+export const getMyClinic = () => api.get('/clinics/me');
+export const updateMyClinic = (data: any) => api.put('/clinics/me', data);
 
 // Appointments
 export const getAppointments = (params?: { status?: string; hospitalId?: string }) =>

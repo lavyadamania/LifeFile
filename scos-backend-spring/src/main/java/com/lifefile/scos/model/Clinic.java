@@ -21,6 +21,7 @@ public class Clinic {
     private String doctorId;
     private String doctorName;
     private String address;
+    private String mapsUrl;
     private String phone;
     @Builder.Default private Integer doctors = 0;
     @Builder.Default private String status = "active"; // active | maintenance

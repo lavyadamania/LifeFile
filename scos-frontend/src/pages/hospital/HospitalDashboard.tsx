@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Building2, Edit2, Users, UserPlus, Check, Loader2, X, Search, CalendarOff } from 'lucide-react';
+import { Building2, Edit2, Users, UserPlus, Check, Loader2, X, Search, CalendarOff, MapPin, ExternalLink } from 'lucide-react';
 import { getMyHospital, updateMyHospital, getDoctors, updateHospitalDoctors, hireHospitalDoctor, updateDoctor, getHospitalRequests, updateHospitalRequest, markDoctorUnavailable } from '../../lib/api';
 
 export default function HospitalDashboard() {
@@ -9,7 +9,7 @@ export default function HospitalDashboard() {
   const [doctorSearch, setDoctorSearch] = useState('');
   
   const [isEditing, setIsEditing] = useState(false);
-  const [form, setForm] = useState({ name: '', address: '', phone: '', email: '', description: '', departments: '', status: 'active' });
+  const [form, setForm] = useState({ name: '', address: '', mapsUrl: '', phone: '', email: '', description: '', departments: '', status: 'active' });
   
   const [showHire, setShowHire] = useState(false);
   const [showUnavailModal, setShowUnavailModal] = useState(false);
@@ -29,6 +29,7 @@ export default function HospitalDashboard() {
         setForm({
           name: hRes.data.name || '',
           address: hRes.data.address || '',
+          mapsUrl: hRes.data.mapsUrl || '',
           phone: hRes.data.phone || '',
           email: hRes.data.email || '',
           description: hRes.data.description || '',
@@ -207,6 +208,7 @@ export default function HospitalDashboard() {
           <div className="mt-6 pt-6 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4">
             <input value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} placeholder="Hospital Name" className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" />
             <input value={form.address} onChange={e => setForm(p => ({...p, address: e.target.value}))} placeholder="Address" className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" />
+            <input value={form.mapsUrl} onChange={e => setForm(p => ({...p, mapsUrl: e.target.value}))} placeholder="Google Maps link" type="url" className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" />
             <input value={form.phone} onChange={e => setForm(p => ({...p, phone: e.target.value}))} placeholder="Phone" className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" />
             <input value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} placeholder="Email" className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" />
             <textarea value={form.description} onChange={e => setForm(p => ({...p, description: e.target.value}))} placeholder="Description" rows={2} className="md:col-span-2 w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none resize-none" />
@@ -224,6 +226,7 @@ export default function HospitalDashboard() {
         ) : (
           <div className="mt-6 pt-6 border-t border-slate-100 flex flex-wrap gap-x-8 gap-y-4 text-sm">
             <div><span className="text-slate-400 block mb-1">Address</span><span className="font-medium text-slate-800">{hospital.address}</span></div>
+            <div><span className="text-slate-400 block mb-1">Directions</span>{hospital.mapsUrl ? <a href={hospital.mapsUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-bold text-purple-600 hover:text-purple-800"><MapPin className="w-4 h-4" />Open Maps <ExternalLink className="w-3 h-3" /></a> : <span className="font-medium text-slate-400">Not added</span>}</div>
             <div><span className="text-slate-400 block mb-1">Phone</span><span className="font-medium text-slate-800">{hospital.phone}</span></div>
             <div><span className="text-slate-400 block mb-1">Email</span><span className="font-medium text-slate-800">{hospital.email || '-'}</span></div>
             <div><span className="text-slate-400 block mb-1">Status</span><span className={`font-bold px-2 py-0.5 rounded text-xs ${hospital.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>{hospital.status}</span></div>

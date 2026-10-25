@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Building2, MapPin, Phone, Mail, Star, ArrowLeft, Clock, UserPlus, FileText, ChevronDown, ChevronUp, Pill, ArrowRight } from 'lucide-react';
+import { Building2, MapPin, Phone, Mail, Star, ArrowLeft, Clock, UserPlus, FileText, ChevronDown, ChevronUp, Pill, ArrowRight, ExternalLink } from 'lucide-react';
 import { getHospital, getHospitalPatientRecords, transferHospital, getPatientProfile } from '../../lib/api';
 import useAuthStore from '../../store/useAuthStore';
 
@@ -42,6 +42,7 @@ export default function HospitalDetail() {
                 <h1 className="text-3xl font-bold">{hospital.name}</h1>
                 <div className="flex flex-wrap items-center gap-4 mt-2 text-white/80 text-sm">
                   <span className="flex items-center gap-1"><MapPin className="w-4 h-4" />{hospital.address}</span>
+                  {hospital.mapsUrl && <a href={hospital.mapsUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-white"><ExternalLink className="w-4 h-4" />Directions</a>}
                   <span className="flex items-center gap-1"><Phone className="w-4 h-4" />{hospital.phone}</span>
                   {hospital.email && <span className="flex items-center gap-1"><Mail className="w-4 h-4" />{hospital.email}</span>}
                 </div>

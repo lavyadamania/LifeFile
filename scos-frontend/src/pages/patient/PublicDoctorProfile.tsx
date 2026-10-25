@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, GraduationCap, Users, Building, FileBadge, MapPin, Calendar, ArrowLeft } from 'lucide-react';
-import { getDoctors, getReviews } from '../../lib/api';
+import { Star, GraduationCap, Users, Building, FileBadge, MapPin, Calendar, ArrowLeft, ExternalLink } from 'lucide-react';
+import { getDoctors, getReviews, getClinics } from '../../lib/api';
 
 export default function PublicDoctorProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [doctorDetails, setDoctorDetails] = useState<any>(null);
   const [reviews, setReviews] = useState<any[]>([]);
+  const [privateClinic, setPrivateClinic] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,6 +20,10 @@ export default function PublicDoctorProfile() {
       if (match) {
         setDoctorDetails(match);
         getReviews(match._id || match.id).then(r => setReviews(r.data)).catch(() => {});
+        getClinics().then(r => {
+          const clinic = (r.data || []).find((item: any) => String(item.doctorId) === String(match._id || match.id));
+          setPrivateClinic(clinic || null);
+        }).catch(() => {});
       }
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -63,6 +68,7 @@ export default function PublicDoctorProfile() {
             <p className="text-lg text-slate-700 mt-1 font-medium">{doctorDetails.specialization}</p>
             <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-slate-500 font-medium">
               <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4" /> {doctorDetails.location || 'Location not specified'}</span>
+              {privateClinic?.mapsUrl && <a href={privateClinic.mapsUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-cyan-700 hover:text-cyan-900"><MapPin className="w-4 h-4" /> Private clinic directions <ExternalLink className="w-3 h-3" /></a>}
               <span className="flex items-center gap-1.5 text-blue-600 font-bold"><Users className="w-4 h-4" /> {doctorDetails.reviewCount ? `${doctorDetails.reviewCount * 5}+ Patients` : 'Building practice'}</span>
             </div>
           </div>

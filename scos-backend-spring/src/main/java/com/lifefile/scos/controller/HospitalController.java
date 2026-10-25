@@ -60,6 +60,7 @@ public class HospitalController {
         map.put("userId", hospital.getUserId());
         map.put("name", hospital.getName());
         map.put("address", hospital.getAddress());
+        map.put("mapsUrl", hospital.getMapsUrl());
         map.put("phone", hospital.getPhone());
         map.put("email", hospital.getEmail());
         map.put("description", hospital.getDescription());
@@ -149,6 +150,7 @@ public class HospitalController {
         Hospital hospital = hospitalOpt.get();
         if (updateData.getName() != null) hospital.setName(updateData.getName());
         if (updateData.getAddress() != null) hospital.setAddress(updateData.getAddress());
+        if (updateData.getMapsUrl() != null) hospital.setMapsUrl(updateData.getMapsUrl().trim());
         if (updateData.getPhone() != null) hospital.setPhone(updateData.getPhone());
         if (updateData.getEmail() != null) hospital.setEmail(updateData.getEmail());
         if (updateData.getDescription() != null) hospital.setDescription(updateData.getDescription());

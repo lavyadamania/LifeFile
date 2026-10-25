@@ -3,9 +3,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { Stethoscope, Loader2, Sparkles, Building2, Shield, Users, Search, Database } from 'lucide-react';
+import { Stethoscope, Loader2, Sparkles, Building2, Shield, Users, Search, Database, BarChart3, ExternalLink } from 'lucide-react';
 import useAuthStore from '../store/useAuthStore';
 import { loginUser, resetDemoData } from '../lib/api';
+
+const POWER_BI_URL = import.meta.env.VITE_POWERBI_URL || 'https://app.powerbi.com/';
+const STREAMLIT_URL = import.meta.env.VITE_STREAMLIT_URL || 'http://localhost:8511';
+const METABASE_URL = import.meta.env.VITE_METABASE_URL || 'http://localhost:3000';
 
 const loginSchema = z.object({
   email: z.string().min(1, "Username / Email is required"),
@@ -404,6 +408,30 @@ export default function Login() {
             {isResettingDemo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
             {isResettingDemo ? 'Resetting...' : 'Reset & Seed Demo Data'}
           </button>
+        </div>
+
+        <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-cyan-200 bg-cyan-50 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <BarChart3 className="mt-0.5 h-5 w-5 shrink-0 text-cyan-700" />
+            <div>
+              <p className="text-sm font-semibold text-cyan-950">Power BI analytics</p>
+              <p className="text-xs text-cyan-800">Open the configured LifeFile executive dashboard.</p>
+            </div>
+          </div>
+          <a href={POWER_BI_URL} target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-cyan-700 px-3 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-cyan-800">
+            Open Power BI <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        </div>
+
+        <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <a href={STREAMLIT_URL} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm transition-colors hover:bg-emerald-100">
+            <span><span className="block text-sm font-semibold text-emerald-950">Streamlit BI dashboard</span><span className="block text-xs text-emerald-800">Live practicals and filtered reports</span></span>
+            <ExternalLink className="h-4 w-4 text-emerald-700" />
+          </a>
+          <a href={METABASE_URL} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-2xl border border-orange-200 bg-orange-50 p-4 shadow-sm transition-colors hover:bg-orange-100">
+            <span><span className="block text-sm font-semibold text-orange-950">Metabase analytics</span><span className="block text-xs text-orange-800">Saved questions and dashboards</span></span>
+            <ExternalLink className="h-4 w-4 text-orange-700" />
+          </a>
         </div>
 
         <div className="bg-white py-8 px-4 shadow sm:rounded-2xl sm:px-10 border border-slate-100">

@@ -11,7 +11,7 @@ export default function AdminManageHospitals() {
   const [editId, setEditId] = useState<string | null>(null);
   const [rosterHospitalId, setRosterHospitalId] = useState<string | null>(null);
   const [hireHospitalId, setHireHospitalId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', address: '', phone: '', email: '', description: '', departments: '', status: 'active' });
+  const [form, setForm] = useState({ name: '', address: '', mapsUrl: '', phone: '', email: '', description: '', departments: '', status: 'active' });
   const [hireForm, setHireForm] = useState({ name: '', email: '', password: '', specialization: 'General Practice' });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
@@ -19,7 +19,7 @@ export default function AdminManageHospitals() {
   const load = () => { getHospitals({ search: search || undefined }).then(r => setHospitals(r.data)).catch(() => {}); };
   useEffect(() => { load(); getDoctors().then(r => setAllDoctors(r.data)).catch(() => {}); }, [search]);
 
-  const resetForm = () => setForm({ name: '', address: '', phone: '', email: '', description: '', departments: '', status: 'active' });
+  const resetForm = () => setForm({ name: '', address: '', mapsUrl: '', phone: '', email: '', description: '', departments: '', status: 'active' });
 
   const handleSave = async () => {
     setSaving(true);
@@ -39,7 +39,7 @@ export default function AdminManageHospitals() {
   };
 
   const handleEdit = (h: any) => {
-    setForm({ name: h.name, address: h.address, phone: h.phone, email: h.email || '', description: h.description || '', departments: (h.departments || []).join(', '), status: h.status });
+    setForm({ name: h.name, address: h.address, mapsUrl: h.mapsUrl || '', phone: h.phone, email: h.email || '', description: h.description || '', departments: (h.departments || []).join(', '), status: h.status });
     setEditId(h._id); setShowAdd(true);
   };
 
@@ -98,6 +98,7 @@ export default function AdminManageHospitals() {
             <div className="flex items-center justify-between"><h2 className="text-lg font-bold text-slate-800">{editId ? 'Edit Hospital' : 'Add Hospital'}</h2><button onClick={() => { setShowAdd(false); setEditId(null); }}><X className="w-5 h-5 text-slate-400" /></button></div>
             <input value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} placeholder="Hospital Name *" className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
             <input value={form.address} onChange={e => setForm(p => ({...p, address: e.target.value}))} placeholder="Address *" className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+            <input value={form.mapsUrl} onChange={e => setForm(p => ({...p, mapsUrl: e.target.value}))} placeholder="Google Maps link" type="url" className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
             <div className="grid grid-cols-2 gap-3">
               <input value={form.phone} onChange={e => setForm(p => ({...p, phone: e.target.value}))} placeholder="Phone *" className="px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
               <input value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} placeholder="Email" className="px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
@@ -141,6 +142,7 @@ export default function AdminManageHospitals() {
                 <div>
                   <h3 className="text-lg font-bold text-slate-800">{h.name}</h3>
                   <p className="text-sm text-slate-500">{h.address} • {h.phone}</p>
+                  {h.mapsUrl && <a href={h.mapsUrl} target="_blank" rel="noreferrer" className="text-xs font-bold text-indigo-600 hover:text-indigo-800">Open Google Maps</a>}
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`text-xs font-bold px-2 py-1 rounded-full ${h.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>{h.status}</span>

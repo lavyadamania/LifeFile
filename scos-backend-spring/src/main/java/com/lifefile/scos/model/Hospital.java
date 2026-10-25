@@ -1,11 +1,15 @@
 package com.lifefile.scos.model;
 
-import lombok.*;
+import java.time.Instant;
+import java.util.List;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.Instant;
-import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /** Hospital document — mirrors models/Hospital.js */
 @Document(collection = "hospitals")
@@ -24,6 +28,7 @@ public class Hospital {
     private String userId;
     private String name;
     private String address;
+    private String mapsUrl;
     private String phone;
     @Builder.Default private String email       = "";
     @Builder.Default private String description = "";

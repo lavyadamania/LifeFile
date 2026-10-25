@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { Star, GraduationCap, Users, Save, X, Edit2, Plus, Trash2, Building, FileBadge, MapPin } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
-import { getReviews, getDoctors, updateDoctor } from '../../lib/api';
+import { getReviews, getDoctors, updateDoctor, getMyClinic, updateMyClinic } from '../../lib/api';
 
 interface Education { degree: string; institution: string; year: string; }
 interface Experience { title: string; hospital: string; duration: string; description: string; }
@@ -29,6 +29,10 @@ export default function DoctorProfile() {
   const { user } = useAuthStore();
   const [doctorDetails, setDoctorDetails] = useState<any>(null);
   const [reviews, setReviews] = useState<any[]>([]);
+  const [privateClinic, setPrivateClinic] = useState<any>(null);
+  const [clinicMapsUrl, setClinicMapsUrl] = useState('');
+  const [clinicAddress, setClinicAddress] = useState('');
+  const [savingClinic, setSavingClinic] = useState(false);
   const [activeModal, setActiveModal] = useState<'intro' | 'about' | 'experience' | 'education' | 'skills' | 'certifications' | 'hours' | null>(null);
 
   const { register, control, handleSubmit, reset, watch, setValue } = useForm<ProfileForm>({
@@ -86,6 +90,23 @@ export default function DoctorProfile() {
   };
 
   useEffect(() => { loadData(); }, [user]);
+  useEffect(() => {
+    getMyClinic().then(res => {
+      setPrivateClinic(res.data);
+      setClinicMapsUrl(res.data.mapsUrl || '');
+      setClinicAddress(res.data.address || '');
+    }).catch(() => setPrivateClinic(null));
+  }, [user]);
+
+  const saveClinicLocation = async () => {
+    setSavingClinic(true);
+    try {
+      const res = await updateMyClinic({ address: clinicAddress, mapsUrl: clinicMapsUrl });
+      setPrivateClinic(res.data);
+    } finally {
+      setSavingClinic(false);
+    }
+  };
 
   const onSubmit = async (data: ProfileForm) => {
     if (!doctorDetails) return;
@@ -421,6 +442,20 @@ export default function DoctorProfile() {
 
         {/* Side Content (Skills, Certs, Ratings) */}
         <div className="space-y-6">
+
+          {privateClinic && (
+            <div className="bg-cyan-50 rounded-xl border border-cyan-100 shadow-sm p-6">
+              <h3 className="text-lg font-bold text-slate-900">Private Clinic Location</h3>
+              <p className="text-xs text-slate-500 mt-1">Add directions patients can use for your clinic.</p>
+              <label className="block text-xs font-bold text-slate-500 mt-4 mb-1">Clinic address</label>
+              <input value={clinicAddress} onChange={e => setClinicAddress(e.target.value)} className="w-full p-2.5 border border-cyan-200 rounded-lg bg-white" placeholder="Clinic address" />
+              <label className="block text-xs font-bold text-slate-500 mt-3 mb-1">Google Maps link</label>
+              <input value={clinicMapsUrl} onChange={e => setClinicMapsUrl(e.target.value)} type="url" className="w-full p-2.5 border border-cyan-200 rounded-lg bg-white" placeholder="https://maps.google.com/..." />
+              <button onClick={saveClinicLocation} disabled={savingClinic} className="mt-4 w-full px-4 py-2 bg-cyan-700 text-white font-bold rounded-lg hover:bg-cyan-800 disabled:opacity-50">
+                {savingClinic ? 'Saving...' : 'Save Clinic Location'}
+              </button>
+            </div>
+          )}
           
           {/* Timings */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">

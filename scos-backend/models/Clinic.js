@@ -5,6 +5,7 @@ const clinicSchema = new mongoose.Schema({
   doctorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Doctor', default: null },
   doctorName: { type: String, default: '' },
   address: { type: String, required: true },
+  mapsUrl: { type: String, default: '' },
   phone:   { type: String, required: true },
   doctors: { type: Number, default: 0 },
   status:  { type: String, enum: ['active', 'maintenance'], default: 'active' },

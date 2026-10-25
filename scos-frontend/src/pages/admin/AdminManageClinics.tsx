@@ -6,7 +6,7 @@ export default function AdminManageClinics() {
   const [clinics, setClinics] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAdd, setShowAdd] = useState(false);
-  const [newClinic, setNewClinic] = useState({ name: '', address: '', phone: '', status: 'active' });
+  const [newClinic, setNewClinic] = useState({ name: '', address: '', mapsUrl: '', phone: '', status: 'active' });
 
   const fetchClinics = () => {
     getClinics({ search: searchTerm || undefined }).then(res => setClinics(res.data)).catch(() => {});
@@ -17,7 +17,7 @@ export default function AdminManageClinics() {
   const handleAdd = async () => {
     if (!newClinic.name || !newClinic.address || !newClinic.phone) return;
     await addClinic(newClinic);
-    setNewClinic({ name: '', address: '', phone: '', status: 'active' });
+    setNewClinic({ name: '', address: '', mapsUrl: '', phone: '', status: 'active' });
     setShowAdd(false);
     fetchClinics();
   };
@@ -47,6 +47,7 @@ export default function AdminManageClinics() {
             <h2 className="text-lg font-bold text-slate-800">Add New Clinic</h2>
             <input placeholder="Clinic Name" value={newClinic.name} onChange={e => setNewClinic({...newClinic, name: e.target.value})} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
             <input placeholder="Address" value={newClinic.address} onChange={e => setNewClinic({...newClinic, address: e.target.value})} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+            <input placeholder="Google Maps link" type="url" value={newClinic.mapsUrl} onChange={e => setNewClinic({...newClinic, mapsUrl: e.target.value})} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
             <input placeholder="Phone" value={newClinic.phone} onChange={e => setNewClinic({...newClinic, phone: e.target.value})} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
             <div className="flex gap-3">
               <button onClick={() => setShowAdd(false)} className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200">Cancel</button>
@@ -90,6 +91,7 @@ export default function AdminManageClinics() {
                 <div className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
                   <p className="text-sm font-medium text-slate-600 leading-relaxed">{clinic.address}</p>
+                  {clinic.mapsUrl && <a href={clinic.mapsUrl} target="_blank" rel="noreferrer" className="text-sm font-bold text-blue-600 hover:text-blue-800">Open Google Maps</a>}
                 </div>
                 <div className="flex items-center gap-3">
                   <Phone className="w-5 h-5 text-slate-400 shrink-0" />

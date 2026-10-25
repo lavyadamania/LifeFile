@@ -16,8 +16,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.lifefile.scos.model.Clinic;
+import com.lifefile.scos.model.Doctor;
 import com.lifefile.scos.model.User;
 import com.lifefile.scos.repository.ClinicRepository;
+import com.lifefile.scos.repository.DoctorRepository;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +33,7 @@ import lombok.RequiredArgsConstructor;
 public class ClinicController {
 
     private final ClinicRepository clinicRepository;
+    private final DoctorRepository doctorRepository;
 
     @GetMapping
     public ResponseEntity<?> getClinics(@RequestParam(required = false) String search) {
@@ -61,6 +64,39 @@ public class ClinicController {
         clinic.setCreatedAt(now);
         clinic.setUpdatedAt(now);
         return ResponseEntity.status(HttpStatus.CREATED).body(clinicRepository.save(clinic));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getMyClinic(HttpServletRequest request) {
+        User user = (User) request.getAttribute("currentUser");
+        if (user == null || !"doctor".equalsIgnoreCase(user.getRole())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        Optional<Doctor> doctor = doctorRepository.findByUserId(user.getId());
+        if (doctor.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(java.util.Map.of("error", "Doctor profile not found"));
+        Optional<Clinic> clinic = clinicRepository.findByDoctorId(doctor.get().getId());
+        if (clinic.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(java.util.Map.of("error", "Private clinic not found"));
+        return ResponseEntity.ok(clinic.get());
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<?> updateMyClinic(@RequestBody Clinic updateData, HttpServletRequest request) {
+        User user = (User) request.getAttribute("currentUser");
+        if (user == null || !"doctor".equalsIgnoreCase(user.getRole())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        Optional<Doctor> doctor = doctorRepository.findByUserId(user.getId());
+        if (doctor.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(java.util.Map.of("error", "Doctor profile not found"));
+        Optional<Clinic> existing = clinicRepository.findByDoctorId(doctor.get().getId());
+        if (existing.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(java.util.Map.of("error", "Private clinic not found"));
+
+        Clinic clinic = existing.get();
+        if (updateData.getMapsUrl() != null) clinic.setMapsUrl(updateData.getMapsUrl().trim());
+        if (updateData.getAddress() != null) clinic.setAddress(updateData.getAddress().trim());
+        clinic.setUpdatedAt(Instant.now());
+        return ResponseEntity.ok(clinicRepository.save(clinic));
     }
 
     @PutMapping("/{id}")

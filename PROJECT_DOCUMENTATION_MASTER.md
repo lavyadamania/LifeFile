@@ -17,6 +17,7 @@ The **LifeFile / SCOS (Smart Clinic Operating System)** is an enterprise-grade, 
 7. **Doctor-Linked Private Clinics:** Gives every seeded doctor a private clinic record while preserving hospital affiliations as separate facilities.
 8. **Operational Healthcare Analytics:** Provides role-specific hospital, private-clinic, doctor, patient, and admin analytics from live MongoDB data.
 9. **Patient Feedback & BI:** Captures post-appointment doctor reviews and exposes real LifeFile data to five BI practicals, Streamlit, and Metabase.
+10. **Verified Directions:** Hospitals and doctors can maintain Google Maps links for their facility or private clinic so patients can open directions directly.
 
 ---
 
@@ -48,6 +49,7 @@ flowchart TD
         AnalyticsCtrl[Role Analytics /api/analytics]
         ReviewCtrl[Doctor Reviews /api/reviews]
         ClinicCtrl[Private Clinic Controller /api/clinics]
+        Maps[Google Maps Directions Links]
         NLPTriage[Real-Time NLP Symptom Triage Classifier]
         InspectDB[CLI Database Inspector Matrix Engine]
     end
@@ -78,6 +80,8 @@ flowchart TD
     ClinicCtrl --> DB_Clinic
     ReviewCtrl --> DB_Review
     AnalyticsCtrl --> DB_Appt & DB_Doc & DB_Hosp & DB_Clinic & DB_Review
+    HospitalCtrl --> Maps
+    ClinicCtrl --> Maps
 
     QueueCtrl -->|Produce Event: scos.queue.updates| Kafka
     Kafka --> SocketServer
@@ -297,6 +301,13 @@ The Spring analytics controller exposes role-specific live aggregates:
 
 Private-clinic appointments are identified by the absence of a `hospitalId` and are grouped through the appointment's `doctorId` and the linked clinic record.
 
+### Facility Directions and Permissions
+
+* Hospital users can edit `mapsUrl` and address from the Hospital Dashboard. The value is returned by public hospital APIs and rendered as a **Directions** link.
+* Doctors can edit only the `mapsUrl` and address of their own linked private clinic through `GET/PUT /api/clinics/me`. They cannot edit another doctor's clinic.
+* Admins can add or update clinic map links from Manage Clinics and hospital map links from Manage Hospitals.
+* The legacy Node API supports the same clinic location fields for seeders and compatibility; Spring Boot is the primary runtime.
+
 ## 📈 9. Healthcare BI Practicals & Metabase
 
 The `bi-labs` module operates on real LifeFile MongoDB collections; it does not generate unrelated sample sales data. `pipeline.py` performs five practicals:
@@ -326,30 +337,50 @@ Metabase runs at `http://localhost:3000` and connects to MongoDB through `host.d
 npm run dev
 ```
 
-The root `dev` command seeds the live Ananya presentation data and starts Spring Boot on port `8080` plus Vite on port `5173`. To run the legacy Node backend separately, use `npm run dev:backend:node`.
+The root `dev` command seeds the live Ananya presentation data and starts Spring Boot on port `8080`, Vite on port `5173`, Streamlit BI on port `8511`, and Metabase on port `3000` through `concurrently`. Docker must be running for Metabase, and the BI virtual environment must contain Streamlit. To run the legacy Node backend separately, use `npm run dev:backend:node`.
 
-### 2. Seed 24/7 Time-Aware Presentation Data
+### 2. Configure Power BI on Login
+
+Set `VITE_POWERBI_URL` before building the frontend to point the login-page **Open Power BI** button at the published report or dashboard:
+
+```powershell
+$env:VITE_POWERBI_URL = "https://app.powerbi.com/view?r=YOUR_PUBLIC_REPORT_ID"
+Push-Location scos-frontend; npm run build; Pop-Location
+```
+
+When no environment value is supplied, the button opens the Power BI home page.
+
+The login page also exposes local BI links by default and supports deployment overrides:
+
+```powershell
+$env:VITE_STREAMLIT_URL = "http://localhost:8511"
+$env:VITE_METABASE_URL = "http://localhost:3000"
+```
+
+These buttons open the Streamlit practical dashboard and Metabase saved questions/dashboard directly from the login page.
+
+### 3. Seed 24/7 Time-Aware Presentation Data
 ```bash
 npm run seed:presentation -- --confirm
 ```
 
-### 3. Inspect Live Database State
+### 4. Inspect Live Database State
 ```bash
 npm run inspect:db
 ```
 
-### 4. Synchronize Doctor-Linked Private Clinics
+### 5. Synchronize Doctor-Linked Private Clinics
 ```powershell
 npm run seed:clinics --prefix scos-backend
 ```
 
 This non-destructive seeder removes unlinked clinic records and upserts one private clinic per existing doctor.
 
-### 5. Reset Demo Data from Login
+### 6. Reset Demo Data from Login
 
 The local demo reset control calls the protected demo-data endpoint and reseeds the presentation dataset. Use it only when a full demo reset is acceptable.
 
-### 6. Stop / Cleanup Background Processes
+### 7. Stop / Cleanup Background Processes
 ```bash
 npm run stop:all
 ```
@@ -362,3 +393,6 @@ npm run stop:all
 * **Build Verification:** Spring Maven compile and frontend TypeScript/Vite build pass
 * **Data Store:** MongoDB database `scos` at `mongodb://localhost:27017/scos`
 * **Runtime Ports:** Spring `8080`, Vite `5173`, Streamlit `8511`, Metabase `3000`
+* **Directions Field:** `mapsUrl` on `hospitals` and `clinics`
+* **Power BI Configuration:** `VITE_POWERBI_URL`
+* **BI Link Configuration:** `VITE_STREAMLIT_URL`, `VITE_METABASE_URL`

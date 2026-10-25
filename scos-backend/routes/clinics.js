@@ -30,6 +30,31 @@ router.post('/', auth, requireRole('admin'), async (req, res) => {
   }
 });
 
+// GET /api/clinics/me — doctor gets the linked private clinic
+router.get('/me', auth, requireRole('doctor'), async (req, res) => {
+  try {
+    const Doctor = require('../models/Doctor');
+    const doctor = await Doctor.findOne({ userId: req.user._id || req.user.id });
+    if (!doctor) return res.status(404).json({ error: 'Doctor profile not found' });
+    const clinic = await Clinic.findOne({ doctorId: doctor._id });
+    if (!clinic) return res.status(404).json({ error: 'Private clinic not found' });
+    res.json(clinic);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/clinics/me — doctor updates the linked private clinic location
+router.put('/me', auth, requireRole('doctor'), async (req, res) => {
+  try {
+    const clinic = await Clinic.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!clinic) return res.status(404).json({ error: 'Clinic not found' });
+    res.json(clinic);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // PUT /api/clinics/:id — admin only
 router.put('/:id', auth, requireRole('admin'), async (req, res) => {
   try {
