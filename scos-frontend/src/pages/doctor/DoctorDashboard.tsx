@@ -11,7 +11,7 @@ import { getAppointments, getPrescriptions, getDoctorProfile } from '../../lib/a
 
 export default function DoctorDashboard() {
   const navigate = useNavigate();
-  const { isConnected, connect, disconnect, queueList } = useStreamingStore();
+  const { isConnected, connect, disconnect, queueList, fetchQueue } = useStreamingStore();
   const { mode, setMode, activeHospitalId, hospitals } = useDoctorStore();
 
   const [hospitalStats, setHospitalStats] = useState({ appointments: 0, prescriptions: 0 });
@@ -26,6 +26,15 @@ export default function DoctorDashboard() {
   useEffect(() => {
     getDoctorProfile().then(res => setDoctorProfile(res.data)).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    const docId = doctorProfile?._id || doctorProfile?.id;
+    if (docId) {
+      fetchQueue(docId);
+      const interval = setInterval(() => fetchQueue(docId), 5000);
+      return () => clearInterval(interval);
+    }
+  }, [doctorProfile, fetchQueue]);
 
   useEffect(() => {
     // Hospital stats

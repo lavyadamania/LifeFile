@@ -1,4 +1,4 @@
-import { Users, UserPlus, Activity, ArrowRight, CheckCircle2, Building2, AlertCircle } from 'lucide-react';
+import { Users, UserPlus, Activity, ArrowRight, CheckCircle2, Building2, AlertCircle, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useStreamingStore from '../../services/streaming';
 import useDoctorStore from '../../store/useDoctorStore';
@@ -74,8 +74,8 @@ export default function DoctorQueue() {
   };
 
   const handleStartConsultation = () => {
-    if (nowServing?.id) {
-      navigate(`/doctor/consultation/${nowServing.id}`);
+    if (nowServing?.id || nowServing?.patientId) {
+      navigate(`/doctor/consultation/${nowServing.patientId || nowServing.id}`);
     }
   };
 
@@ -126,9 +126,20 @@ export default function DoctorQueue() {
                  <h1 className="text-3xl font-extrabold text-slate-800 mb-1">
                    {nowServing.name || nowServing.patientName}
                  </h1>
-                 <p className="text-sm font-bold text-blue-600 mb-6 font-mono">
+                 <p className="text-sm font-bold text-blue-600 mb-3 font-mono">
                    Permanent Token #{nowServing.tokenNumber || nowServing.baseToken} • Slot Time: {nowServing.time || '—'}
                  </p>
+
+                 {/* Reason for Appointment / Chief Complaint */}
+                 <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-3 mb-6 max-w-md mx-auto text-left shadow-sm">
+                   <div className="flex items-center gap-1.5 text-amber-800 font-bold text-xs uppercase tracking-wider mb-1">
+                     <FileText className="w-3.5 h-3.5 text-amber-600" />
+                     <span>Booking Reason / Chief Complaint</span>
+                   </div>
+                   <p className="text-sm font-semibold text-slate-800">
+                     {nowServing.chiefComplaint || nowServing.reason || 'General OPD Consultation'}
+                   </p>
+                 </div>
                 
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                    <button 
@@ -238,6 +249,14 @@ export default function DoctorQueue() {
                    </div>
                  </div>
                  
+                 {/* Booking Reason */}
+                 <div className={`px-2.5 py-1.5 rounded-lg border text-left ${isEmergencyTop ? 'bg-red-100/70 border-red-200' : 'bg-slate-50 border-slate-100'}`}>
+                   <span className={`block uppercase font-bold text-[8px] tracking-wider ${isEmergencyTop ? 'text-red-700' : 'text-slate-400'}`}>Booking Reason</span>
+                   <p className={`text-xs font-semibold line-clamp-2 ${isEmergencyTop ? 'text-red-950 font-bold' : 'text-slate-800'}`}>
+                     {patient.chiefComplaint || patient.reason || 'General OPD Consultation'}
+                   </p>
+                 </div>
+
                  <div className="mt-1 flex items-center justify-between">
                    <p className={`text-[10px] italic truncate max-w-[110px] ${isEmergencyTop ? 'text-red-600 font-medium' : 'text-slate-500'}`}>
                      {patient.priority?.reason}
@@ -297,6 +316,14 @@ export default function DoctorQueue() {
                      <span className="text-red-400 block uppercase font-bold text-[7px]">Triage</span>
                      <span className="font-bold text-red-700">Lvl {patient.triageLevel}</span>
                    </div>
+                 </div>
+
+                 {/* Booking Reason for missed */}
+                 <div className="px-2 py-1 bg-red-50/70 rounded-lg border border-red-100 text-left">
+                   <span className="block uppercase font-bold text-[7px] text-red-400 tracking-wider">Booking Reason</span>
+                   <p className="text-[11px] font-semibold text-red-900 truncate">
+                     {patient.chiefComplaint || patient.reason || 'General OPD Consultation'}
+                   </p>
                  </div>
                  
                  <div className="mt-1 flex items-center justify-between gap-2">

@@ -237,18 +237,39 @@ export default function DoctorConsultation() {
   useEffect(() => {
     if (patientId && patientId !== 'new' && !selectedPatient) {
       getAppointments().then(res => {
-        const appt = res.data.find((a: any) => (a.patientId?._id || a.patientId) === patientId);
-        if (appt && appt.patientId?._id) {
+        const appt = res.data.find((a: any) =>
+          (a.patientId?._id || a.patientId) === patientId ||
+          a._id === patientId ||
+          a.id === patientId
+        );
+        if (appt) {
+          const pId = typeof appt.patientId === 'object' && appt.patientId ? appt.patientId._id : (appt.patientId || patientId);
+          const pName = typeof appt.patientId === 'object' && appt.patientId ? appt.patientId.name : (appt.patientName || 'Patient');
+          const pEmail = typeof appt.patientId === 'object' && appt.patientId ? (appt.patientId.email || '') : '';
+
           handleSelectPatient({
-            _id: appt.patientId._id,
-            name: appt.patientId.name,
-            email: appt.patientId.email || ''
+            _id: pId,
+            name: pName,
+            email: pEmail
           });
+
           // Capture hospital context from appointment
           if (appt.hospitalId) setAppointmentHospitalId(appt.hospitalId);
           if (appt.hospitalName) setAppointmentHospitalName(appt.hospitalName);
+        } else {
+          handleSelectPatient({
+            _id: patientId,
+            name: 'Patient',
+            email: ''
+          });
         }
-      }).catch(console.error);
+      }).catch(() => {
+        handleSelectPatient({
+          _id: patientId,
+          name: 'Patient',
+          email: ''
+        });
+      });
     }
   }, [patientId]);
 
@@ -766,6 +787,47 @@ export default function DoctorConsultation() {
           <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col h-full overflow-hidden">
             
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
+
+              {/* Prominent AI Clinical Health Summary banner for writing prescription */}
+              {(selectedPatient || !isNewPrescription) && (
+                <div className="bg-gradient-to-r from-teal-50 via-emerald-50 to-teal-50 border border-teal-200 rounded-2xl p-5 shadow-sm">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 bg-teal-600 rounded-xl flex items-center justify-center text-white shadow-sm">
+                        <BrainCircuit className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-slate-900 text-base">
+                            AI Patient Health Summary
+                          </h3>
+                          <span className="text-[10px] font-bold uppercase tracking-wider bg-teal-100 text-teal-800 px-2.5 py-0.5 rounded-full border border-teal-300">
+                            Clinical Decision Support
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          Synthesized clinical insights from past visits, longitudinal prescriptions, and active risks
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/85 backdrop-blur-sm rounded-xl border border-teal-100 p-4">
+                    {loadingAi ? (
+                      <div className="flex items-center gap-2 text-sm text-slate-500 py-2">
+                        <div className="w-4 h-4 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+                        Analyzing patient records and generating AI clinical summary...
+                      </div>
+                    ) : aiSummary ? (
+                      <div className="text-sm text-slate-700 prose prose-sm max-w-none prose-p:leading-relaxed prose-li:my-0.5">
+                        <ReactMarkdown>{aiSummary}</ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-500 italic">No AI summary generated for this patient yet.</p>
+                    )}
+                  </div>
+                </div>
+              )}
               
               {/* Smart NLP Auto-Fill */}
               <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-2xl border border-indigo-100 shadow-sm p-6 space-y-4">

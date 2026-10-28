@@ -73,6 +73,18 @@ def load_project_data(mongo_uri: str = DEFAULT_MONGO_URI, database: str = "scos"
     return appointments_df, reviews_df
 
 
+def load_exported_data(input_dir: str | Path) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Load the BI CSV exports without requiring a MongoDB connection."""
+    export_dir = Path(input_dir)
+    appointments_path = export_dir / "cleaned_appointments.csv"
+    reviews_path = export_dir / "review_sentiment.csv"
+    if not appointments_path.exists() or not reviews_path.exists():
+        raise FileNotFoundError(
+            f"Expected {appointments_path.name} and {reviews_path.name} in {export_dir}"
+        )
+    return pd.read_csv(appointments_path), pd.read_csv(reviews_path)
+
+
 def clean_appointment_data(data: pd.DataFrame) -> pd.DataFrame:
     cleaned = data.copy()
     cleaned.columns = cleaned.columns.str.strip().str.lower().str.replace(" ", "_", regex=False)
@@ -173,8 +185,16 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run BI analysis on the real LifeFile MongoDB data.")
     parser.add_argument("--mongo-uri", default=os.getenv("MONGO_URI", DEFAULT_MONGO_URI))
     parser.add_argument("--database", default="scos")
+    parser.add_argument(
+        "--input-dir",
+        default=os.getenv("BI_INPUT_DIR"),
+        help="Read cleaned_appointments.csv and review_sentiment.csv instead of MongoDB.",
+    )
     args = parser.parse_args()
-    appointments, reviews = load_project_data(args.mongo_uri, args.database)
+    if args.input_dir:
+        appointments, reviews = load_exported_data(args.input_dir)
+    else:
+        appointments, reviews = load_project_data(args.mongo_uri, args.database)
     appointments = clean_appointment_data(appointments)
     reviews = add_review_sentiment(reviews)
     print(json.dumps(export_reports(appointments, reviews), indent=2, default=str))

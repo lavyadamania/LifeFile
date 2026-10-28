@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Activity, Stethoscope, FileText, ChevronDown, ChevronUp, Clock, Pill, Building2, CalendarCheck, MapPin, Upload, Lock, FileImage, Droplets, ActivitySquare, X, Loader2 } from 'lucide-react';
+import { Activity, Stethoscope, FileText, ChevronDown, ChevronUp, Clock, Pill, Building2, CalendarCheck, MapPin, Upload, Lock, FileImage, Droplets, ActivitySquare, X, Loader2, BrainCircuit } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import PrescriptionPreview from '../../components/PrescriptionPreview';
-import { getPrescriptions, getAppointments, getMedicalRecords, uploadAttachment, createMedicalRecord, verifyMedicalRecordPassword } from '../../lib/api';
+import { getPrescriptions, getAppointments, getMedicalRecords, uploadAttachment, createMedicalRecord, verifyMedicalRecordPassword, getPatientProfile, getPatientAISummary } from '../../lib/api';
 
 type TimelineEvent = {
   id: string;
@@ -30,6 +31,10 @@ export default function MedicalTimeline() {
   const [recordPassword, setRecordPassword] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState('');
+
+  // AI Summary State
+  const [aiSummary, setAiSummary] = useState('');
+  const [loadingAi, setLoadingAi] = useState(true);
 
   const loadTimeline = () => {
     setLoading(true);
@@ -78,6 +83,19 @@ export default function MedicalTimeline() {
 
   useEffect(() => {
     loadTimeline();
+
+    // Fetch patient AI health summary
+    getPatientProfile().then(profileRes => {
+      const patientId = profileRes.data?._id || profileRes.data?.id;
+      if (patientId) {
+        getPatientAISummary(patientId)
+          .then(res => setAiSummary(res.data.summary))
+          .catch(() => setAiSummary('Failed to generate AI summary.'))
+          .finally(() => setLoadingAi(false));
+      } else {
+        setLoadingAi(false);
+      }
+    }).catch(() => setLoadingAi(false));
   }, []);
 
   const toggleEvent = (id: string) => {
@@ -138,6 +156,39 @@ export default function MedicalTimeline() {
         </button>
       </div>
 
+      {/* AI Health Summary Card */}
+      <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-2xl border border-teal-100 shadow-sm p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center text-teal-600 shadow-sm">
+              <BrainCircuit className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-800">My AI Health Summary</h3>
+              <p className="text-xs text-slate-500">Auto-generated synthesis based on your longitudinal medical history</p>
+            </div>
+          </div>
+          <span className="text-xs font-bold px-3 py-1 bg-teal-100 text-teal-700 rounded-full border border-teal-200">
+            LifeFile AI
+          </span>
+        </div>
+        
+        <div className="bg-white/70 backdrop-blur-sm rounded-xl border border-teal-100/60 p-5">
+          {loadingAi ? (
+            <div className="flex items-center gap-2 text-sm text-slate-500 py-3">
+              <div className="w-5 h-5 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+              Generating your personalized AI health summary...
+            </div>
+          ) : aiSummary ? (
+            <div className="text-sm text-slate-700 prose prose-sm max-w-none prose-p:leading-relaxed prose-li:my-0.5">
+              <ReactMarkdown>{aiSummary}</ReactMarkdown>
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500 italic">No AI summary available. Start by uploading a medical record or booking a consultation.</p>
+          )}
+        </div>
+      </div>
+
       {loading ? (
         <div className="flex justify-center py-16">
           <div className="w-8 h-8 border-3 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
@@ -150,7 +201,7 @@ export default function MedicalTimeline() {
         </div>
       ) : (
         <div className="relative border-l-2 border-slate-200 ml-4 space-y-6 pb-8">
-          {events.map((event) => {
+          {events.map((event: TimelineEvent) => {
             const isExpanded = expandedEvents.has(event.id);
             const isRx = event.type === 'prescription';
             const isRec = event.type === 'record';
@@ -285,7 +336,7 @@ export default function MedicalTimeline() {
                   type="text" 
                   placeholder="e.g. Brain MRI, Annual Blood Test" 
                   value={uploadForm.title}
-                  onChange={e => setUploadForm(p => ({...p, title: e.target.value}))}
+                  onChange={e => setUploadForm((p: any) => ({...p, title: e.target.value}))}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 />
               </div>
@@ -294,7 +345,7 @@ export default function MedicalTimeline() {
                 <label className="block text-sm font-bold text-slate-700 mb-1">Report Type</label>
                 <select 
                   value={uploadForm.type}
-                  onChange={e => setUploadForm(p => ({...p, type: e.target.value}))}
+                  onChange={e => setUploadForm((p: any) => ({...p, type: e.target.value}))}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
                 >
                   <option value="other">Other Report</option>
@@ -319,7 +370,7 @@ export default function MedicalTimeline() {
                   <input 
                     type="checkbox" 
                     checked={uploadForm.isProtected} 
-                    onChange={e => setUploadForm(p => ({...p, isProtected: e.target.checked}))}
+                    onChange={e => setUploadForm((p: any) => ({...p, isProtected: e.target.checked}))}
                     className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
                   />
                   <span className="text-sm font-bold text-slate-700 flex items-center gap-1"><Lock className="w-4 h-4 text-slate-400" /> Password Protect (Optional)</span>
@@ -331,7 +382,7 @@ export default function MedicalTimeline() {
                       type="password" 
                       placeholder="Enter a secure password..." 
                       value={uploadForm.password}
-                      onChange={e => setUploadForm(p => ({...p, password: e.target.value}))}
+                      onChange={e => setUploadForm((p: any) => ({...p, password: e.target.value}))}
                       className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
                     />
                     <p className="text-xs text-slate-500 mt-1">You will need this password to view the file later.</p>

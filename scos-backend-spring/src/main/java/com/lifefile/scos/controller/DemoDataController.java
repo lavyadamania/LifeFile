@@ -42,8 +42,8 @@ public class DemoDataController {
         try {
             ProcessBuilder processBuilder = new ProcessBuilder("node", seedScript.getName(), "--confirm")
                     .directory(workingDirectory)
-                    .redirectOutput(ProcessBuilder.Redirect.DISCARD)
-                    .redirectError(ProcessBuilder.Redirect.DISCARD);
+                    .redirectOutput(ProcessBuilder.Redirect.INHERIT)
+                    .redirectError(ProcessBuilder.Redirect.INHERIT);
             processBuilder.environment().put("MONGO_URI", mongoUri);
             Process process = processBuilder.start();
 

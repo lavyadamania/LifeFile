@@ -9,6 +9,7 @@ from pipeline import (
     DEFAULT_MONGO_URI,
     add_review_sentiment,
     clean_appointment_data,
+    load_exported_data,
     load_project_data,
     load_warehouse,
     warehouse_insights,
@@ -18,8 +19,11 @@ st.set_page_config(page_title="LifeFile BI", page_icon="🏥", layout="wide")
 
 
 @st.cache_data
-def get_data(mongo_uri: str):
-    appointments, reviews = load_project_data(mongo_uri)
+def get_data(mongo_uri: str, input_dir: str = ""):
+    if input_dir:
+        appointments, reviews = load_exported_data(input_dir)
+    else:
+        appointments, reviews = load_project_data(mongo_uri)
     return clean_appointment_data(appointments), add_review_sentiment(reviews)
 
 
@@ -27,11 +31,15 @@ st.title("LifeFile Operational BI")
 st.caption("Live analysis of appointments, clinical workload, hospital activity, and patient reviews.")
 
 mongo_uri = os.getenv("MONGO_URI", DEFAULT_MONGO_URI)
+input_dir = os.getenv("BI_INPUT_DIR", "")
 try:
-    appointments, reviews = get_data(mongo_uri)
+    appointments, reviews = get_data(mongo_uri, input_dir)
 except Exception as error:
     st.error(f"Could not load LifeFile MongoDB data: {error}")
-    st.info("Start MongoDB, seed the LifeFile database, and set MONGO_URI if it is not using the default connection.")
+    st.info(
+        "Set MONGO_URI for MongoDB/Atlas access, or set BI_INPUT_DIR to a folder "
+        "containing cleaned_appointments.csv and review_sentiment.csv."
+    )
     st.stop()
 
 with st.sidebar:

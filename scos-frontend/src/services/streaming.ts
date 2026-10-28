@@ -36,6 +36,8 @@ export interface QueuePatient {
   missedCalls?: number;
   time?: string;
   priority?: PriorityDetails;
+  chiefComplaint?: string;
+  reason?: string;
 }
 
 interface StreamingState {
@@ -84,7 +86,7 @@ const useStreamingStore = create<StreamingState>((set, get) => ({
 
       if (res.data && typeof res.data === 'object' && !Array.isArray(res.data)) {
         nowServingItem = res.data.nowServing || null;
-        waitingList = res.data.waitingQueue || [];
+        waitingList = res.data.waitingQueue || res.data.queue || [];
       } else if (Array.isArray(res.data)) {
         waitingList = res.data.map((q: any) => ({
           id: q._id || q.id,
@@ -101,7 +103,9 @@ const useStreamingStore = create<StreamingState>((set, get) => ({
           triageLevel: q.triageLevel,
           missedCalls: q.missedCalls,
           time: q.time,
-          priority: q.priority
+          priority: q.priority,
+          chiefComplaint: q.chiefComplaint || q.reason || 'General Consultation',
+          reason: q.chiefComplaint || q.reason || 'General Consultation'
         }));
       }
 

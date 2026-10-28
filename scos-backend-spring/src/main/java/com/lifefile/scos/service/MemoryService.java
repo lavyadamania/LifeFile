@@ -6,7 +6,9 @@ import com.lifefile.scos.model.AuditLog;
 import com.lifefile.scos.model.Patient;
 import com.lifefile.scos.model.PatientMemory;
 import com.lifefile.scos.model.Prescription;
+import com.lifefile.scos.model.MedicalRecord;
 import com.lifefile.scos.repository.AuditLogRepository;
+import com.lifefile.scos.repository.MedicalRecordRepository;
 import com.lifefile.scos.repository.PatientMemoryRepository;
 import com.lifefile.scos.repository.PatientRepository;
 import com.lifefile.scos.repository.PrescriptionRepository;
@@ -37,6 +39,7 @@ public class MemoryService {
     private final PatientMemoryRepository memoryRepository;
     private final PrescriptionRepository prescriptionRepository;
     private final PatientRepository patientRepository;
+    private final MedicalRecordRepository medicalRecordRepository;
     private final AuditLogRepository auditLogRepository;
     private final ObjectMapper objectMapper;
 
@@ -45,6 +48,9 @@ public class MemoryService {
 
     @Value("${app.genai.base-url:https://generativelanguage.googleapis.com/v1beta}")
     private String geminiBaseUrl;
+
+    @Value("${app.genai.model:gemini-3.5-flash}")
+    private String geminiModel;
 
     public String normalizeText(String text) {
         if (text == null) return "";
@@ -271,7 +277,7 @@ public class MemoryService {
             );
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-            String url = geminiBaseUrl + "/models/gemini-1.5-flash:generateContent";
+            String url = geminiBaseUrl + "/models/" + geminiModel + ":generateContent";
 
             ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
             JsonNode root = objectMapper.readTree(response.getBody());
@@ -335,5 +341,136 @@ public class MemoryService {
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build());
+    }
+
+    public String generatePatientAISummary(String patientIdOrUserId) {
+        Patient patient = patientRepository.findById(patientIdOrUserId)
+                .orElseGet(() -> patientRepository.findByUserId(patientIdOrUserId).orElse(null));
+        if (patient == null) {
+            return null;
+        }
+
+        List<String> targetIds = new ArrayList<>();
+        if (patient.getId() != null) targetIds.add(patient.getId());
+        if (patient.getUserId() != null && !targetIds.contains(patient.getUserId())) targetIds.add(patient.getUserId());
+
+        List<Prescription> prescriptions = prescriptionRepository.findAll().stream()
+                .filter(p -> targetIds.contains(p.getPatientId()))
+                .sorted((a, b) -> {
+                    Instant tA = a.getCreatedAt() != null ? a.getCreatedAt() : Instant.EPOCH;
+                    Instant tB = b.getCreatedAt() != null ? b.getCreatedAt() : Instant.EPOCH;
+                    return tB.compareTo(tA);
+                })
+                .collect(Collectors.toList());
+
+        List<MedicalRecord> records = medicalRecordRepository.findByPatientIdIn(targetIds);
+
+        List<PatientMemory> memories = targetIds.stream()
+                .flatMap(id -> memoryRepository.findByPatientId(id).stream())
+                .collect(Collectors.toList());
+
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("You are an expert medical AI assistant. Summarize the following patient's medical history into a concise, professional clinical summary. Use Markdown formatting.\\n\\n");
+        prompt.append("Patient Name: ").append(patient.getName() != null ? patient.getName() : "N/A").append("\\n");
+        prompt.append("Age: ").append(patient.getAge() != null ? patient.getAge() : "N/A")
+                .append(", Gender: ").append(patient.getGender() != null ? patient.getGender() : "N/A")
+                .append(", Blood Group: ").append(patient.getBloodGroup() != null ? patient.getBloodGroup() : "N/A").append("\\n\\n");
+
+        prompt.append("Known Medical Facts & Memories:\\n");
+        if (memories.isEmpty()) prompt.append("None.\\n");
+        for (PatientMemory m : memories) {
+            prompt.append("- [").append(m.getCategory()).append("] ").append(m.getContent())
+                    .append(" (Status: ").append(m.getStatus()).append(")\\n");
+        }
+
+        prompt.append("\\nPast Prescriptions & Diagnoses:\\n");
+        if (prescriptions.isEmpty()) prompt.append("None.\\n");
+        for (Prescription p : prescriptions) {
+            String medsStr = "None";
+            if (p.getMedications() != null && !p.getMedications().isEmpty()) {
+                medsStr = p.getMedications().stream()
+                        .map(m -> m.getName() + " (" + (m.getDosage() != null ? m.getDosage() : "N/A") + ")")
+                        .collect(Collectors.joining(", "));
+            }
+            prompt.append("- Doctor: Dr. ").append(p.getDoctorName() != null ? p.getDoctorName() : "Doctor")
+                    .append(", Diagnosis: ").append(p.getDiagnosis() != null ? p.getDiagnosis() : "N/A")
+                    .append(", Medications: ").append(medsStr).append("\\n");
+        }
+
+        prompt.append("\\nUploaded Medical Records & Diagnostics:\\n");
+        if (records.isEmpty()) prompt.append("None.\\n");
+        for (MedicalRecord r : records) {
+            prompt.append("- ").append(r.getTitle()).append(" (Type: ").append(r.getType()).append(")\\n");
+        }
+
+        String summaryText = "";
+        if (geminiApiKey != null && !geminiApiKey.isEmpty()) {
+            try {
+                RestTemplate restTemplate = new RestTemplate();
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.set("x-goog-api-key", geminiApiKey);
+
+                Map<String, Object> body = Map.of(
+                        "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt.toString()))))
+                );
+
+                HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+                String url = geminiBaseUrl + "/models/" + geminiModel + ":generateContent";
+
+                ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+                JsonNode root = objectMapper.readTree(response.getBody());
+                summaryText = root.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText();
+            } catch (Exception e) {
+                log.warn("Gemini AI API Summary generation notice: " + e.getMessage() + ". Generating deterministic clinical summary.");
+            }
+        }
+
+        if (summaryText == null || summaryText.isBlank()) {
+            StringBuilder det = new StringBuilder();
+            det.append("### 📋 Comprehensive Clinical AI Summary\\n\\n");
+            det.append("**Patient Profile:** ").append(patient.getName() != null ? patient.getName() : "Patient").append(" (")
+                    .append(patient.getAge() != null ? patient.getAge() + " yrs" : "Age N/A").append(", ")
+                    .append(patient.getGender() != null ? patient.getGender() : "Gender N/A").append(", Blood Group: **")
+                    .append(patient.getBloodGroup() != null ? patient.getBloodGroup() : "N/A").append("**)\\n\\n");
+
+            if (!memories.isEmpty()) {
+                det.append("#### 🧠 Extracted Clinical Memory Facts (").append(memories.size()).append(")\\n");
+                for (PatientMemory m : memories) {
+                    String badge = "CONFLICTED".equals(m.getStatus()) ? "⚠️ ALLERGY CONFLICT" : "✅ ACTIVE";
+                    det.append("- **[").append(m.getCategory()).append("]** ").append(m.getContent())
+                            .append(" *(").append(badge).append(")*\\n");
+                }
+                det.append("\\n");
+            }
+
+            det.append("#### 💊 Prescription & Diagnostic History (").append(prescriptions.size()).append(" Records)\\n");
+            if (prescriptions.isEmpty()) {
+                det.append("- No past prescription records found.\\n");
+            } else {
+                for (Prescription p : prescriptions) {
+                    det.append("- (Dr. ").append(p.getDoctorName() != null ? p.getDoctorName() : "Doctor")
+                            .append("): **").append(p.getDiagnosis() != null ? p.getDiagnosis() : "Routine Checkup").append("**\\n");
+                    if (p.getMedications() != null && !p.getMedications().isEmpty()) {
+                        String meds = p.getMedications().stream()
+                                .map(m -> m.getName() + " (" + (m.getDosage() != null ? m.getDosage() : "N/A") + ")")
+                                .collect(Collectors.joining(", "));
+                        det.append("  - *Medications:* ").append(meds).append("\\n");
+                    }
+                }
+            }
+
+            det.append("\\n#### 📂 Uploaded Diagnostics & Medical Imaging (").append(records.size()).append(" Scans)\\n");
+            if (records.isEmpty()) {
+                det.append("- No external medical scans or lab records uploaded.\\n");
+            } else {
+                for (MedicalRecord r : records) {
+                    det.append("- **").append(r.getTitle()).append("** *(").append(r.getType() != null ? r.getType().toUpperCase() : "RECORD").append(")*\\n");
+                }
+            }
+            summaryText = det.toString();
+        }
+
+        return summaryText;
     }
 }

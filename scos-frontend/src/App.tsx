@@ -113,6 +113,7 @@ function App() {
             <Route element={<ProtectedRoute allowedRoles={['patient']} />}>
               <Route element={<PatientLayout />}>
                 <Route path="/patient" element={<LiveQueue />} />
+                <Route path="/patient/dashboard" element={<Navigate to="/patient" replace />} />
                 <Route path="/patient/queue-status/:appointmentId" element={<PatientQueueStatus />} />
                 <Route path="/patient/search" element={<SearchDoctors />} />
                 <Route path="/patient/doctor/:id" element={<PublicDoctorProfile />} />

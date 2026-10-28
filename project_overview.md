@@ -20,7 +20,7 @@ flowchart TD
         Kafka[Apache Kafka Event Bus]
     end
 
-    subgraph Backend Services [Express.js Engine]
+    subgraph Backend Services [Spring Boot 3.4.13 Engine]
         ACPA[Adaptive Clinical Priority Algorithm]
         QueueAPI[Queue Controller]
         DoctorAPI[Doctor & Hospital Controller]
@@ -104,8 +104,12 @@ $$\text{Score} = \underbrace{(100 - \text{Base Token}) \times 10}_{\text{Slot Or
 ## 🛠️ Tech Stack
 
 * **Frontend:** React 18, TypeScript, Tailwind CSS, Lucide Icons, Zustand State Management, Socket.io-client.
-* **Backend:** Node.js, Express.js, MongoDB (Mongoose), Kafka (KafkaJS), Socket.io.
-* **Seeding & Testing:** Automated dynamic seeder (`seed-10-distinct.js`) and integration tester (`test-acceptance-queue.js`).
+* **Backend:** Spring Boot 3.4.13, Java 21, Spring Data MongoDB, Spring Kafka, and Spring WebSocket.
+* **Frontend integration:** Vite proxies `/api` requests to the Spring Boot server on port `8080`.
+* **Legacy compatibility:** The Node.js/Express backend is retained only for legacy seeders, migration scripts, and tests; it is not started by the default development command.
+* **Seeding & Testing:** Node-based seeders and integration test utilities remain available as scripts, but they do not replace the Spring Boot runtime.
+* **BI/Colab:** `bi-labs` supports a live MongoDB Atlas `MONGO_URI` or an offline `BI_INPUT_DIR` containing exported appointment and review CSV files.
+* **Colab connection notebook:** [`notebooks/lifefile_colab_mongodb.ipynb`](notebooks/lifefile_colab_mongodb.ipynb) provides the secure Atlas connection and collection export workflow.
 
 ---
 
@@ -115,6 +119,19 @@ $$\text{Score} = \underbrace{(100 - \text{Base Token}) \times 10}_{\text{Slot Or
 ```bash
 # In project root
 npm run dev
+```
+
+The default `npm run dev` command starts **Spring Boot**, not the legacy Node backend:
+
+```bash
+mvn -f scos-backend-spring/pom.xml spring-boot:run
+```
+
+The legacy Node backend is intentionally **opt-in** and should remain stopped:
+
+```bash
+# Legacy only — do not run for the normal application
+# npm run dev:backend:node
 ```
 
 ### 2. Seed Rich Demonstration Data

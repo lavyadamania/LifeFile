@@ -100,7 +100,8 @@ export const verifyMedicalRecordPassword = (id: string, password: string) => api
 // Queue
 export const addToQueue = (data: { patientId: string; patientName?: string; doctorId?: string; hospitalId?: string; hospitalName?: string }) => api.post('/queue/add', data);
 export const getQueueList = (params: { doctorId: string; date?: string; hospitalId?: string }) => api.get('/queue/list', { params });
-export const getPatientETAStatus = (appointmentId: string) => api.get(`/queue/patient/${appointmentId}`);
+export const getPatientETAStatus = (appointmentId: string) =>
+  api.get('/queue/patient-eta', { params: { appointmentId } });
 export const skipPatient = (data: { doctorId: string; patientId: string; appointmentId: string }) => api.post('/queue/skip', data);
 export const callNextPatient = (data: { doctorId: string; patientId: string; appointmentId: string; hospitalId?: string; hospitalName?: string }) => api.post('/queue/call-next', data);
 export const completeConsultation = (data: { doctorId: string; patientId: string; appointmentId: string; hospitalId?: string; hospitalName?: string }) => api.post('/queue/complete', data);

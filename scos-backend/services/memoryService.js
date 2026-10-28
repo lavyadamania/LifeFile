@@ -298,14 +298,12 @@ async function extractAIMemoryCandidates(patientId, prescriptionId, actorId = nu
   const notesText = `Diagnosis: ${rx.diagnosis || ''}. Notes: ${rx.notes || ''}. Medications: ${JSON.stringify(rx.medications || [])}`;
 
   try {
-    const { GoogleGenerativeAI } = require('@google/generative-ai');
+    const { GoogleGenAI } = require('@google/genai');
     if (!process.env.GEMINI_API_KEY) {
       return await extractDeterministicMemories(patientId, actorId);
     }
 
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const prompt = `Extract concise medical memory facts from this text. 
 Return ONLY valid JSON matching this schema:
 {
@@ -319,8 +317,11 @@ Return ONLY valid JSON matching this schema:
 }
 Text: "${notesText}"`;
 
-    const response = await model.generateContent(prompt);
-    const rawText = response.response.text();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.5-flash',
+      contents: prompt
+    });
+    const rawText = response.text || '';
     const jsonMatch = rawText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return await extractDeterministicMemories(patientId, actorId);
 

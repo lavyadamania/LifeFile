@@ -88,6 +88,12 @@ public class QueueController {
             apptObj.put("time", appt.getTime());
             apptObj.put("hospitalId", appt.getHospitalId());
             apptObj.put("hospitalName", appt.getHospitalName());
+            String complaint = appt.getChiefComplaint();
+            if (complaint == null || complaint.isBlank()) {
+                complaint = "General OPD Consultation";
+            }
+            apptObj.put("chiefComplaint", complaint);
+            apptObj.put("reason", complaint);
             apptObj.put("priority", priority);
 
             if ("In_Progress".equals(appt.getStatus())) {
@@ -114,11 +120,17 @@ public class QueueController {
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("nowServing", nowServing);
+        response.put("waitingQueue", pendingAppointments);
         response.put("queue", pendingAppointments);
         response.put("totalWaiting", pendingAppointments.size());
         response.put("updatedAt", LocalDateTime.now().toString());
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/patient/{appointmentId}")
+    public ResponseEntity<?> getPatientEtaByPath(@PathVariable String appointmentId) {
+        return getPatientEta(appointmentId);
     }
 
     @GetMapping("/patient-eta")
@@ -133,6 +145,13 @@ public class QueueController {
         }
 
         Appointment targetAppt = opt.get();
+        if ("Completed".equals(targetAppt.getStatus()) || "Cancelled".equals(targetAppt.getStatus())) {
+            Map<String, Object> resp = new LinkedHashMap<>();
+            resp.put("status", targetAppt.getStatus());
+            resp.put("eta", null);
+            return ResponseEntity.ok(resp);
+        }
+
         if ("In_Progress".equals(targetAppt.getStatus())) {
             Map<String, Object> resp = new LinkedHashMap<>();
             resp.put("status", "In_Progress");

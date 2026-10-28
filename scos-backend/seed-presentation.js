@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: __dirname + '/.env' });
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -233,8 +233,14 @@ async function seedPresentation() {
     // 6. DYNAMIC ACTIVE QUEUE GENERATOR (ALL 50 PATIENTS IN QUEUE!)
     // -----------------------------------------------------------------
     console.log('\n⚡ Adding ALL 50 Patients directly to active OPD queues across 15 Doctors & 5 Hospitals...');
+    const toLocalYMD = (d) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
     const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
+    const todayStr = toLocalYMD(now);
     const currentMins = now.getHours() * 60 + now.getMinutes();
 
     let totalAppointmentsSeeded = 0;
@@ -275,6 +281,7 @@ async function seedPresentation() {
 
         await Appointment.create({
           patientId: sp.user._id,
+          patientName: sp.user.name,
           doctorId: doc._id,
           doctorName: doc.name,
           spec: doc.specialization,
@@ -306,6 +313,10 @@ async function seedPresentation() {
         patientId: seededPatients[2].user._id, memoryId: memP03._id, patientNote: 'I took Amoxicillin without reaction. Please review Penicillin allergy flag.', status: 'PENDING'
       });
     }
+
+    console.log('⚡ Triggering live real-time queue synchronization for Dr. Ananya Sharma...');
+    const seedAnanyaLive = require('./seed-ananya-live');
+    await seedAnanyaLive();
 
     console.log('\n====================================================');
     console.log('🎉 LIFEFILE DIRECT QUEUE SEEDING COMPLETE!');

@@ -8,6 +8,7 @@ import com.lifefile.scos.repository.HospitalRepository;
 import com.lifefile.scos.repository.MedicalRecordRepository;
 import com.lifefile.scos.repository.PatientRepository;
 import com.lifefile.scos.repository.UserRepository;
+import com.lifefile.scos.service.MemoryService;
 import com.lifefile.scos.util.MongoIdUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,7 @@ public class PatientController {
     private final MedicalRecordRepository medicalRecordRepository;
     private final MongoTemplate mongoTemplate;
     private final PasswordEncoder passwordEncoder;
+    private final MemoryService memoryService;
 
     @GetMapping("/me")
     public ResponseEntity<?> getMyProfile(HttpServletRequest request) {
@@ -71,6 +73,15 @@ public class PatientController {
         return patientRepository.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    }
+
+    @GetMapping("/{id}/ai-summary")
+    public ResponseEntity<?> getPatientAISummary(@PathVariable String id, HttpServletRequest request) {
+        String summary = memoryService.generatePatientAISummary(id);
+        if (summary == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Patient profile not found"));
+        }
+        return ResponseEntity.ok(Map.of("summary", summary));
     }
 
     @PutMapping("/me")

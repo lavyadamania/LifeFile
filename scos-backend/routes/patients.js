@@ -236,12 +236,13 @@ router.get('/:id/ai-summary', auth, async (req, res) => {
 
     if (apiKey) {
       try {
-        const { GoogleGenerativeAI } = require('@google/generative-ai');
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        summaryText = response.text();
+        const { GoogleGenAI } = require('@google/genai');
+        const ai = new GoogleGenAI({ apiKey });
+        const result = await ai.models.generateContent({
+          model: 'gemini-3.5-flash',
+          contents: prompt
+        });
+        summaryText = result.text || "";
       } catch (aiErr) {
         console.warn(`⚠️ Gemini API Notice (${aiErr.message || 'Quota'}): Generating SCOS Deterministic Clinical Summary.`);
       }
