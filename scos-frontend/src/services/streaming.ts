@@ -57,7 +57,7 @@ interface StreamingState {
   disconnect: () => void;
   fetchQueue: (doctorId: string, hospitalId?: string) => Promise<void>;
   callNext: (doctorId: string, hospitalId?: string, hospitalName?: string, appointmentId?: string, patientId?: string) => Promise<void>;
-  completeConsult: (doctorId: string, appointmentId: string) => Promise<void>;
+  completeConsult: (doctorId: string, appointmentId: string, hospitalId?: string) => Promise<void>;
   skipAppt: (doctorId: string, appointmentId: string) => Promise<void>;
 }
 
@@ -78,7 +78,18 @@ const useStreamingStore = create<StreamingState>((set, get) => ({
 
   fetchQueue: async (doctorId: string, hospitalId?: string) => {
     try {
-      set({ activeDoctorId: doctorId, activeHospitalId: hospitalId });
+      const facilityChanged = get().activeHospitalId !== hospitalId;
+      set({
+        activeDoctorId: doctorId,
+        activeHospitalId: hospitalId,
+        ...(facilityChanged ? {
+          nowServing: null,
+          currentServingId: null,
+          currentServingName: null,
+          currentServingPatientId: null,
+          queueList: [],
+        } : {}),
+      });
       const res = await getQueueList({ doctorId, hospitalId });
       
       let nowServingItem: QueuePatient | null = null;
@@ -179,7 +190,7 @@ const useStreamingStore = create<StreamingState>((set, get) => ({
         const hospitalId = get().activeHospitalId;
         if (doctorId && (event.topic === 'lifefile.queue.updates' || event.topic === 'scos.queue.updates')) {
           const { action } = event.data;
-          if (['ADD_TO_QUEUE', 'CALL_NEXT', 'SKIP_PATIENT', 'CONSULTATION_COMPLETE'].includes(action)) {
+          if (['ADD_TO_QUEUE', 'CHECKED_IN', 'CALL_NEXT', 'SKIP_PATIENT', 'CONSULTATION_COMPLETE'].includes(action)) {
             get().fetchQueue(doctorId, hospitalId);
           }
         }
@@ -216,16 +227,37 @@ const useStreamingStore = create<StreamingState>((set, get) => ({
     }
   },
 
-  completeConsult: async (doctorId: string, appointmentId: string) => {
+  completeConsult: async (doctorId: string, appointmentId: string, hospitalId?: string) => {
+    const facilityId = hospitalId || get().activeHospitalId;
     try {
       await apiCompleteConsultation({
         doctorId,
         patientId: '',
-        appointmentId
+        appointmentId,
+        hospitalId: facilityId
       });
-      await get().fetchQueue(doctorId, get().activeHospitalId);
     } catch (err) {
       console.error('[Queue] Complete consultation failed:', err);
+      return;
+    }
+
+    await get().fetchQueue(doctorId, facilityId);
+    const nextAppointment = get().queueList[0];
+    if (!nextAppointment) return;
+
+    try {
+      // Promote the first item from the same authoritative, priority-sorted
+      // list shown on screen so the UI and the backend advance to one patient.
+      await callNextPatient({
+        doctorId,
+        patientId: nextAppointment.patientId,
+        appointmentId: nextAppointment.id,
+        hospitalId: facilityId
+      });
+    } catch (err) {
+      console.error('[Queue] Failed to start the next patient:', err);
+    } finally {
+      await get().fetchQueue(doctorId, facilityId);
     }
   },
 

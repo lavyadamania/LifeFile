@@ -18,6 +18,8 @@ const appointmentSchema = new mongoose.Schema({
   triageLevel:  { type: Number, min: 1, max: 5, default: 1 },
   missedCalls:  { type: Number, default: 0 },
   chiefComplaint:{ type: String, default: '' },
+  // Mirrors the Spring Appointment model; queue seeders set this on check-in.
+  checkedInAt: { type: Date, default: null },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Appointment', appointmentSchema);

@@ -43,13 +43,13 @@ export default function PatientQueueStatus() {
     socket.on('scos.queue.updates', (event) => {
       // If the queue updates, we need to recalculate our ACPA position and ETA!
       // This allows the queue to re-sort automatically without page refresh.
-      if (['ADD_TO_QUEUE', 'CALL_NEXT', 'SKIP_PATIENT', 'CONSULTATION_COMPLETE'].includes(event?.data?.action)) {
+      if (['ADD_TO_QUEUE', 'CHECKED_IN', 'CALL_NEXT', 'SKIP_PATIENT', 'CONSULTATION_COMPLETE'].includes(event?.data?.action)) {
         fetchETA();
       }
     });
 
     // 30-second silent polling fallback in case WebSocket disconnects on a bad hospital 4G connection
-    const interval = setInterval(() => fetchETA(), 30000);
+    const interval = setInterval(() => fetchETA(), 4000);
 
     return () => {
       socket.disconnect();

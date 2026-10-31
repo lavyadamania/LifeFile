@@ -1,9 +1,7 @@
 package com.lifefile.scos.controller;
 
 import com.lifefile.scos.model.Appointment;
-import com.lifefile.scos.model.Patient;
 import com.lifefile.scos.repository.AppointmentRepository;
-import com.lifefile.scos.repository.PatientRepository;
 import com.lifefile.scos.service.DynamicPriorityService;
 import com.lifefile.scos.service.KafkaProducerService;
 import com.lifefile.scos.service.QueueEtaService;
@@ -30,7 +28,6 @@ import java.util.*;
 public class QueueController {
 
     private final AppointmentRepository appointmentRepository;
-    private final PatientRepository patientRepository;
     private final MongoTemplate mongoTemplate;
     private final DynamicPriorityService priorityService;
     private final QueueEtaService etaService;
@@ -48,7 +45,8 @@ public class QueueController {
 
         String utcToday = LocalDate.now().toString();
         String dateToMatch = date != null ? date : utcToday;
-        List<String> validStatuses = List.of("Pending", "Confirmed", "In_Progress");
+        // Confirmed appointments are booked but have not checked in yet.
+        List<String> validStatuses = List.of("Pending", "In_Progress");
 
         Query query = new Query(new Criteria().andOperator(
                 MongoIdUtil.idCriteria("doctorId", doctorId),
@@ -69,10 +67,13 @@ public class QueueController {
         for (Appointment appt : appointments) {
             DynamicPriorityService.PriorityDetails priority = priorityService.calculateCEP(appt, currentTime);
 
+            // Appointments already store the patient's display name. Avoid a
+            // single-result profile lookup here: legacy/demo data can contain
+            // duplicate Patient profiles for one user, which otherwise makes
+            // the entire queue endpoint fail with IncorrectResultSizeDataAccessException.
             String patientName = appt.getPatientName();
-            if (appt.getPatientId() != null) {
-                Patient patient = patientRepository.findByUserId(appt.getPatientId()).orElse(null);
-                if (patient != null) patientName = patient.getName();
+            if (patientName == null || patientName.isBlank()) {
+                patientName = "Patient";
             }
 
             Map<String, Object> apptObj = new HashMap<>();
@@ -107,7 +108,11 @@ public class QueueController {
         pendingAppointments.sort((a, b) -> {
             DynamicPriorityService.PriorityDetails scoreA = (DynamicPriorityService.PriorityDetails) a.get("priority");
             DynamicPriorityService.PriorityDetails scoreB = (DynamicPriorityService.PriorityDetails) b.get("priority");
-            return Double.compare(scoreB.getScore(), scoreA.getScore());
+            int byScore = Double.compare(scoreB.getScore(), scoreA.getScore());
+            if (byScore != 0) return byScore;
+            int byToken = Comparator.nullsLast(Integer::compareTo)
+                    .compare((Integer) a.get("baseToken"), (Integer) b.get("baseToken"));
+            return byToken != 0 ? byToken : String.valueOf(a.get("id")).compareTo(String.valueOf(b.get("id")));
         });
 
         for (int i = 0; i < pendingAppointments.size(); i++) {
@@ -128,13 +133,31 @@ public class QueueController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/patient/{appointmentId}")
+    @GetMapping({
+            "/patient/{appointmentId}",
+            "/patient-eta/{appointmentId}",
+            "/eta/{appointmentId}"
+    })
     public ResponseEntity<?> getPatientEtaByPath(@PathVariable String appointmentId) {
-        return getPatientEta(appointmentId);
+        return getPatientQueueStatus(appointmentId);
     }
 
-    @GetMapping("/patient-eta")
+    @GetMapping({"/patient-eta", "/eta"})
     public ResponseEntity<?> getPatientEta(@RequestParam String appointmentId) {
+        return getPatientQueueStatus(appointmentId);
+    }
+
+    @GetMapping({"/patient-position/{appointmentId}", "/position/{appointmentId}"})
+    public ResponseEntity<?> getPatientQueuePositionByPath(@PathVariable String appointmentId) {
+        return getPatientQueueStatus(appointmentId);
+    }
+
+    @GetMapping({"/patient-position", "/position"})
+    public ResponseEntity<?> getPatientQueuePosition(@RequestParam String appointmentId) {
+        return getPatientQueueStatus(appointmentId);
+    }
+
+    private ResponseEntity<?> getPatientQueueStatus(String appointmentId) {
         if (appointmentId == null || appointmentId.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "appointmentId is required"));
         }
@@ -145,10 +168,15 @@ public class QueueController {
         }
 
         Appointment targetAppt = opt.get();
-        if ("Completed".equals(targetAppt.getStatus()) || "Cancelled".equals(targetAppt.getStatus())) {
+        if (List.of("Completed", "Cancelled", "Missed", "Postponed").contains(targetAppt.getStatus())) {
             Map<String, Object> resp = new LinkedHashMap<>();
             resp.put("status", targetAppt.getStatus());
-            resp.put("eta", null);
+            resp.put("patientName", targetAppt.getPatientName());
+            resp.put("tokenNumber", targetAppt.getBaseToken());
+            resp.put("nowServingToken", null);
+            resp.put("queuePosition", 0);
+            resp.put("estimatedWait", null);
+            resp.put("updatedAt", LocalDateTime.now().toString());
             return ResponseEntity.ok(resp);
         }
 
@@ -164,12 +192,43 @@ public class QueueController {
             return ResponseEntity.ok(resp);
         }
 
+        String today = LocalDate.now().toString();
+        if (!today.equals(targetAppt.getDate())) {
+            Map<String, Object> resp = new LinkedHashMap<>();
+            resp.put("status", targetAppt.getStatus());
+            resp.put("patientName", targetAppt.getPatientName());
+            resp.put("tokenNumber", targetAppt.getBaseToken());
+            resp.put("nowServingToken", null);
+            resp.put("queuePosition", 0);
+            resp.put("estimatedWait", null);
+            resp.put("message", "Appointment is not in today's queue");
+            resp.put("updatedAt", LocalDateTime.now().toString());
+            return ResponseEntity.ok(resp);
+        }
+
+        if ("Confirmed".equals(targetAppt.getStatus()) || "Rescheduled".equals(targetAppt.getStatus())) {
+            Map<String, Object> resp = new LinkedHashMap<>();
+            resp.put("status", targetAppt.getStatus());
+            resp.put("patientName", targetAppt.getPatientName());
+            resp.put("tokenNumber", targetAppt.getBaseToken());
+            resp.put("nowServingToken", null);
+            resp.put("queuePosition", 0);
+            resp.put("estimatedWait", null);
+            resp.put("message", "Check in during the appointment window to join the queue");
+            resp.put("updatedAt", LocalDateTime.now().toString());
+            return ResponseEntity.ok(resp);
+        }
+
         String doctorId = targetAppt.getDoctorId();
         Query query = new Query(new Criteria().andOperator(
                 MongoIdUtil.idCriteria("doctorId", doctorId),
-                Criteria.where("status").in(List.of("Pending", "Confirmed", "Rescheduled", "In_Progress"))
+                Criteria.where("date").is(targetAppt.getDate()),
+                Criteria.where("status").in(List.of("Pending", "In_Progress"))
         ));
         List<Appointment> appointments = mongoTemplate.find(query, Appointment.class);
+        String targetFacility = targetAppt.getHospitalId() == null || targetAppt.getHospitalId().isBlank()
+                ? "private" : "hospital";
+        appointments.removeIf(a -> !MongoIdUtil.matchesHospitalFilter(a.getHospitalId(), targetFacility));
 
         LocalDateTime currentTime = LocalDateTime.now();
         List<Map<String, Object>> queue = new ArrayList<>();
@@ -189,10 +248,14 @@ public class QueueController {
         queue.sort((a, b) -> {
             DynamicPriorityService.PriorityDetails pA = (DynamicPriorityService.PriorityDetails) a.get("priority");
             DynamicPriorityService.PriorityDetails pB = (DynamicPriorityService.PriorityDetails) b.get("priority");
-            return Double.compare(pB.getScore(), pA.getScore());
+            int byScore = Double.compare(pB.getScore(), pA.getScore());
+            if (byScore != 0) return byScore;
+            int byToken = Comparator.nullsLast(Integer::compareTo)
+                    .compare((Integer) a.get("baseToken"), (Integer) b.get("baseToken"));
+            return byToken != 0 ? byToken : String.valueOf(a.get("id")).compareTo(String.valueOf(b.get("id")));
         });
 
-        int nowServingToken = targetAppt.getBaseToken();
+        Integer nowServingToken = targetAppt.getBaseToken();
         Optional<Appointment> inProg = appointments.stream().filter(a -> "In_Progress".equals(a.getStatus())).findFirst();
         if (inProg.isPresent()) {
             nowServingToken = inProg.get().getBaseToken();
@@ -201,8 +264,8 @@ public class QueueController {
         }
 
         QueueEtaService.EtaDetails etaDetails = etaService.getPatientETA(queue, appointmentId, QueueEtaService.DEFAULT_CONSULT_DURATION);
-        int queuePosition = 1;
-        Map<String, Integer> estimatedWait = Map.of("min", 0, "max", 5);
+        int queuePosition = 0;
+        Map<String, Integer> estimatedWait = null;
 
         if (etaDetails != null) {
             queuePosition = etaDetails.getQueuePosition();
@@ -241,6 +304,7 @@ public class QueueController {
     public ResponseEntity<?> callNext(@RequestBody Map<String, String> body) {
         String doctorId = body.get("doctorId");
         String appointmentId = body.get("appointmentId");
+        String hospitalId = body.get("hospitalId");
 
         Query inProgQuery = new Query(new Criteria().andOperator(
                 MongoIdUtil.idCriteria("doctorId", doctorId),
@@ -248,6 +312,8 @@ public class QueueController {
         ));
         List<Appointment> existingInConsult = mongoTemplate.find(inProgQuery, Appointment.class);
         for (Appointment old : existingInConsult) {
+            if (hospitalId != null && !hospitalId.isBlank()
+                    && !MongoIdUtil.matchesHospitalFilter(old.getHospitalId(), hospitalId)) continue;
             old.setStatus("Pending");
             old.setMissedCalls((old.getMissedCalls() != null ? old.getMissedCalls() : 0) + 1);
             old.setUpdatedAt(Instant.now());
@@ -255,8 +321,14 @@ public class QueueController {
         }
 
         Appointment targetAppt = null;
-        if (appointmentId != null) {
+        if (appointmentId != null && !appointmentId.isBlank()) {
             targetAppt = appointmentRepository.findById(appointmentId).orElse(null);
+            if (targetAppt != null && (!Objects.equals(targetAppt.getDoctorId(), doctorId)
+                    || !"Pending".equals(targetAppt.getStatus())
+                    || (hospitalId != null && !hospitalId.isBlank()
+                    && !MongoIdUtil.matchesHospitalFilter(targetAppt.getHospitalId(), hospitalId)))) {
+                targetAppt = null;
+            }
         }
 
         if (targetAppt == null) {
@@ -264,16 +336,22 @@ public class QueueController {
             Query pendingQuery = new Query(new Criteria().andOperator(
                     MongoIdUtil.idCriteria("doctorId", doctorId),
                     Criteria.where("date").is(today),
-                    Criteria.where("status").in(List.of("Pending", "Confirmed"))
+                    Criteria.where("status").is("Pending")
             ));
             List<Appointment> pending = mongoTemplate.find(pendingQuery, Appointment.class);
+            if (hospitalId != null && !hospitalId.isBlank()) {
+                pending.removeIf(a -> !MongoIdUtil.matchesHospitalFilter(a.getHospitalId(), hospitalId));
+            }
 
             if (!pending.isEmpty()) {
                 LocalDateTime now = LocalDateTime.now();
                 pending.sort((a, b) -> {
                     double sA = priorityService.calculateCEP(a, now).getScore();
                     double sB = priorityService.calculateCEP(b, now).getScore();
-                    return Double.compare(sB, sA);
+                    int byScore = Double.compare(sB, sA);
+                    if (byScore != 0) return byScore;
+                    int byToken = Comparator.nullsLast(Integer::compareTo).compare(a.getBaseToken(), b.getBaseToken());
+                    return byToken != 0 ? byToken : String.valueOf(a.getId()).compareTo(String.valueOf(b.getId()));
                 });
                 targetAppt = pending.get(0);
             }

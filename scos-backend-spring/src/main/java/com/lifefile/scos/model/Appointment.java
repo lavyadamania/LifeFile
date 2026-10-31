@@ -30,7 +30,7 @@ public class Appointment {
     @Builder.Default private String spec        = "";
     private String date;        // "YYYY-MM-DD"
     private String time;        // "HH:mm"
-    @Builder.Default private String status      = "Pending";
+    @Builder.Default private String status      = "Confirmed";
     @Builder.Default private String location    = "Main Clinic";
     @Builder.Default private String postponedTo = "";
     @Builder.Default private Boolean isWalkin   = false;
@@ -43,4 +43,5 @@ public class Appointment {
 
     private Instant createdAt;
     private Instant updatedAt;
+    private Instant checkedInAt;
 }

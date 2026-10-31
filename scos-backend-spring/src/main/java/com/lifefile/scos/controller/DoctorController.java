@@ -17,9 +17,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -65,6 +68,64 @@ public class DoctorController {
         Optional<Doctor> doctor = doctorRepository.findByUserId(user.getId());
         return doctor.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    }
+
+    @PutMapping("/me/schedule")
+    public ResponseEntity<?> updateMySchedule(@RequestBody Doctor.Schedule schedule,
+                                               HttpServletRequest request) {
+        User user = (User) request.getAttribute("currentUser");
+        if (user == null || !"doctor".equalsIgnoreCase(user.getRole())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        Optional<Doctor> doctor = doctorRepository.findByUserId(user.getId());
+        if (doctor.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+
+        Doctor existing = doctor.get();
+        if (schedule == null || schedule.getDays() == null || schedule.getDays().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "A schedule with at least one day is required"));
+        }
+
+        existing.setSchedule(schedule);
+        existing.setUpdatedAt(java.time.Instant.now());
+        return ResponseEntity.ok(doctorRepository.save(existing));
+    }
+
+    @PutMapping("/me/private-schedule")
+    public ResponseEntity<?> updateMyPrivateSchedule(@RequestBody Doctor.Schedule schedule,
+                                                      HttpServletRequest request) {
+        User user = (User) request.getAttribute("currentUser");
+        if (user == null || !"doctor".equalsIgnoreCase(user.getRole())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        Optional<Doctor> doctor = doctorRepository.findByUserId(user.getId());
+        if (doctor.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        if (schedule == null || schedule.getDays() == null || schedule.getDays().size() != 7) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Private clinic schedule must include all seven days"));
+        }
+        Set<String> expectedDays = Set.of("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun");
+        Set<String> suppliedDays = schedule.getDays().stream().map(Doctor.DaySchedule::getDay).collect(Collectors.toSet());
+        if (!expectedDays.equals(suppliedDays)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Private clinic schedule must contain each weekday once"));
+        }
+        try {
+            for (Doctor.DaySchedule day : schedule.getDays()) {
+                if (!Boolean.TRUE.equals(day.getIsAvailable())) continue;
+                LocalTime start = LocalTime.parse(day.getStartTime());
+                LocalTime end = LocalTime.parse(day.getEndTime());
+                if (!start.isBefore(end)) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Each open day must end after it starts"));
+                }
+            }
+        } catch (DateTimeParseException | NullPointerException ex) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Enter valid start and end times for open days"));
+        }
+
+        Doctor existing = doctor.get();
+        existing.setPrivateSchedule(schedule);
+        existing.setUpdatedAt(java.time.Instant.now());
+        return ResponseEntity.ok(doctorRepository.save(existing));
     }
 
     @GetMapping("/me/requests")
@@ -114,6 +175,12 @@ public class DoctorController {
         updateData.setId(id);
         // Ensure userId remains unchanged
         updateData.setUserId(existing.get().getUserId());
+        if (updateData.getSchedule() == null) {
+            updateData.setSchedule(existing.get().getSchedule());
+        }
+        if (updateData.getPrivateSchedule() == null) {
+            updateData.setPrivateSchedule(existing.get().getPrivateSchedule());
+        }
 
         return ResponseEntity.ok(doctorRepository.save(updateData));
     }

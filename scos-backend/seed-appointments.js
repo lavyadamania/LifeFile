@@ -5,8 +5,10 @@ const Doctor = require('./models/Doctor');
 const User = require('./models/User'); 
 
 mongoose.connect(process.env.MONGO_URI).then(async () => { 
-  // Find Dr. Lavya Damania
-  const doc = await Doctor.findOne({ name: { $regex: /lavya damania/i } }); 
+  // Prefer the original demo doctor, then use the first seeded doctor.
+  const doc = await Doctor.findOne({ name: { $regex: /ananya sharma/i } })
+    || await Doctor.findOne({ name: { $regex: /lavya damania/i } })
+    || await Doctor.findOne().sort({ name: 1 });
   if (!doc) { 
     console.log('No doctor found matching "Lavya Damania". Available doctors:'); 
     const allDocs = await Doctor.find({});
@@ -14,9 +16,8 @@ mongoose.connect(process.env.MONGO_URI).then(async () => {
     process.exit(1); 
   } 
 
-  // Clean up the 10 appointments we just created in the previous script (from today at 02:50)
-  // Just in case they were booked for someone else.
-  await Appointment.deleteMany({ date: '2026-08-19', time: '02:50', status: 'Pending' });
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   const patients = await User.find({ role: 'patient' }).limit(10); 
   console.log('Found ' + patients.length + ' patients'); 
@@ -28,7 +29,7 @@ mongoose.connect(process.env.MONGO_URI).then(async () => {
       doctorId: doc._id, 
       doctorName: doc.name, 
       spec: doc.specialization || 'General', 
-      date: '2026-08-19', 
+      date: today,
       time: '02:50', 
       status: 'Pending', 
       baseToken: i + 1, 
@@ -37,6 +38,6 @@ mongoose.connect(process.env.MONGO_URI).then(async () => {
     }); 
   } 
   
-  console.log('Successfully booked ' + patients.length + ' appointments specifically for ' + doc.name + ' at 02:50 AM on 2026-08-19'); 
+  console.log('Successfully booked ' + patients.length + ' appointments specifically for ' + doc.name + ' at 02:50 on ' + today);
   mongoose.disconnect(); 
 });

@@ -27,7 +27,7 @@ function makeMedicalSvg(title, subtitle, color = '%230f172a', textColor = '%2338
 async function seedAnanyaLive() {
   const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/scos';
   console.log('====================================================================');
-  console.log('⚡ SCOS REAL-TIME SEEDER: DR. ANANYA SHARMA (20 HOSPITAL + 5 PRIVATE)');
+  console.log('⚡ SCOS REAL-TIME SEEDER: DR. ANANYA SHARMA (30 HOSPITAL + 10 PRIVATE)');
   console.log('====================================================================');
   console.log(`Connecting to: ${mongoUri}...`);
 
@@ -107,7 +107,14 @@ async function seedAnanyaLive() {
       await mongoose.disconnect();
       process.exit(1);
     }
-    const p = await Patient.findOne({ userId: u._id });
+    let p = await Patient.findOne({ userId: u._id });
+    if (!p) {
+      p = await Patient.create({
+        userId: u._id,
+        name: u.name
+      });
+      console.log(`ℹ️ Created missing patient profile for P${pad} (${email})`);
+    }
     patients.push({ user: u, profile: p, index: i });
   }
   console.log(`✅ Loaded ${patients.length} existing patients (P01–P50) — no new patients created`);
@@ -135,36 +142,50 @@ async function seedAnanyaLive() {
     return toLocalYMD(dt);
   };
 
-  // --- 20 HOSPITAL APPOINTMENTS (LifeFile Central Hospital) ---
-  console.log('🏥 Creating 20 Hospital Appointments for Dr. Ananya Sharma...');
-
+  // The first 20 hospital appointments are already checked in and waiting.
+  // The next 10 are confirmed bookings whose slots begin one hour after seeding.
+  const queueScenarios = [
+    { triage: 5, waitMins: 5, missedCalls: 0, complaint: 'EMERGENCY: suspected acute coronary syndrome with severe chest pain.' },
+    { triage: 5, waitMins: 12, missedCalls: 1, complaint: 'EMERGENCY: acute respiratory distress with cardiac history.' },
+    { triage: 5, waitMins: 2, missedCalls: 0, complaint: 'EMERGENCY: collapse with suspected life-threatening arrhythmia.' },
+    { triage: 4, waitMins: 25, missedCalls: 0, complaint: 'HIGH: severe chest pain with abnormal ECG findings.' },
+    { triage: 4, waitMins: 18, missedCalls: 1, complaint: 'HIGH: worsening shortness of breath and low oxygen saturation.' },
+    { triage: 4, waitMins: 10, missedCalls: 2, complaint: 'HIGH: persistent tachycardia; patient missed two calls.' },
+    { triage: 4, waitMins: 4, missedCalls: 0, complaint: 'HIGH: possible deep vein thrombosis with chest symptoms.' },
+    { triage: 3, waitMins: 180, missedCalls: 0, complaint: 'MODERATE: prolonged wait, stable but worsening palpitations.' },
+    { triage: 3, waitMins: 90, missedCalls: 1, complaint: 'MODERATE: dizziness and intermittent irregular heartbeat.' },
+    { triage: 3, waitMins: 45, missedCalls: 0, complaint: 'MODERATE: uncontrolled hypertension with headache.' },
+    { triage: 3, waitMins: 25, missedCalls: 2, complaint: 'MODERATE: follow-up; patient has missed two calls.' },
+    { triage: 3, waitMins: 10, missedCalls: 0, complaint: 'MODERATE: persistent fatigue and exertional breathlessness.' },
+    { triage: 3, waitMins: 0, missedCalls: 0, complaint: 'MODERATE: same-time arrival for chest discomfort review.' },
+    { triage: 2, waitMins: 150, missedCalls: 0, complaint: 'LOW: long-wait follow-up for stable coronary disease.' },
+    { triage: 2, waitMins: 75, missedCalls: 1, complaint: 'LOW: routine medication review after one missed call.' },
+    { triage: 2, waitMins: 30, missedCalls: 0, complaint: 'LOW: stable blood pressure follow-up.' },
+    { triage: 2, waitMins: 0, missedCalls: 0, complaint: 'LOW: stable follow-up, checked in at seed time.' },
+    { triage: 1, waitMins: 210, missedCalls: 0, complaint: 'ROUTINE: long-wait preventive cardiology review.' },
+    { triage: 1, waitMins: 60, missedCalls: 1, complaint: 'ROUTINE: annual check-up after one missed call.' },
+    { triage: 1, waitMins: 0, missedCalls: 0, complaint: 'ROUTINE: preventive screening, checked in at seed time.' }
+  ];
   const hospitalConfigs = [
-    // Position 1: In_Progress RIGHT NOW (Emergency Level 5, Penicillin Allergy Conflict)
-    { pIdx: 0, status: 'In_Progress', offsetMins: -12, token: 101, triage: 5, date: todayStr, complaint: 'Severe crushing retrosternal chest pain radiating to left jaw. Acute Coronary Syndrome. CRITICAL: Penicillin anaphylaxis.' },
-    // Position 2: Confirmed with ACTIVE CHECK-IN WINDOW right now (+5 mins)
-    { pIdx: 1, status: 'Confirmed', offsetMins: 5, token: 102, triage: 4, date: todayStr, complaint: 'Post-stroke evaluation, aura episodes. Brain MRI scheduled.' },
-    // Positions 3-5: Upcoming Confirmed appointments
-    { pIdx: 2, status: 'Confirmed', offsetMins: 20, token: 103, triage: 3, date: todayStr, complaint: 'Cardiometabolic review, uncontrolled hypertension.' },
-    { pIdx: 3, status: 'Confirmed', offsetMins: 35, token: 104, triage: 2, date: todayStr, complaint: 'Rheumatic mitral valvular disease follow-up.' },
-    { pIdx: 4, status: 'Confirmed', offsetMins: 50, token: 105, triage: 2, date: todayStr, complaint: 'Cor pulmonale secondary to COPD.' },
-    // Positions 6-12: Upcoming today
-    { pIdx: 5, status: 'Confirmed', offsetMins: 65, token: 106, triage: 1, date: todayStr, complaint: 'Tachycardia and palpitations assessment.' },
-    { pIdx: 6, status: 'Confirmed', offsetMins: 80, token: 107, triage: 2, date: todayStr, complaint: 'Non-cardiac chest burning vs atypical angina.' },
-    { pIdx: 7, status: 'Confirmed', offsetMins: 95, token: 108, triage: 1, date: todayStr, complaint: 'Pre-operative cardiac clearance for elective procedure.' },
-    { pIdx: 8, status: 'Confirmed', offsetMins: 110, token: 109, triage: 3, date: todayStr, complaint: 'Cardiorenal syndrome Stage 3 CKD.' },
-    { pIdx: 9, status: 'Confirmed', offsetMins: 125, token: 110, triage: 2, date: todayStr, complaint: 'Exercise-induced wheeze & cardiac stress check.' },
-    { pIdx: 10, status: 'Confirmed', offsetMins: 140, token: 111, triage: 2, date: todayStr, complaint: 'Hypertension management & ECG baseline.' },
-    { pIdx: 11, status: 'Confirmed', offsetMins: 155, token: 112, triage: 1, date: todayStr, complaint: 'Cardio-oncology surveillance post chemotherapy.' },
-    // Positions 13-14: Pending verification
-    { pIdx: 12, status: 'Pending', offsetMins: 170, token: 113, triage: 1, date: todayStr, complaint: 'Panic-induced sinus tachycardia.' },
-    { pIdx: 13, status: 'Pending', offsetMins: 185, token: 114, triage: 1, date: todayStr, complaint: 'Vasovagal presyncope evaluation.' },
-    // Positions 15-20: Completed consultations (earlier today & past days for analytics charts)
-    { pIdx: 14, status: 'Completed', offsetMins: -90, token: 90, triage: 4, date: todayStr, complaint: 'Paroxysmal Atrial Fibrillation rate control.' },
-    { pIdx: 15, status: 'Completed', offsetMins: 0, token: 89, triage: 2, date: daysAgo(1), complaint: 'Essential hypertension follow-up.' },
-    { pIdx: 16, status: 'Completed', offsetMins: 0, token: 88, triage: 3, date: daysAgo(2), complaint: 'Cardiogenic syncope investigation.' },
-    { pIdx: 17, status: 'Completed', offsetMins: 0, token: 87, triage: 1, date: daysAgo(3), complaint: 'Hypothyroid bradycardia review.' },
-    { pIdx: 18, status: 'Completed', offsetMins: 0, token: 86, triage: 2, date: daysAgo(5), complaint: 'Nocturnal hypoxemia and pulmonary arterial pressure check.' },
-    { pIdx: 19, status: 'Completed', offsetMins: 0, token: 85, triage: 3, date: daysAgo(7), complaint: 'Autoimmune pericarditis screening.' }
+    ...queueScenarios.map((scenario, i) => ({
+      pIdx: i,
+      status: 'Pending', // checked in; visible in the active queue immediately
+      // Keep every checked-in appointment on today's queue, even if seeding near midnight.
+      offsetMins: -Math.min(scenario.waitMins, now.getHours() * 60 + now.getMinutes()),
+      token: 101 + i,
+      triage: scenario.triage,
+      missedCalls: scenario.missedCalls,
+      complaint: scenario.complaint
+    })),
+    ...Array.from({ length: 10 }, (_, i) => ({
+      pIdx: 20 + i,
+      status: 'Confirmed',
+      offsetMins: 60,
+      token: 121 + i,
+      triage: (i % 3) + 1,
+      missedCalls: 0,
+      complaint: `SCHEDULED +1 HOUR: ${['routine cardiology review', 'moderate blood pressure follow-up', 'stable palpitations evaluation'][i % 3]}.`
+    }))
   ];
 
   for (const cfg of hospitalConfigs) {
@@ -177,7 +198,7 @@ async function seedAnanyaLive() {
       doctorId: ananyaDoc._id,
       doctorName: ananyaDoc.name,
       spec: ananyaDoc.specialization,
-      date: cfg.date,
+      date: cfg.date || toLocalYMD(apptTime),
       time: formatTime(apptTime),
       status: cfg.status,
       hospitalId: centralHosp._id,
@@ -185,27 +206,35 @@ async function seedAnanyaLive() {
       location: 'Cardiology Room 302',
       baseToken: cfg.token,
       triageLevel: cfg.triage,
-      missedCalls: 0,
+      missedCalls: cfg.missedCalls || 0,
       chiefComplaint: cfg.complaint,
-      createdAt: new Date(new Date(cfg.date).getTime() + 10 * 3600 * 1000)
+      checkedInAt: cfg.status === 'Pending' ? apptTime : null,
+      createdAt: now
     });
   }
 
-  // --- 5 PRIVATE APPOINTMENTS (Dr. Ananya Private Cardiology Clinic) ---
-  console.log('🩺 Creating 5 Private Appointments for Dr. Ananya Sharma...');
+  // 10 private clinic appointments are also checked in at seed time.
+  console.log('🩺 Creating 10 checked-in private clinic appointments...');
+  const privateConfigs = Array.from({ length: 10 }, (_, i) => ({
+    pIdx: 30 + i,
+    status: 'Pending',
+    offsetMins: 0,
+    token: i + 1,
+    triage: (i % 5) + 1,
+    missedCalls: i % 4 === 0 ? 1 : 0,
+    complaint: `PRIVATE CLINIC: ${['routine prevention', 'stable follow-up', 'moderate palpitations', 'blood pressure review', 'cardiology consultation'][i % 5]}.`
+  }));
 
-  const privateConfigs = [
-    // Private 1: Confirmed later today
-    { pIdx: 20, status: 'Confirmed', offsetMins: 90, token: 1, date: todayStr, complaint: 'Private executive comprehensive lipidology & 2D-Echo.' },
-    // Private 2: Confirmed today evening
-    { pIdx: 21, status: 'Confirmed', offsetMins: 115, token: 2, date: todayStr, complaint: 'Holter monitor interpretation & private second opinion.' },
-    // Private 3: Pending confirmation
-    { pIdx: 22, status: 'Pending', offsetMins: 140, token: 3, date: todayStr, complaint: 'Private tele-consultation on coronary calcium score.' },
-    // Private 4: Completed yesterday (Private prescription attached)
-    { pIdx: 23, status: 'Completed', offsetMins: 0, token: 4, date: daysAgo(1), complaint: 'Private consultation for refractory systolic hypertension.' },
-    // Private 5: Completed 3 days ago (Private prescription attached)
-    { pIdx: 24, status: 'Completed', offsetMins: 0, token: 5, date: daysAgo(3), complaint: 'Private cardiovascular risk profiling & statin therapy.' }
-  ];
+  const allAppointmentConfigs = [...hospitalConfigs, ...privateConfigs];
+  const assignedPatientIds = allAppointmentConfigs.map(cfg => String(patients[cfg.pIdx].user._id));
+  if (new Set(assignedPatientIds).size !== assignedPatientIds.length) {
+    throw new Error('Ananya seed assigns the same patient to more than one appointment');
+  }
+  const waitingHospitalConfigs = hospitalConfigs.filter(cfg => cfg.status === 'Pending');
+  const waitingTriageLevels = new Set(waitingHospitalConfigs.map(cfg => cfg.triage));
+  if (waitingHospitalConfigs.length !== 20 || [1, 2, 3, 4, 5].some(level => !waitingTriageLevels.has(level))) {
+    throw new Error('Ananya seed must create 20 unique active hospital patients across triage levels 1–5');
+  }
 
   for (const cfg of privateConfigs) {
     const pt = patients[cfg.pIdx];
@@ -217,17 +246,18 @@ async function seedAnanyaLive() {
       doctorId: ananyaDoc._id,
       doctorName: ananyaDoc.name,
       spec: ananyaDoc.specialization,
-      date: cfg.date,
+      date: cfg.date || toLocalYMD(apptTime),
       time: formatTime(apptTime),
       status: cfg.status,
       hospitalId: null, // Private mode has hospitalId null
       hospitalName: 'Dr. Ananya Private Cardiology Clinic',
       location: 'Private Consulting Suite A',
       baseToken: cfg.token,
-      triageLevel: 2,
-      missedCalls: 0,
+      triageLevel: cfg.triage,
+      missedCalls: cfg.missedCalls || 0,
       chiefComplaint: cfg.complaint,
-      createdAt: new Date(new Date(cfg.date).getTime() + 14 * 3600 * 1000)
+      checkedInAt: cfg.status === 'Pending' ? apptTime : null,
+      createdAt: now
     });
   }
 
@@ -419,11 +449,16 @@ async function seedAnanyaLive() {
   console.log('🎉 SEEDING COMPLETED SUCCESSFULLY!');
   console.log('====================================================================');
   console.log('📊 Verification Summary:');
-  console.log(`   Patients used:         P01–P25 from existing 50-patient list (NO new patients created)`);
-  console.log(`   Hospital Appointments: 20 (P01–P20 → LifeFile Central Hospital)`);
-  console.log(`   Private Appointments:  5  (P21–P25 → Private Clinic)`);
-  console.log(`   Live Queue:            P01 ${patients[0].user.name} — Token 101 (In_Progress)`);
-  console.log(`   Check-In Window:       P02 ${patients[1].user.name} — Token 102 (NOW + 5m)`);
+  console.log(`   Patients used:         P01–P40 from existing 50-patient list (NO new patients created)`);
+  console.log(`   Hospital Appointments: 30 (20 checked in now; 10 confirmed for +1 hour)`);
+  console.log(`   Private Appointments:  10 (checked in now at Dr. Ananya's private clinic)`);
+  console.log(`   Priority scenarios:    Emergency, high, moderate, low, routine; varied wait times and missed calls`);
+  const triageCounts = queueScenarios.reduce((counts, scenario) => {
+    counts[scenario.triage] = (counts[scenario.triage] || 0) + 1;
+    return counts;
+  }, {});
+  console.log(`   Hospital triage mix:   ${JSON.stringify(triageCounts)}`);
+  console.log(`   Active Hospital Queue: 20 patients (tokens 101–120)`);
   console.log(`   Prescriptions:         11`);
   console.log(`   Medical Records:       13 (timelines for P01–P05, P21, P24)`);
   console.log(`   Clinical Memories:     7 (allergy flags, conditions, medications)`);

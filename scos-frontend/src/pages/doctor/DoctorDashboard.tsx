@@ -7,15 +7,17 @@ import {
 import { useNavigate } from 'react-router-dom';
 import useStreamingStore from '../../services/streaming';
 import useDoctorStore from '../../store/useDoctorStore';
-import { getAppointments, getPrescriptions, getDoctorProfile } from '../../lib/api';
+import { getAppointments, getPrescriptions, getDoctorProfile, getQueueList } from '../../lib/api';
 
 export default function DoctorDashboard() {
   const navigate = useNavigate();
-  const { isConnected, connect, disconnect, queueList, fetchQueue } = useStreamingStore();
+  const { isConnected, connect, disconnect, fetchQueue } = useStreamingStore();
   const { mode, setMode, activeHospitalId, hospitals } = useDoctorStore();
 
   const [hospitalStats, setHospitalStats] = useState({ appointments: 0, prescriptions: 0 });
   const [privateStats, setPrivateStats] = useState({ appointments: 0, prescriptions: 0 });
+  const [hospitalQueueCount, setHospitalQueueCount] = useState(0);
+  const [privateQueueCount, setPrivateQueueCount] = useState(0);
   const [doctorProfile, setDoctorProfile] = useState<any>(null);
 
   useEffect(() => {
@@ -30,11 +32,33 @@ export default function DoctorDashboard() {
   useEffect(() => {
     const docId = doctorProfile?._id || doctorProfile?.id;
     if (docId) {
-      fetchQueue(docId);
-      const interval = setInterval(() => fetchQueue(docId), 5000);
+      fetchQueue(docId, activeHospitalId);
+      const interval = setInterval(() => fetchQueue(docId, activeHospitalId), 5000);
       return () => clearInterval(interval);
     }
-  }, [doctorProfile, fetchQueue]);
+  }, [activeHospitalId, doctorProfile, fetchQueue]);
+
+  useEffect(() => {
+    const docId = doctorProfile?._id || doctorProfile?.id;
+    if (!docId) return;
+
+    const refreshFacilityQueueCounts = async () => {
+      try {
+        const [hospitalRes, privateRes] = await Promise.all([
+          getQueueList({ doctorId: docId, hospitalId: 'hospital' }),
+          getQueueList({ doctorId: docId, hospitalId: 'private' }),
+        ]);
+        setHospitalQueueCount(hospitalRes.data?.totalWaiting ?? hospitalRes.data?.waitingQueue?.length ?? 0);
+        setPrivateQueueCount(privateRes.data?.totalWaiting ?? privateRes.data?.waitingQueue?.length ?? 0);
+      } catch (err) {
+        console.error('Failed to refresh facility queue counts:', err);
+      }
+    };
+
+    refreshFacilityQueueCounts();
+    const interval = setInterval(refreshFacilityQueueCounts, 5000);
+    return () => clearInterval(interval);
+  }, [doctorProfile]);
 
   useEffect(() => {
     // Hospital stats
@@ -53,9 +77,6 @@ export default function DoctorDashboard() {
       setPrivateStats(prev => ({ ...prev, prescriptions: res.data.length }));
     }).catch(() => {});
   }, []);
-
-  const hospitalQueueCount = queueList.filter(p => p.hospitalId && p.hospitalId !== 'private').length;
-  const privateQueueCount = queueList.filter(p => !p.hospitalId || p.hospitalId === 'private').length;
 
   const currentStats = mode === 'hospital' ? hospitalStats : privateStats;
   const currentQueueCount = mode === 'hospital' ? hospitalQueueCount : privateQueueCount;

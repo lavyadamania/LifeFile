@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { Star, GraduationCap, Users, Save, X, Edit2, Plus, Trash2, Building, FileBadge, MapPin } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
-import { getReviews, getDoctors, updateDoctor, getMyClinic, updateMyClinic } from '../../lib/api';
+import { getReviews, getDoctors, updateDoctor, updateDoctorSchedule, updateDoctorPrivateSchedule, getMyClinic, updateMyClinic } from '../../lib/api';
 
 interface Education { degree: string; institution: string; year: string; }
 interface Experience { title: string; hospital: string; duration: string; description: string; }
@@ -33,9 +33,15 @@ export default function DoctorProfile() {
   const [clinicMapsUrl, setClinicMapsUrl] = useState('');
   const [clinicAddress, setClinicAddress] = useState('');
   const [savingClinic, setSavingClinic] = useState(false);
-  const [activeModal, setActiveModal] = useState<'intro' | 'about' | 'experience' | 'education' | 'skills' | 'certifications' | 'hours' | null>(null);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileError, setProfileError] = useState('');
+  const [activeModal, setActiveModal] = useState<'intro' | 'about' | 'experience' | 'education' | 'skills' | 'certifications' | 'hours' | 'privateHours' | null>(null);
+  const [privateSchedule, setPrivateSchedule] = useState<{ isSameEveryday: boolean; days: ScheduleDay[] }>({
+    isSameEveryday: false,
+    days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => ({ day, isAvailable: false, startTime: '18:00', endTime: '21:00' }))
+  });
 
-  const { register, control, handleSubmit, reset, watch, setValue } = useForm<ProfileForm>({
+  const { register, control, handleSubmit, reset, watch, getValues, setValue } = useForm<ProfileForm>({
     defaultValues: {
       specialization: '', location: '', hours: '', experience: 0, bio: '',
       educations: [], experiences: [], certifications: [], skills: [],
@@ -70,8 +76,17 @@ export default function DoctorProfile() {
           isSameEveryday: match.schedule?.isSameEveryday ?? true,
           days: safeDays,
         };
+        const safePrivateSchedule = match.privateSchedule?.days?.length === 7
+          ? match.privateSchedule
+          : {
+              isSameEveryday: false,
+              days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day: string) => ({
+                day, isAvailable: false, startTime: '18:00', endTime: '21:00'
+              }))
+            };
+        setPrivateSchedule(safePrivateSchedule);
 
-        setDoctorDetails({ ...match, schedule: safeSchedule });
+        setDoctorDetails({ ...match, schedule: safeSchedule, privateSchedule: match.privateSchedule || null });
         reset({
           specialization: match.specialization || '',
           location: match.location || '',
@@ -110,16 +125,44 @@ export default function DoctorProfile() {
 
   const onSubmit = async (data: ProfileForm) => {
     if (!doctorDetails) return;
+    setSavingProfile(true);
+    setProfileError('');
     try {
       const payload = {
         ...data,
         skills: data.skills.map(s => s.value).filter(v => v.trim() !== '')
       };
-      await updateDoctor(doctorDetails._id, payload);
-      setDoctorDetails({ ...doctorDetails, ...payload });
+      let response;
+      if (activeModal === 'hours') {
+        response = await updateDoctorSchedule(data.schedule);
+      } else if (activeModal === 'privateHours') {
+        response = await updateDoctorPrivateSchedule(privateSchedule);
+      } else {
+        const doctorId = doctorDetails._id || doctorDetails.id;
+        if (!doctorId) throw new Error('Doctor profile ID is missing');
+        response = await updateDoctor(doctorId, payload);
+      }
+      const savedHospitalSchedule = response.data.schedule?.days?.length
+        ? response.data.schedule
+        : doctorDetails.schedule;
+      const savedPrivateSchedule = response.data.privateSchedule?.days?.length === 7
+        ? response.data.privateSchedule
+        : activeModal === 'privateHours'
+          ? privateSchedule
+          : doctorDetails.privateSchedule;
+      if (savedPrivateSchedule?.days?.length === 7) setPrivateSchedule(savedPrivateSchedule);
+      setDoctorDetails({
+        ...doctorDetails,
+        ...response.data,
+        schedule: savedHospitalSchedule,
+        privateSchedule: savedPrivateSchedule || null,
+      });
       setActiveModal(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to update profile:', err);
+      setProfileError(err.response?.data?.error || err.message || 'Failed to save profile changes.');
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -139,14 +182,19 @@ export default function DoctorProfile() {
             </button>
           </div>
           <div className="p-6 overflow-y-auto flex-1">
+            {profileError && (
+              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {profileError}
+              </div>
+            )}
             {children}
           </div>
           <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
             <button onClick={() => { setActiveModal(null); reset(); loadData(); }} className="px-5 py-2 font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors">
               Cancel
             </button>
-            <button onClick={handleSubmit(onSubmit)} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors shadow-sm flex items-center gap-2">
-              <Save className="w-4 h-4" /> Save
+            <button type="button" onClick={handleSubmit(onSubmit)} disabled={savingProfile} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors shadow-sm flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-60">
+              <Save className="w-4 h-4" /> {savingProfile ? 'Saving...' : 'Save'}
             </button>
           </div>
         </div>
@@ -185,7 +233,7 @@ export default function DoctorProfile() {
         </div>
       ))}
 
-      {renderModal('hours', 'Edit Timings', (
+      {renderModal('hours', 'Edit Hospital Timings', (
         <div className="space-y-4">
           <label className="block text-sm font-bold text-slate-700 mb-2">Consultation Schedule</label>
           <div className="flex items-center gap-2 mb-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
@@ -199,16 +247,18 @@ export default function DoctorProfile() {
                  <label className="block text-xs font-bold text-slate-500 mb-1">Start Time</label>
                  <input type="time" {...register('schedule.days.0.startTime')} onChange={(e) => {
                    const val = e.target.value;
-                   const days = watch('schedule.days');
-                   setValue('schedule.days', days.map(d => ({...d, startTime: val})));
+                   const days = getValues('schedule.days') || [];
+                   register('schedule.days.0.startTime').onChange(e);
+                   setValue('schedule.days', days.map(d => ({...d, startTime: val})), { shouldDirty: true });
                  }} className="w-full p-2.5 border rounded-lg" />
                </div>
                <div>
                  <label className="block text-xs font-bold text-slate-500 mb-1">End Time</label>
                  <input type="time" {...register('schedule.days.0.endTime')} onChange={(e) => {
                    const val = e.target.value;
-                   const days = watch('schedule.days');
-                   setValue('schedule.days', days.map(d => ({...d, endTime: val})));
+                   const days = getValues('schedule.days') || [];
+                   register('schedule.days.0.endTime').onChange(e);
+                   setValue('schedule.days', days.map(d => ({...d, endTime: val})), { shouldDirty: true });
                  }} className="w-full p-2.5 border rounded-lg" />
                </div>
              </div>
@@ -235,6 +285,39 @@ export default function DoctorProfile() {
               ))}
             </div>
           )}
+        </div>
+      ))}
+
+      {renderModal('privateHours', 'Edit Private Clinic Working Hours', (
+        <div className="space-y-3">
+          <p className="text-sm text-slate-500">These hours apply only to bookings at your private clinic. Hospital hours remain separate.</p>
+          {privateSchedule.days.map((day, idx) => (
+            <div key={day.day} className="flex items-center gap-3 p-3 bg-emerald-50/50 border border-emerald-100 rounded-xl">
+              <label className="flex items-center gap-2 w-24 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={day.isAvailable}
+                  onChange={e => setPrivateSchedule(current => ({
+                    ...current,
+                    days: current.days.map((item, i) => i === idx ? { ...item, isAvailable: e.target.checked } : item)
+                  }))}
+                  className="w-4 h-4 rounded text-emerald-600"
+                />
+                <span className="font-bold text-sm text-slate-700">{day.day}</span>
+              </label>
+              {day.isAvailable ? (
+                <div className="flex-1 flex items-center gap-2">
+                  <input type="time" value={day.startTime} onChange={e => setPrivateSchedule(current => ({
+                    ...current, days: current.days.map((item, i) => i === idx ? { ...item, startTime: e.target.value } : item)
+                  }))} className="w-full p-2 text-sm border rounded-lg" />
+                  <span className="text-slate-400">to</span>
+                  <input type="time" value={day.endTime} onChange={e => setPrivateSchedule(current => ({
+                    ...current, days: current.days.map((item, i) => i === idx ? { ...item, endTime: e.target.value } : item)
+                  }))} className="w-full p-2 text-sm border rounded-lg" />
+                </div>
+              ) : <span className="text-sm text-slate-400">Closed</span>}
+            </div>
+          ))}
         </div>
       ))}
 
@@ -460,10 +543,10 @@ export default function DoctorProfile() {
           {/* Timings */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
             <div className="flex justify-between items-center mb-5">
-              <h3 className="text-lg font-bold text-slate-900">Consultation Timings</h3>
+              <h3 className="text-lg font-bold text-slate-900">Hospital Working Hours</h3>
               <button onClick={() => setActiveModal('hours')} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"><Edit2 className="w-4 h-4" /></button>
             </div>
-            {doctorDetails?.schedule ? (
+            {doctorDetails?.schedule?.days?.length > 0 ? (
               doctorDetails.schedule.isSameEveryday ? (
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-center justify-between">
                   <span className="font-bold text-slate-700 text-[15px]">Everyday</span>
@@ -494,6 +577,26 @@ export default function DoctorProfile() {
                 {doctorDetails?.hours || 'Mon-Fri, 9AM-5PM'}
               </p>
             )}
+          </div>
+
+          <div className="bg-emerald-50 rounded-xl border border-emerald-100 shadow-sm p-6">
+            <div className="flex justify-between items-center mb-3">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Private Clinic Working Hours</h3>
+                <p className="text-xs text-slate-500 mt-1">Separate from your hospital schedule and queue.</p>
+              </div>
+              <button onClick={() => setActiveModal('privateHours')} className="p-2 text-emerald-700 hover:bg-emerald-100 rounded-full transition-colors" aria-label="Edit private clinic working hours"><Edit2 className="w-4 h-4" /></button>
+            </div>
+            {doctorDetails?.privateSchedule?.days?.some((d: any) => d.isAvailable) ? (
+              <div className="space-y-1.5">
+                {doctorDetails.privateSchedule.days.filter((d: any) => d.isAvailable).map((d: any) => (
+                  <div key={d.day} className="flex justify-between text-sm">
+                    <span className="font-semibold text-slate-700">{d.day}</span>
+                    <span className="text-emerald-700 font-medium">{d.startTime} – {d.endTime}</span>
+                  </div>
+                ))}
+              </div>
+            ) : <p className="text-sm text-amber-700">Not configured. Private booking slots stay closed until you add hours.</p>}
           </div>
 
           {/* Skills */}

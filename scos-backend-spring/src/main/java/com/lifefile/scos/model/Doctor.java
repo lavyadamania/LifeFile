@@ -38,6 +38,9 @@ public class Doctor {
 
     private Schedule schedule;
 
+    /** Separate weekly availability for appointments booked at the doctor's private clinic. */
+    private Schedule privateSchedule;
+
     @Builder.Default
     private Double rating = 0.0;
 

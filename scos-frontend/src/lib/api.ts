@@ -56,9 +56,13 @@ export const getMe = () => api.get('/auth/me');
 
 // Demo reset is intentionally public so it can be used from the login page.
 export const resetDemoData = () => api.post('/demo/reset');
+export const seedAllDemoScripts = () => api.post('/demo/seed-all');
+export const runDemoSeed = (seed: string) => api.post('/demo/seed', { seed });
 
 // Doctors
 export const getDoctorProfile = () => api.get('/doctors/me');
+export const updateDoctorSchedule = (schedule: any) => api.put('/doctors/me/schedule', schedule);
+export const updateDoctorPrivateSchedule = (schedule: any) => api.put('/doctors/me/private-schedule', schedule);
 export const getDoctors = (params?: { search?: string; spec?: string; hospitalId?: string }) =>
   api.get('/doctors', { params });
 
@@ -86,9 +90,11 @@ export const createWalkinAppointment = (data: any) => api.post('/appointments/wa
 export const getMissedAppointments = (params?: { hospitalId?: string }) => api.get('/appointments/missed', { params });
 export const updateAppointmentStatus = (id: string, data: { status: string; postponedDate?: string; postponedTime?: string }) =>
   api.put(`/appointments/${id}/status`, data);
+export const checkInAppointment = (id: string) => api.post(`/appointments/${id}/check-in`);
 
 // Patients
 export const getPatientProfile = () => api.get('/patients/me');
+export const getPatientById = (id: string) => api.get(`/patients/${id}`);
 export const updatePatientProfile = (data: any) => api.put('/patients/me', data);
 export const searchPatients = (q: string) => api.get('/patients/search', { params: { q } });
 

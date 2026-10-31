@@ -4,12 +4,14 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.TextStyle;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
 import java.util.Optional;
 
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -56,51 +58,94 @@ public class AppointmentController {
     private final MongoTemplate mongoTemplate;
     private final KafkaProducerService kafkaProducerService;
 
-    /**
-     * Check if appointment is older than 48 hours and mark it as Missed.
-     */
-    private boolean checkAndMarkIfStale48Hours(Appointment appt, Instant cutoff, ZoneId zone) {
-        if (!"Pending".equalsIgnoreCase(appt.getStatus()) && !"Confirmed".equalsIgnoreCase(appt.getStatus())) {
-            return false;
-        }
-        try {
-            Instant apptInstant = parseAppointmentInstant(appt, zone);
-            if (apptInstant != null && apptInstant.isBefore(cutoff)) {
-                appt.setStatus("Missed");
-                appt.setUpdatedAt(Instant.now());
-                appointmentRepository.save(appt);
-                return true;
-            }
-        } catch (Exception ignored) {}
-        return false;
-    }
-
-    private Instant parseAppointmentInstant(Appointment appt, ZoneId zone) {
-        if (appt.getDate() == null || appt.getDate().isBlank()) return null;
-        try {
-            LocalDate date = LocalDate.parse(appt.getDate());
-            LocalTime time = LocalTime.MIDNIGHT;
-            if (appt.getTime() != null && !appt.getTime().isBlank()) {
-                String t = appt.getTime().trim();
-                try {
-                    time = LocalTime.parse(t, DateTimeFormatter.ofPattern("HH:mm"));
-                } catch (DateTimeParseException e1) {
-                    try {
-                        time = LocalTime.parse(t.toUpperCase(), DateTimeFormatter.ofPattern("hh:mm a"));
-                    } catch (DateTimeParseException ignored) {}
-                }
-            }
-            return LocalDateTime.of(date, time).atZone(zone).toInstant();
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
     private boolean isPatientOwner(Appointment appt, User user) {
         if (appt.getPatientId() == null) return false;
         if (appt.getPatientId().equals(user.getId())) return true;
         Optional<Patient> p = patientRepository.findByUserId(user.getId());
         return p.isPresent() && appt.getPatientId().equals(p.get().getId());
+    }
+
+    private String validateWorkingHours(Doctor doctor, String hospitalId, String date, String time) {
+        boolean privateClinicBooking = hospitalId == null || hospitalId.isBlank();
+        Doctor.Schedule schedule = privateClinicBooking ? doctor.getPrivateSchedule() : doctor.getSchedule();
+        if (privateClinicBooking && schedule == null) {
+            return "This doctor has not configured private clinic working hours";
+        }
+
+        try {
+            LocalDate appointmentDate = LocalDate.parse(date);
+            String normalizedTime = time.trim().toUpperCase(Locale.ROOT);
+            LocalTime appointmentTime = normalizedTime.endsWith("AM") || normalizedTime.endsWith("PM")
+                    ? LocalTime.parse(normalizedTime, DateTimeFormatter.ofPattern("h:mm a", Locale.US))
+                    : LocalTime.parse(normalizedTime, DateTimeFormatter.ofPattern("H:mm", Locale.US));
+
+            Doctor.DaySchedule daySchedule = null;
+            if (schedule != null && schedule.getDays() != null && !schedule.getDays().isEmpty()) {
+                String dayName = appointmentDate.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.US);
+                daySchedule = Boolean.TRUE.equals(schedule.getIsSameEveryday())
+                        ? schedule.getDays().get(0)
+                        : schedule.getDays().stream().filter(d -> dayName.equalsIgnoreCase(d.getDay())).findFirst().orElse(null);
+            }
+
+            if (daySchedule == null) {
+                if (privateClinicBooking) return "Private clinic hours are not configured for this day";
+                // Preserve the existing hospital fallback for older doctor profiles.
+                return appointmentTime.isBefore(LocalTime.of(9, 0)) || !appointmentTime.isBefore(LocalTime.of(17, 0))
+                        ? "Appointment time is outside hospital working hours (09:00–17:00)" : null;
+            }
+            if (!Boolean.TRUE.equals(daySchedule.getIsAvailable())) {
+                return privateClinicBooking ? "Private clinic is closed on this day" : "Hospital schedule is closed on this day";
+            }
+
+            LocalTime start = LocalTime.parse(daySchedule.getStartTime());
+            LocalTime end = LocalTime.parse(daySchedule.getEndTime());
+            if (appointmentTime.isBefore(start) || !appointmentTime.isBefore(end)) {
+                return "Appointment time must be within " + start + "–" + end
+                        + (privateClinicBooking ? " private clinic hours" : " hospital hours");
+            }
+            return null;
+        } catch (DateTimeParseException | NullPointerException ex) {
+            return "Appointment date or time is invalid";
+        }
+    }
+
+    private Optional<Doctor> findDoctorForAppointment(Appointment appointment) {
+        Optional<Doctor> byId = doctorRepository.findById(appointment.getDoctorId());
+        return byId.isPresent() ? byId : doctorRepository.findByUserId(appointment.getDoctorId());
+    }
+
+    /** Prevent one patient from entering the same doctor's same-facility daily queue twice. */
+    private boolean hasDuplicateActiveAppointment(String patientId, Doctor doctor, String date,
+                                                   String hospitalId, String exceptAppointmentId) {
+        if (patientId == null || patientId.isBlank() || doctor == null || date == null || date.isBlank()) {
+            return false;
+        }
+
+        List<String> doctorIds = new ArrayList<>();
+        if (doctor.getId() != null) doctorIds.add(doctor.getId());
+        if (doctor.getUserId() != null) doctorIds.add(doctor.getUserId());
+        Query query = new Query(new Criteria().andOperator(
+                MongoIdUtil.idCriteria("doctorId", doctorIds),
+                Criteria.where("date").is(date)));
+
+        return mongoTemplate.find(query, Appointment.class).stream().anyMatch(existing -> {
+            if (exceptAppointmentId != null && exceptAppointmentId.equals(existing.getId())) return false;
+            if (!List.of("Confirmed", "Pending", "In_Progress", "Rescheduled").contains(existing.getStatus())) return false;
+            return sameAppointmentId(patientId, existing.getPatientId())
+                    && sameAppointmentId(hospitalId, existing.getHospitalId());
+        });
+    }
+
+    private boolean sameAppointmentId(String left, String right) {
+        boolean leftEmpty = left == null || left.isBlank();
+        boolean rightEmpty = right == null || right.isBlank();
+        if (leftEmpty || rightEmpty) return leftEmpty && rightEmpty;
+        return left.trim().equalsIgnoreCase(right.trim());
+    }
+
+    private ResponseEntity<?> duplicateAppointmentResponse() {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                "error", "This patient already has an active appointment with this doctor at this facility on this date"));
     }
 
     @GetMapping
@@ -111,9 +156,6 @@ public class AppointmentController {
 
         User user = (User) request.getAttribute("currentUser");
         if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-
-        Instant cutoff = Instant.now().minusSeconds(48 * 3600);
-        ZoneId zone = ZoneId.systemDefault();
 
         List<Appointment> appointments;
         switch (user.getRole() == null ? "" : user.getRole()) {
@@ -126,10 +168,6 @@ public class AppointmentController {
             Query q = new Query(MongoIdUtil.idCriteria("patientId", targetIds));
             appointments = new ArrayList<>(mongoTemplate.find(q, Appointment.class));
 
-            // Update any stale pending appointments to Missed
-            for (Appointment a : appointments) {
-                checkAndMarkIfStale48Hours(a, cutoff, zone);
-            }
         }
         case "doctor" -> {
             List<String> targetIds = new ArrayList<>();
@@ -140,22 +178,14 @@ public class AppointmentController {
             Query q = new Query(MongoIdUtil.idCriteria("doctorId", targetIds));
             appointments = new ArrayList<>(mongoTemplate.find(q, Appointment.class));
 
-            // Check stale appointments and mark as Missed
-            for (Appointment a : appointments) {
-                checkAndMarkIfStale48Hours(a, cutoff, zone);
-            }
-
-            // DOCTOR SIDE REQUIREMENT: Missed / expired appointments are automatically removed from doctor view
-            // unless the doctor specifically asked for status=Missed
+            // Keep missed appointments out of the regular doctor view unless
+            // the doctor explicitly requests status=Missed.
             if (status == null || !status.equalsIgnoreCase("Missed")) {
                 appointments.removeIf(a -> "Missed".equalsIgnoreCase(a.getStatus()));
             }
         }
         default -> {
             appointments = new ArrayList<>(appointmentRepository.findAll());
-            for (Appointment a : appointments) {
-                checkAndMarkIfStale48Hours(a, cutoff, zone);
-            }
         }
         }
 
@@ -177,9 +207,6 @@ public class AppointmentController {
 
         User user = (User) request.getAttribute("currentUser");
         if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-
-        String today = LocalDate.now().format(DateTimeFormatter.ISO_DATE);
-        ZoneId zone = ZoneId.systemDefault();
 
         List<Appointment> list;
         switch (user.getRole() == null ? "" : user.getRole()) {
@@ -206,39 +233,30 @@ public class AppointmentController {
         }
         }
 
-        // Keep appointments that are already 'Missed' or past appointment time with status Pending/Confirmed
-        List<Appointment> missed = new ArrayList<>();
-
-        for (Appointment a : list) {
-            if ("Missed".equalsIgnoreCase(a.getStatus())) {
-                missed.add(a);
-            } else if ("Pending".equalsIgnoreCase(a.getStatus()) || "Confirmed".equalsIgnoreCase(a.getStatus())) {
-                if (a.getDate() != null && a.getDate().compareTo(today) < 0) {
-                    a.setStatus("Missed");
-                    a.setUpdatedAt(Instant.now());
-                    appointmentRepository.save(a);
-                    missed.add(a);
-                } else if (today.equals(a.getDate())) {
-                    // Check time of day
-                    Instant apptInstant = parseAppointmentInstant(a, zone);
-                    if (apptInstant != null && apptInstant.isBefore(Instant.now())) {
-                        missed.add(a);
-                    }
-                }
-            }
-        }
+        // The scheduled cleanup job owns status transitions. Reading this list
+        // must not mark an appointment missed as a side effect.
+        list.removeIf(a -> !"Missed".equalsIgnoreCase(a.getStatus()));
 
         if (hospitalId != null && !hospitalId.isBlank()) {
-            missed.removeIf(a -> !MongoIdUtil.matchesHospitalFilter(a.getHospitalId(), hospitalId));
+            list.removeIf(a -> !MongoIdUtil.matchesHospitalFilter(a.getHospitalId(), hospitalId));
         }
 
-        return ResponseEntity.ok(missed);
+        return ResponseEntity.ok(list);
     }
 
     @PostMapping
     public ResponseEntity<?> bookAppointment(@RequestBody Appointment reqBody, HttpServletRequest request) {
         User user = (User) request.getAttribute("currentUser");
         if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        Optional<Doctor> doctor = findDoctorForAppointment(reqBody);
+        if (doctor.isEmpty()) return ResponseEntity.badRequest().body(Map.of("error", "Doctor not found"));
+        String scheduleError = validateWorkingHours(doctor.get(), reqBody.getHospitalId(), reqBody.getDate(), reqBody.getTime());
+        if (scheduleError != null) return ResponseEntity.badRequest().body(Map.of("error", scheduleError));
+        reqBody.setDoctorId(doctor.get().getId());
+        if (hasDuplicateActiveAppointment(user.getId(), doctor.get(), reqBody.getDate(), reqBody.getHospitalId(), null)) {
+            return duplicateAppointmentResponse();
+        }
 
         // Calculate baseToken logic
         Query q = new Query(Criteria.where("date").is(reqBody.getDate())
@@ -250,7 +268,8 @@ public class AppointmentController {
         reqBody.setPatientName(user.getName());
         reqBody.setBaseToken(maxToken + 1);
         if (reqBody.getTriageLevel() == null) reqBody.setTriageLevel(1);
-        if (reqBody.getStatus() == null) reqBody.setStatus("Pending");
+        // Booking confirms the slot immediately. Queue entry happens only at check-in.
+        reqBody.setStatus("Confirmed");
         reqBody.setCreatedAt(Instant.now());
         reqBody.setUpdatedAt(Instant.now());
 
@@ -265,6 +284,50 @@ public class AppointmentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(appointment);
     }
 
+    @PostMapping("/{id}/check-in")
+    public ResponseEntity<?> checkIn(@PathVariable String id, HttpServletRequest request) {
+        User user = (User) request.getAttribute("currentUser");
+        if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        Optional<Appointment> aptOpt = appointmentRepository.findById(id);
+        if (aptOpt.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Appointment not found"));
+
+        Appointment appointment = aptOpt.get();
+        if ("patient".equals(user.getRole()) && !isPatientOwner(appointment, user)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        if (!List.of("Confirmed", "Rescheduled").contains(appointment.getStatus())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Appointment is not available for check-in"));
+        }
+
+        ZoneId zone = ZoneId.of("Asia/Kolkata");
+        LocalDateTime now = LocalDateTime.now(zone);
+        try {
+            LocalDate date = LocalDate.parse(appointment.getDate());
+            String rawTime = appointment.getTime().trim().toUpperCase();
+            LocalTime time = rawTime.endsWith("AM") || rawTime.endsWith("PM")
+                    ? LocalTime.parse(rawTime, DateTimeFormatter.ofPattern("h:mm a"))
+                    : LocalTime.parse(rawTime, DateTimeFormatter.ofPattern("H:mm"));
+            LocalDateTime slot = LocalDateTime.of(date, time);
+            if (now.isBefore(slot.minusMinutes(10)) || now.isAfter(slot.plusMinutes(20))) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Check-in is available from 10 minutes before until 20 minutes after the appointment time"));
+            }
+        } catch (DateTimeParseException | NullPointerException ex) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Appointment date or time is invalid"));
+        }
+
+        appointment.setStatus("Pending"); // Pending means checked in and waiting in the queue.
+        appointment.setCheckedInAt(Instant.now());
+        appointment.setUpdatedAt(Instant.now());
+        appointment = appointmentRepository.save(appointment);
+        kafkaProducerService.publishQueueEvent(appointment.getDoctorId(), Map.of(
+                "action", "CHECKED_IN",
+                "appointmentId", appointment.getId()
+        ));
+        return ResponseEntity.ok(appointment);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<?> rescheduleAppointment(@PathVariable String id, @RequestBody Appointment updateData, HttpServletRequest request) {
         User user = (User) request.getAttribute("currentUser");
@@ -276,6 +339,18 @@ public class AppointmentController {
         Appointment appointment = aptOpt.get();
         if ("patient".equals(user.getRole()) && !isPatientOwner(appointment, user)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        String requestedDate = updateData.getDate() != null ? updateData.getDate() : appointment.getDate();
+        String requestedTime = updateData.getTime() != null ? updateData.getTime() : appointment.getTime();
+        Optional<Doctor> doctor = findDoctorForAppointment(appointment);
+        if (doctor.isPresent()) {
+            String scheduleError = validateWorkingHours(doctor.get(), appointment.getHospitalId(), requestedDate, requestedTime);
+            if (scheduleError != null) return ResponseEntity.badRequest().body(Map.of("error", scheduleError));
+            if (hasDuplicateActiveAppointment(appointment.getPatientId(), doctor.get(), requestedDate,
+                    appointment.getHospitalId(), appointment.getId())) {
+                return duplicateAppointmentResponse();
+            }
         }
 
         if (updateData.getDate() != null) appointment.setDate(updateData.getDate());
@@ -309,6 +384,15 @@ public class AppointmentController {
         String postponedTime = body.get("postponedTime");
 
         if ("Postponed".equalsIgnoreCase(newStatus) && postponedDate != null && postponedTime != null) {
+            Optional<Doctor> doctor = findDoctorForAppointment(appointment);
+            if (doctor.isPresent()) {
+                String scheduleError = validateWorkingHours(doctor.get(), appointment.getHospitalId(), postponedDate, postponedTime);
+                if (scheduleError != null) return ResponseEntity.badRequest().body(Map.of("error", scheduleError));
+                if (hasDuplicateActiveAppointment(appointment.getPatientId(), doctor.get(), postponedDate,
+                        appointment.getHospitalId(), appointment.getId())) {
+                    return duplicateAppointmentResponse();
+                }
+            }
             Appointment newAppt = Appointment.builder()
                     .patientId(appointment.getPatientId())
                     .patientName(appointment.getPatientName())
@@ -403,6 +487,13 @@ public class AppointmentController {
         reqBody.setIsWalkin(true);
         if (reqBody.getDate() == null) reqBody.setDate(LocalDate.now().format(DateTimeFormatter.ISO_DATE));
         if (reqBody.getTriageLevel() == null) reqBody.setTriageLevel(1);
+
+        Optional<Doctor> walkinDoctor = doctorRepository.findById(doctorId);
+        if (reqBody.getPatientId() != null && walkinDoctor.isPresent()
+                && hasDuplicateActiveAppointment(reqBody.getPatientId(), walkinDoctor.get(), reqBody.getDate(),
+                        reqBody.getHospitalId(), null)) {
+            return duplicateAppointmentResponse();
+        }
         reqBody.setCreatedAt(Instant.now());
         reqBody.setUpdatedAt(Instant.now());
 

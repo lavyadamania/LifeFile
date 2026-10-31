@@ -10,20 +10,20 @@ async function seed100() {
     await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/scos');
     console.log('Connected to MongoDB');
 
-    let doctorUser = await User.findOne({ email: 'doctor@gmail.com' });
-    if (!doctorUser) {
-      console.error("Doctor 'doctor@gmail.com' not found. Please ensure the doctor exists.");
-      process.exit(1);
+    const doctorUser = await User.findOne({ email: 'doctor@gmail.com' });
+    let doctorProfile = doctorUser ? await Doctor.findOne({ userId: doctorUser._id }) : null;
+    if (!doctorProfile) {
+      doctorProfile = await Doctor.findOne({ name: { $regex: /ananya sharma/i } })
+        || await Doctor.findOne().sort({ name: 1 });
     }
-    
-    let doctorProfile = await Doctor.findOne({ userId: doctorUser._id });
     if (!doctorProfile) {
       console.error("Doctor 1 profile not found.");
       process.exit(1);
     }
 
     // Get today's date in local time string format like "2026-04-26"
-    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const time = '09:00';
 
     console.log(`Creating 100 patients and appointments for ${doctorProfile.name} on ${today} at ${time}...`);

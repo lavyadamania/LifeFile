@@ -7,13 +7,16 @@ const User = require('./models/User');
 mongoose.connect(process.env.MONGO_URI).then(async () => { 
   console.log('Connected to DB. Starting 20 Patient Seed...');
 
-  const doc = await Doctor.findOne({ name: { $regex: /lavya damania/i } }); 
+  const doc = await Doctor.findOne({ name: { $regex: /ananya sharma/i } })
+    || await Doctor.findOne({ name: { $regex: /lavya damania/i } })
+    || await Doctor.findOne().sort({ name: 1 });
   if (!doc) { 
     console.log('Doctor not found'); process.exit(1); 
   } 
 
   // Clear today's pending queue
-  const today = '2026-08-19';
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   await Appointment.deleteMany({ doctorId: doc._id, date: today, status: 'Pending' });
 
   // Make sure we have 20 mock users
@@ -35,7 +38,6 @@ mongoose.connect(process.env.MONGO_URI).then(async () => {
   }
 
   // Get EXACT current PC time
-  const now = new Date();
   const toTimeString = (d) => d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
   const currentTimeStr = toTimeString(now);
 

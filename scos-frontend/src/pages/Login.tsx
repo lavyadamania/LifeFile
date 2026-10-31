@@ -3,9 +3,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { Stethoscope, Loader2, Sparkles, Building2, Shield, Users, Search, Database, BarChart3, ExternalLink } from 'lucide-react';
+import { Stethoscope, Loader2, Sparkles, Building2, Shield, Users, Search, Database, BarChart3, ExternalLink, Play } from 'lucide-react';
 import useAuthStore from '../store/useAuthStore';
-import { loginUser, resetDemoData } from '../lib/api';
+import { loginUser, resetDemoData, runDemoSeed, seedAllDemoScripts } from '../lib/api';
 
 const POWER_BI_URL = import.meta.env.VITE_POWERBI_URL || 'https://app.powerbi.com/';
 const STREAMLIT_URL = import.meta.env.VITE_STREAMLIT_URL || 'http://localhost:8511';
@@ -98,6 +98,20 @@ const QUICK_PICKS: DemoAccount[] = [
   ALL_PATIENTS[2]
 ];
 
+const DEMO_SEEDS = [
+  { id: 'admin', name: 'Admin account', description: 'Create or reset the demo admin account' },
+  { id: 'presentation', name: 'Full presentation dataset', description: 'Reset and recreate the complete demo data', destructive: true },
+  { id: 'ananya', name: 'Dr. Ananya live queue', description: '20 hospital + 5 private appointments' },
+  { id: 'clinics', name: 'Private clinics', description: 'Create doctor-linked private clinics' },
+  { id: 'appointments', name: 'Appointment seed', description: 'Create the hyphenated appointment dataset' },
+  { id: 'basic-appointments', name: 'Basic appointments', description: 'Create the basic doctor appointment dataset' },
+  { id: 'hundred-appointments', name: '100 appointments', description: 'Create a large appointment dataset' },
+  { id: 'twenty-patients', name: '20 test patients', description: 'Create 20 patients for queue testing' },
+  { id: 'distinct-patients', name: 'Distinct patients', description: 'Create the smaller distinct patient dataset' },
+  { id: 'realistic-queue', name: 'Realistic queue', description: 'Create realistic queue and missed-call data' },
+  { id: 'dwpa-test', name: 'DWPA test data', description: 'Create dynamic priority queue test data' }
+] as const;
+
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -106,6 +120,7 @@ export default function Login() {
   const [isResettingDemo, setIsResettingDemo] = useState(false);
   const [serverError, setServerError] = useState('');
   const [demoStatus, setDemoStatus] = useState('');
+  const [runningSeed, setRunningSeed] = useState<string | null>(null);
   const [demoTab, setDemoTab] = useState<'quick' | 'hospital' | 'doctor' | 'patient' | 'admin'>('quick');
   const [patientSearch, setPatientSearch] = useState('');
 
@@ -170,6 +185,43 @@ export default function Login() {
     } catch (err: any) {
       setDemoStatus('');
       setServerError(err.response?.data?.error || 'Demo data reset failed. Is the backend running?');
+    } finally {
+      setIsResettingDemo(false);
+    }
+  };
+
+  const handleRunSeed = async (seed: typeof DEMO_SEEDS[number]) => {
+    if ('destructive' in seed && seed.destructive && !window.confirm('This will clear existing non-admin data and recreate the full presentation dataset. Continue?')) return;
+
+    setRunningSeed(seed.id);
+    setServerError('');
+    setDemoStatus(`Running ${seed.name}...`);
+
+    try {
+      await runDemoSeed(seed.id);
+      setDemoStatus(`${seed.name} completed successfully.`);
+    } catch (err: any) {
+      setDemoStatus('');
+      setServerError(err.response?.data?.error || `${seed.name} failed. Is the backend running?`);
+    } finally {
+      setRunningSeed(null);
+    }
+  };
+
+  const handleSeedAllScripts = async () => {
+    if (!window.confirm('This will run every seed script, including the full presentation reset. Continue?')) return;
+
+    setIsResettingDemo(true);
+    setServerError('');
+    setDemoStatus('Running every demo seed script...');
+
+    try {
+      const response = await seedAllDemoScripts();
+      const completed = response.data.completed || [];
+      setDemoStatus(`All ${completed.length} seed scripts completed successfully.`);
+    } catch (err: any) {
+      setDemoStatus('');
+      setServerError(err.response?.data?.error || 'One or more seed scripts failed. Check the backend response.');
     } finally {
       setIsResettingDemo(false);
     }
@@ -390,23 +442,49 @@ export default function Login() {
           </div>
         </div>
 
-        <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
           <div className="flex items-start gap-3">
             <Database className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
             <div>
               <p className="text-sm font-semibold text-amber-950">Demo data controls</p>
-              <p className="text-xs text-amber-800">Clears the database and recreates the complete presentation dataset.</p>
+              <p className="text-xs text-amber-800">Run a complete reset or load a focused test dataset.</p>
               {demoStatus && <p className="mt-1 text-xs font-medium text-amber-900">{demoStatus}</p>}
             </div>
+          </div>
+          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {DEMO_SEEDS.map(seed => (
+              <button
+                key={seed.id}
+                type="button"
+                onClick={() => handleRunSeed(seed)}
+                disabled={isLoading || isResettingDemo || runningSeed !== null}
+                className="flex items-start gap-2 rounded-xl border border-amber-200 bg-white p-3 text-left transition-colors hover:border-amber-400 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {runningSeed === seed.id ? <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-amber-700" /> : <Play className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />}
+                <span>
+                  <span className="block text-xs font-bold text-amber-950">{seed.name}</span>
+                  <span className="mt-0.5 block text-[11px] text-amber-800">{seed.description}</span>
+                </span>
+              </button>
+            ))}
           </div>
           <button
             type="button"
             onClick={handleResetDemo}
-            disabled={isLoading || isResettingDemo}
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-amber-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isLoading || isResettingDemo || runningSeed !== null}
+            className="mt-3 inline-flex items-center justify-center gap-2 rounded-lg bg-amber-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isResettingDemo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
             {isResettingDemo ? 'Resetting...' : 'Reset & Seed Demo Data'}
+          </button>
+          <button
+            type="button"
+            onClick={handleSeedAllScripts}
+            disabled={isLoading || isResettingDemo || runningSeed !== null}
+            className="mt-3 ml-2 inline-flex items-center justify-center gap-2 rounded-lg border border-amber-600 bg-white px-3 py-2 text-xs font-bold text-amber-800 shadow-sm transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isResettingDemo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+            Seed Each &amp; Every Script
           </button>
         </div>
 

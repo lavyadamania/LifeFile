@@ -7,13 +7,16 @@ const User = require('./models/User');
 mongoose.connect(process.env.MONGO_URI).then(async () => { 
   console.log('Connected to DB. Starting DWPA Test Seed...');
 
-  const doc = await Doctor.findOne({ name: { $regex: /lavya damania/i } }); 
+  const doc = await Doctor.findOne({ name: { $regex: /ananya sharma/i } })
+    || await Doctor.findOne({ name: { $regex: /lavya damania/i } })
+    || await Doctor.findOne().sort({ name: 1 });
   if (!doc) { 
     console.log('Doctor not found'); process.exit(1); 
   } 
 
   // Clear today's pending queue for a clean test
-  const today = '2026-08-19';
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   await Appointment.deleteMany({ doctorId: doc._id, date: today, status: 'Pending' });
 
   // 1. Ensure we have enough mock users
@@ -45,8 +48,6 @@ mongoose.connect(process.env.MONGO_URI).then(async () => {
   }
 
   // Calculate times for Wait Time (Aging) test
-  const now = new Date();
-  
   // Rahul: 3 hours ago (High aging)
   const rahulTime = new Date(now.getTime() - (3 * 60 * 60 * 1000));
   

@@ -1,0 +1,226 @@
+{
+  "info": {
+    "_postman_id": "68e8c104-ccf2-4e67-920f-2f19d53cfa11",
+    "name": "LifeFile - Queue and Patient APIs",
+    "description": "Queue list, patient queue position, patient ETA, and patient-by-ID requests for the LifeFile Spring Boot API. Run requests in order: Login, Get current doctor profile, Get today's appointments, then the queue requests. Search for a patient before Get patient by ID. Protected requests use the token saved by Login.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{token}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" },
+    { "key": "token", "value": "", "type": "string" },
+    { "key": "doctorEmail", "value": "demo.doctor.ananya@lifefile.test", "type": "string" },
+    { "key": "doctorPassword", "value": "Demo@123", "type": "string" },
+    { "key": "doctorId", "value": "", "type": "string" },
+    { "key": "appointmentId", "value": "", "type": "string" },
+    { "key": "patientId", "value": "", "type": "string" },
+    { "key": "patientSearch", "value": "Aarav", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Setup",
+      "item": [
+        {
+          "name": "Login as demo doctor",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "noauth" },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{doctorEmail}}\",\n  \"password\": \"{{doctorPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Saves the returned JWT into the collection variable token."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login succeeded', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "if (data.token) pm.collectionVariables.set('token', data.token);",
+                  "if (!data.token) throw new Error('Login response did not include a token');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get current doctor profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/doctors/me",
+            "description": "Saves the profile ID as doctorId for Get queue list. Requires Login first."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Doctor profile loaded', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "const id = data._id || data.id;",
+                  "if (id) pm.collectionVariables.set('doctorId', id);",
+                  "if (!id) throw new Error('Doctor profile response did not include _id or id');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get today's appointments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/appointments",
+            "description": "Saves the first active appointment ID for the queue position and ETA requests. Requires Login first."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Appointments loaded', function () { pm.response.to.have.status(200); });",
+                  "const appointments = pm.response.json();",
+                  "const active = Array.isArray(appointments) ? appointments.find(a => ['Pending', 'Confirmed', 'In_Progress'].includes(a.status)) : null;",
+                  "const id = active && (active._id || active.id);",
+                  "if (id) pm.collectionVariables.set('appointmentId', id);",
+                  "if (!id) console.warn('No active appointment found; set appointmentId manually.');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Search for a demo patient",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/patients/search?q={{patientSearch}}",
+            "description": "Saves the first result's User ID as patientId. GET patient by ID accepts either a Patient profile ID or User ID. Requires Login first."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Patient search succeeded', function () { pm.response.to.have.status(200); });",
+                  "const patients = pm.response.json();",
+                  "const id = Array.isArray(patients) && patients.length ? (patients[0].id || patients[0]._id) : null;",
+                  "if (id) pm.collectionVariables.set('patientId', id);",
+                  "if (!id) console.warn('No patient found; change patientSearch or set patientId manually.');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 - Queue",
+      "item": [
+        {
+          "name": "Get queue list",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/queue/list?doctorId={{doctorId}}",
+            "description": "Returns nowServing, waitingQueue, totalWaiting, and queue positions. Run Get current doctor profile first."
+          },
+          "response": []
+        },
+        {
+          "name": "Get patient queue position",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/queue/patient-position?appointmentId={{appointmentId}}",
+            "description": "Returns queuePosition and appointment status, plus the current serving token and estimated wait. Run Get today's appointments first."
+          },
+          "response": []
+        },
+        {
+          "name": "Get patient queue ETA",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/queue/patient-eta?appointmentId={{appointmentId}}",
+            "description": "Returns estimatedWait min/max and queue details for the appointment. Run Get today's appointments first."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "07 - Patients",
+      "item": [
+        {
+          "name": "Get patient by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/patients/{{patientId}}",
+            "description": "Accepts either the Patient profile ID or the associated User ID. Run Search for a demo patient first. Requires Login and a Bearer token."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "08 - Doctor Profile & Clinic Hours",
+      "item": [
+        {
+          "name": "Save private clinic weekly hours",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isSameEveryday\": false,\n  \"days\": [\n    { \"day\": \"Mon\", \"isAvailable\": true,  \"startTime\": \"17:00\", \"endTime\": \"20:00\" },\n    { \"day\": \"Tue\", \"isAvailable\": true,  \"startTime\": \"17:00\", \"endTime\": \"20:00\" },\n    { \"day\": \"Wed\", \"isAvailable\": true,  \"startTime\": \"17:00\", \"endTime\": \"20:00\" },\n    { \"day\": \"Thu\", \"isAvailable\": true,  \"startTime\": \"17:00\", \"endTime\": \"20:00\" },\n    { \"day\": \"Fri\", \"isAvailable\": true,  \"startTime\": \"17:00\", \"endTime\": \"20:00\" },\n    { \"day\": \"Sat\", \"isAvailable\": false, \"startTime\": \"17:00\", \"endTime\": \"20:00\" },\n    { \"day\": \"Sun\", \"isAvailable\": false, \"startTime\": \"17:00\", \"endTime\": \"20:00\" }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/doctors/me/private-schedule",
+            "description": "Saves the doctor's separate private clinic schedule. Run Setup > Login as demo doctor first. Edit the example days and hours before sending if needed. This request changes the saved profile schedule when executed."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Private clinic hours saved', function () { pm.response.to.have.status(200); });",
+                  "const doctor = pm.response.json();",
+                  "pm.test('Response includes seven private schedule days', function () { pm.expect(doctor.privateSchedule.days).to.have.lengthOf(7); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Get doctor profile and saved clinic hours",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/doctors/me",
+            "description": "Returns the doctor profile, including separate schedule and privateSchedule. Run Setup > Login as demo doctor first."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

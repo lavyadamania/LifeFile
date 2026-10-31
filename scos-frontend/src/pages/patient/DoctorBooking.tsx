@@ -78,7 +78,7 @@ export default function DoctorBooking() {
     
     try {
       // Create date string in YYYY-MM-DD format
-      const dateStr = selectedDateObj.toISOString().split('T')[0];
+      const dateStr = `${selectedDateObj.getFullYear()}-${String(selectedDateObj.getMonth() + 1).padStart(2, '0')}-${String(selectedDateObj.getDate()).padStart(2, '0')}`;
       
       await createAppointment({
         patientId: user.id,
@@ -139,18 +139,19 @@ export default function DoctorBooking() {
       if (isUnavailable) return [];
     }
     
-    if (!doctor.schedule || !Array.isArray(doctor.schedule.days) || doctor.schedule.days.length === 0) {
-      // Fallback if no valid schedule is set
-      return generateTimeSlots('09:00', '17:00').map(s => s.display);
+    const schedule = bookingType === 'private' ? doctor.privateSchedule : doctor.schedule;
+    if (!schedule || !Array.isArray(schedule.days) || schedule.days.length === 0) {
+      // Keep the legacy hospital default, but never reuse hospital hours for the private clinic.
+      return bookingType === 'private' ? [] : generateTimeSlots('09:00', '17:00').map(s => s.display);
     }
 
     const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][selectedDateObj.getDay()];
     
     let daySchedule;
-    if (doctor.schedule.isSameEveryday) {
-      daySchedule = doctor.schedule.days[0];
+    if (schedule.isSameEveryday) {
+      daySchedule = schedule.days[0];
     } else {
-      daySchedule = doctor.schedule.days.find((d: any) => d.day === dayOfWeek);
+      daySchedule = schedule.days.find((d: any) => d.day === dayOfWeek);
     }
 
     if (!daySchedule || !daySchedule.isAvailable) return [];
@@ -199,6 +200,11 @@ export default function DoctorBooking() {
   }
 
   const availableTimeSlots = getAvailableSlots();
+  const selectedSchedule = bookingType === 'private' ? doctor.privateSchedule : doctor.schedule;
+  const selectedDayName = selectedDateObj ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][selectedDateObj.getDay()] : '';
+  const selectedDaySchedule = selectedSchedule?.isSameEveryday
+    ? selectedSchedule?.days?.[0]
+    : selectedSchedule?.days?.find((d: any) => d.day === selectedDayName);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-12">
@@ -288,7 +294,7 @@ export default function DoctorBooking() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Private Clinic */}
             <button
-              onClick={() => { setBookingType('private'); setSelectedHospitalId(null); setSelectedHospitalName(''); }}
+              onClick={() => { setBookingType('private'); setSelectedHospitalId(null); setSelectedHospitalName(''); setSelectedSlot(null); }}
               className={`relative rounded-xl p-4 text-left border-2 transition-all ${bookingType === 'private' ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 hover:border-emerald-200'}`}
             >
               {bookingType === 'private' && <CheckCircle2 className="absolute top-3 right-3 w-5 h-5 text-emerald-500" />}
@@ -310,7 +316,7 @@ export default function DoctorBooking() {
               return (
                 <button
                   key={hId}
-                  onClick={() => { setBookingType('hospital'); setSelectedHospitalId(hId); setSelectedHospitalName(hName); }}
+                  onClick={() => { setBookingType('hospital'); setSelectedHospitalId(hId); setSelectedHospitalName(hName); setSelectedSlot(null); }}
                   className={`relative rounded-xl p-4 text-left border-2 transition-all ${isActive ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-blue-200'}`}
                 >
                   {isActive && <CheckCircle2 className="absolute top-3 right-3 w-5 h-5 text-blue-500" />}
@@ -361,41 +367,24 @@ export default function DoctorBooking() {
           <div>
             <h3 className="text-sm font-medium text-slate-700 mb-3">Select Time for {selectedDateObj?.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</h3>
             <div className="flex flex-col gap-2">
-              <input 
-                type="time" 
-                min="09:00" 
-                max="17:00" 
-                value={selectedSlot ? (() => {
-                  if (selectedSlot.includes('AM') || selectedSlot.includes('PM')) {
-                    const [time, modifier] = selectedSlot.split(' ');
-                    let [hours, minutes] = time.split(':');
-                    if (hours === '12') hours = '00';
-                    if (modifier === 'PM') hours = (parseInt(hours, 10) + 12).toString();
-                    return `${hours.padStart(2, '0')}:${minutes}`;
-                  }
-                  return selectedSlot;
-                })() : ''} 
-                onChange={(e) => {
-                  const timeStr = e.target.value;
-                  if (timeStr) {
-                    const [h] = timeStr.split(':').map(Number);
-                    if (h >= 9 && h <= 17) {
-                      let hours = h;
-                      const ampm = hours >= 12 ? 'PM' : 'AM';
-                      hours = hours % 12;
-                      hours = hours ? hours : 12;
-                      const strTime = hours.toString().padStart(2, '0') + ':' + timeStr.split(':')[1] + ' ' + ampm;
-                      setSelectedSlot(strTime);
-                    } else {
-                      alert('Please select a time between 09:00 AM and 05:00 PM');
-                    }
-                  } else {
-                    setSelectedSlot(null);
-                  }
-                }}
-                className="w-full sm:w-auto px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium text-slate-700 shadow-sm transition-all hover:border-blue-400" 
-              />
-              <span className="text-sm text-slate-500 font-medium">Working hours: 09:00 AM - 05:00 PM</span>
+              <select
+                value={selectedSlot || ''}
+                onChange={e => setSelectedSlot(e.target.value || null)}
+                disabled={availableTimeSlots.length === 0}
+                className="w-full sm:w-auto min-w-56 px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium text-slate-700 shadow-sm disabled:bg-slate-100"
+              >
+                <option value="">{availableTimeSlots.length ? 'Choose an available time' : 'No slots available'}</option>
+                {availableTimeSlots.map(slot => <option key={slot} value={slot}>{slot}</option>)}
+              </select>
+              <span className="text-sm text-slate-500 font-medium">
+                {selectedDaySchedule?.isAvailable
+                  ? `Working hours: ${selectedDaySchedule.startTime} – ${selectedDaySchedule.endTime}`
+                  : bookingType === 'hospital' && !selectedSchedule
+                    ? 'Working hours: 09:00 – 17:00'
+                  : bookingType === 'private' && !doctor.privateSchedule
+                    ? 'Private clinic hours have not been configured by this doctor.'
+                    : 'This clinic is closed on the selected day.'}
+              </span>
             </div>
           </div>
         </div>

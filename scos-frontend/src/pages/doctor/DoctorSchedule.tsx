@@ -78,7 +78,7 @@ export default function DoctorSchedule() {
   const handlePostpone = async () => {
     if (!postponeTarget || !postponeDate || !postponeTime) return;
     try {
-      await updateAppointmentStatus(postponeTarget._id, {
+      await updateAppointmentStatus(postponeTarget._id || postponeTarget.id, {
         status: 'Postponed',
         postponedDate: postponeDate,
         postponedTime: postponeTime,
@@ -158,7 +158,7 @@ export default function DoctorSchedule() {
                     <ArrowRightLeft className="w-3 h-3" /> Postpone
                   </button>
                   <button
-                    onClick={() => handleExpire(appt._id)}
+                    onClick={() => handleExpire(appt._id || appt.id)}
                     className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-700 text-xs font-bold rounded-lg hover:bg-red-100 transition-colors border border-red-200"
                   >
                     <XCircle className="w-3 h-3" /> Expire

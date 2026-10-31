@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Activity, Clock, Bell, Building2, UserCheck, Calendar, ArrowRight, CheckCircle2, Sparkles, Users } from 'lucide-react';
 import useStreamingStore from '../../services/streaming';
 import useAuthStore from '../../store/useAuthStore';
-import { getAppointments, getPatientETAStatus, addToQueue, updateAppointmentStatus, API_BASE_URL } from '../../lib/api';
+import { getAppointments, getPatientETAStatus, checkInAppointment, API_BASE_URL } from '../../lib/api';
 import { io } from 'socket.io-client';
 
 export default function LiveQueue() {
@@ -24,7 +24,8 @@ export default function LiveQueue() {
     try {
       const res = await getAppointments();
       const allAppts: any[] = res.data || [];
-      const todayStr = new Date().toISOString().split('T')[0];
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
       // Sort prioritizing In_Progress, then Pending, then Confirmed/Rescheduled for today
       const inProg = allAppts.find(a => a.status === 'In_Progress');
@@ -65,7 +66,7 @@ export default function LiveQueue() {
       syncAppointmentsAndQueue();
     });
 
-    const interval = setInterval(syncAppointmentsAndQueue, 6000);
+    const interval = setInterval(syncAppointmentsAndQueue, 4000);
 
     return () => {
       disconnect();
@@ -77,7 +78,7 @@ export default function LiveQueue() {
   // Handle Kafka notification banners
   useEffect(() => {
     if (lastEvent) {
-      if (lastEvent.topic === 'scos.queue.updates') {
+      if (['scos.queue.updates', 'lifefile.queue.updates'].includes(lastEvent.topic)) {
         setToast({ message: 'Queue updated! Real-time wait recalculated.', type: 'info' });
         setTimeout(() => setToast(null), 3000);
       }
@@ -91,14 +92,7 @@ export default function LiveQueue() {
   const handleJoinQueue = async (apt: any) => {
     setIsCheckingIn(true);
     try {
-      await addToQueue({
-        patientId: apt.patientId?._id || apt.patientId || myPatientId,
-        patientName: apt.patientName || user?.name,
-        doctorId: apt.doctorId?._id || apt.doctorId,
-        hospitalId: apt.hospitalId,
-        hospitalName: apt.hospitalName
-      });
-      await updateAppointmentStatus(apt._id || apt.id, { status: 'Pending' });
+      await checkInAppointment(apt._id || apt.id);
       await syncAppointmentsAndQueue();
       navigate(`/patient/queue-status/${apt._id || apt.id}`);
     } catch (e) {

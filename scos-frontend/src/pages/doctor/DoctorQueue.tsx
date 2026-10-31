@@ -41,9 +41,8 @@ export default function DoctorQueue() {
 
   // Emergency Buzzer Logic on top waiting patient
   useEffect(() => {
-    const activeQueue = queueList.filter(p => !p.missedCalls || p.missedCalls === 0);
-    if (activeQueue.length > 0) {
-      const topPatient = activeQueue[0];
+    if (queueList.length > 0) {
+      const topPatient = queueList[0];
       if ((topPatient.triageLevel ?? 0) >= 4 && lastAlertedPatientId !== topPatient.id) {
         setLastAlertedPatientId(topPatient.id);
         try {
@@ -75,7 +74,8 @@ export default function DoctorQueue() {
 
   const handleStartConsultation = () => {
     if (nowServing?.id || nowServing?.patientId) {
-      navigate(`/doctor/consultation/${nowServing.patientId || nowServing.id}`);
+      const patientId = nowServing.patientId || nowServing.id;
+      navigate(`/doctor/consultation/${patientId}?appointmentId=${encodeURIComponent(nowServing.id)}`);
     }
   };
 
@@ -160,7 +160,7 @@ export default function DoctorQueue() {
                   <button
                     onClick={() => {
                       const docId = doctorProfileId || user?.id || 'DOC-1';
-                      completeConsult(docId, nowServing.id);
+                      completeConsult(docId, nowServing.id, activeHospitalId);
                     }}
                     className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors text-sm"
                   >
@@ -198,12 +198,12 @@ export default function DoctorQueue() {
           <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-blue-50">
              <h2 className="text-sm font-bold text-blue-900">Waiting Queue</h2>
              <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">
-               {queueList.filter(p => !p.missedCalls || p.missedCalls === 0).length} Left
+               {queueList.length} Left
              </span>
           </div>
           
           <div className="flex-1 overflow-y-auto p-3 space-y-3">
-            {queueList.filter(p => !p.missedCalls || p.missedCalls === 0).map((patient, idx) => {
+            {queueList.map((patient, idx) => {
               const isEmergencyTop = idx === 0 && (patient.triageLevel ?? 0) >= 4;
               const displayToken = patient.tokenNumber || patient.baseToken;
               const displayPos = patient.queuePosition || (idx + 1);
@@ -220,6 +220,11 @@ export default function DoctorQueue() {
                      <p className={`font-bold text-sm ${isEmergencyTop ? 'text-red-900' : 'text-slate-800'}`}>
                        #{displayPos} — {patient.name || patient.patientName}
                      </p>
+                     {patient.missedCalls ? (
+                       <span className="inline-block mt-1 px-1.5 py-0.5 rounded bg-red-50 text-red-700 text-[9px] font-bold">
+                         {patient.missedCalls} MISSED CALL{patient.missedCalls === 1 ? '' : 'S'} — penalty applied
+                       </span>
+                     ) : null}
                      <p className={`text-[11px] font-bold font-mono mt-0.5 ${isEmergencyTop ? 'text-red-700' : 'text-blue-600'}`}>
                        Token #{displayToken}
                      </p>
@@ -273,7 +278,7 @@ export default function DoctorQueue() {
                  </div>
               </div>
             )})}
-            {queueList.filter(p => !p.missedCalls || p.missedCalls === 0).length === 0 && (
+            {queueList.length === 0 && (
               <div className="text-center py-8 text-slate-500 text-sm">Queue is empty.</div>
             )}
           </div>
@@ -282,11 +287,12 @@ export default function DoctorQueue() {
         {/* Column 4: Skipped Patients Column */}
         <div className="bg-white rounded-2xl shadow-sm border border-red-200 flex flex-col h-[500px]">
           <div className="p-4 border-b border-red-100 flex justify-between items-center bg-red-50">
-             <h2 className="text-sm font-bold text-red-900">Skipped</h2>
+             <h2 className="text-sm font-bold text-red-900">Missed-call recovery</h2>
              <span className="bg-red-200 text-red-800 text-xs font-bold px-2 py-1 rounded">
                {queueList.filter(p => p.missedCalls && p.missedCalls > 0).length} Total
              </span>
           </div>
+          <p className="px-3 pt-2 text-[10px] text-red-700">These patients remain in the scored queue above; missed calls apply a priority penalty.</p>
           
           <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-red-50/30">
             {queueList.filter(p => p.missedCalls && p.missedCalls > 0).map((patient) => {
@@ -294,7 +300,7 @@ export default function DoctorQueue() {
               return (
               <div key={patient.id} className="p-3 border border-red-200 rounded-xl shadow-sm flex flex-col gap-2 relative bg-white">
                  <div className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg">
-                   SKIPPED {patient.missedCalls}x
+                   MISSED {patient.missedCalls}x
                  </div>
                  <div className="flex justify-between items-start mt-2">
                    <div>

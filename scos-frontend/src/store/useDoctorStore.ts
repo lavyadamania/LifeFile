@@ -14,7 +14,9 @@ interface DoctorStore {
 }
 
 const useDoctorStore = create<DoctorStore>((set) => ({
-  activeHospitalId: 'all',
+  // Keep the initial filter aligned with the initial Hospital mode. Leaving
+  // this as "all" made the first queue load include private-clinic visits.
+  activeHospitalId: 'hospital',
   mode: 'hospital',
   hospitals: [],
   setActiveHospitalId: (id) => set({ activeHospitalId: id }),

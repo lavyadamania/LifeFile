@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { ArrowLeft, Activity, FileText, Plus, Trash2, Save, Lock, Search, UserPlus, X, Check, Paperclip, ChevronDown, ChevronUp, Pill, Image, Building2, Stethoscope, BrainCircuit } from 'lucide-react';
 import nlp from 'compromise';
@@ -7,7 +7,8 @@ import ReactMarkdown from 'react-markdown';
 import PrescriptionPreview from '../../components/PrescriptionPreview';
 import DoctorMemoryPanel from '../../components/DoctorMemoryPanel';
 import type { PrescriptionTemplate } from '../../components/PrescriptionPreview';
-import { createPrescription, searchPatients, registerUser, createWalkinAppointment, getDoctors, updateDoctor, getPatientPrescriptions, uploadAttachment, getAppointments, updateAppointmentStatus, getPatientAISummary } from '../../lib/api';
+import { createPrescription, searchPatients, registerUser, createWalkinAppointment, getDoctors, updateDoctor, getPatientPrescriptions, uploadAttachment, getAppointments, getPatientAISummary } from '../../lib/api';
+import useStreamingStore from '../../services/streaming';
 import useAccessStore from '../../store/useAccessStore';
 import useAuthStore from '../../store/useAuthStore';
 
@@ -33,6 +34,9 @@ interface PatientResult {
 export default function DoctorConsultation() {
   const { patientId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const appointmentId = searchParams.get('appointmentId');
+  const completeConsult = useStreamingStore(state => state.completeConsult);
   const { user } = useAuthStore();
 
   const { checkAccess } = useAccessStore();
@@ -237,11 +241,13 @@ export default function DoctorConsultation() {
   useEffect(() => {
     if (patientId && patientId !== 'new' && !selectedPatient) {
       getAppointments().then(res => {
-        const appt = res.data.find((a: any) =>
-          (a.patientId?._id || a.patientId) === patientId ||
-          a._id === patientId ||
-          a.id === patientId
-        );
+        const appt = (appointmentId
+          ? res.data.find((a: any) => (a._id || a.id) === appointmentId)
+          : undefined) || res.data.find((a: any) =>
+            (a.patientId?._id || a.patientId) === patientId ||
+            a._id === patientId ||
+            a.id === patientId
+          );
         if (appt) {
           const pId = typeof appt.patientId === 'object' && appt.patientId ? appt.patientId._id : (appt.patientId || patientId);
           const pName = typeof appt.patientId === 'object' && appt.patientId ? appt.patientId.name : (appt.patientName || 'Patient');
@@ -271,7 +277,7 @@ export default function DoctorConsultation() {
         });
       });
     }
-  }, [patientId]);
+  }, [patientId, appointmentId]);
 
   const toggleExpandRx = (id: string) => {
     setExpandedRx(prev => {
@@ -380,32 +386,9 @@ export default function DoctorConsultation() {
         hospitalName: appointmentHospitalName || undefined,
       });
 
-      // Auto-mark ALL of today's pending appointments for this patient as Completed
-      // This handles: early arrivals, walk-ins, and scheduled appointments
-      try {
-        const today = new Date().toISOString().split('T')[0];
-        const apptRes = await getAppointments();
-        
-        const matches = apptRes.data.filter((a: any) => {
-          const aPatientId = (a.patientId?._id || a.patientId || '').toString();
-          const targetId = (targetPatientId || '').toString();
-          const patientMatch = aPatientId === targetId;
-          const dateMatch = a.date === today || a.date === 'Today';
-          const statusMatch = ['Confirmed', 'Pending'].includes(a.status);
-          return patientMatch && dateMatch && statusMatch;
-        });
-
-        if (matches.length > 0) {
-          // Complete all matching appointments (handles early walk-in + scheduled same day)
-          await Promise.all(
-            matches.map((m: any) => updateAppointmentStatus(m._id, { status: 'Completed' }))
-          );
-          console.log(`✅ ${matches.length} appointment(s) auto-marked as Completed for patient:`, targetPatientId);
-        } else {
-          console.log('⚠️ No active appointments found today for patient:', targetPatientId);
-        }
-      } catch (err) {
-        console.error('❌ Error auto-completing appointment:', err);
+      // Complete only the exact queue visit that opened this consultation.
+      if (appointmentId && doctorProfile?._id) {
+        await completeConsult(doctorProfile._id, appointmentId, appointmentHospitalId || undefined);
       }
     } catch (err) {
       console.error('Failed to save prescription:', err);

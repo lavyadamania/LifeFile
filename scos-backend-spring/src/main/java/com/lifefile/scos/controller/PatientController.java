@@ -12,6 +12,7 @@ import com.lifefile.scos.service.MemoryService;
 import com.lifefile.scos.util.MongoIdUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.bson.types.ObjectId;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
@@ -70,8 +71,18 @@ public class PatientController {
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getPatientById(@PathVariable String id, HttpServletRequest request) {
-        return patientRepository.findById(id)
-                .map(ResponseEntity::ok)
+        if (id == null || !ObjectId.isValid(id)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        Optional<Patient> patient = patientRepository.findById(id);
+        if (patient.isEmpty()) {
+            // Patient search returns User IDs, while several consumers store
+            // Patient profile IDs. Accept either identifier consistently.
+            patient = patientRepository.findByUserId(id);
+        }
+
+        return patient.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 

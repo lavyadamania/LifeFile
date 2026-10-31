@@ -15,8 +15,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import com.lifefile.scos.security.JwtAuthFilter;
 
-import lombok.RequiredArgsConstructor;
-
 /**
  * Spring Security configuration — stateless JWT, no sessions.
  * Mirrors the auth middleware pattern: all /api/** protected except /api/auth/**
@@ -24,10 +22,13 @@ import lombok.RequiredArgsConstructor;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
+
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
+        this.jwtAuthFilter = jwtAuthFilter;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -41,6 +42,8 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/demo/reset").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/demo/seed-all").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/demo/seed").permitAll()
                 .requestMatchers("/api/health").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/doctors", "/api/doctors/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/hospitals", "/api/hospitals/**").permitAll()

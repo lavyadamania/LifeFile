@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -38,7 +39,11 @@ public class AuditLogController {
         }
 
         // Simulating sort and limit (Java list approach for simplicity)
-        logs.sort((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()));
+        // Legacy/imported audit records may not have a createdAt value.
+        // Keep timestamped entries newest-first and place undated entries last.
+        logs.sort(Comparator.comparing(
+                AuditLog::getCreatedAt,
+                Comparator.nullsLast(Comparator.reverseOrder())));
         if (logs.size() > 100) logs = logs.subList(0, 100);
 
         return ResponseEntity.ok(logs);

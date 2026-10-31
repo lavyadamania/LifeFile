@@ -27,7 +27,9 @@ const distinctPatients = [
 mongoose.connect(process.env.MONGO_URI).then(async () => {
   console.log('Connected to DB. Seeding rich test data...');
 
-  const doc = await Doctor.findOne({ name: { $regex: /lavya damania/i } });
+  const doc = await Doctor.findOne({ name: { $regex: /ananya sharma/i } })
+    || await Doctor.findOne({ name: { $regex: /lavya damania/i } })
+    || await Doctor.findOne().sort({ name: 1 });
   if (!doc) {
     console.log('Doctor not found'); process.exit(1);
   }
@@ -44,7 +46,8 @@ mongoose.connect(process.env.MONGO_URI).then(async () => {
   }
 
   // Clear today's pending/confirmed queue
-  const today = new Date().toLocaleDateString('en-CA');
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   await Appointment.deleteMany({ doctorId: doc._id, date: today });
   await Appointment.deleteMany({ doctorId: doc._id, date: '2026-08-18' });
   await Appointment.deleteMany({ doctorId: doc._id, date: '2026-08-19' });
@@ -76,8 +79,6 @@ mongoose.connect(process.env.MONGO_URI).then(async () => {
     );
     users.push(u);
   }
-
-  const now = new Date();
 
   for(let i = 0; i < distinctPatients.length; i++) {
     const pData = distinctPatients[i];

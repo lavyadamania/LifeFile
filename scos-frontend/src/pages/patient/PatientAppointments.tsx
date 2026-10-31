@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Clock, MapPin, CalendarDays, AlertTriangle, ArrowRightLeft, XCircle, Building2, Lock, UserCheck, Bell, Trash2, Star } from 'lucide-react';
-import { getAppointments, cancelAppointment, rescheduleAppointment, getMissedAppointments, updateAppointmentStatus, addToQueue } from '../../lib/api';
+import { getAppointments, cancelAppointment, rescheduleAppointment, getMissedAppointments, updateAppointmentStatus, checkInAppointment } from '../../lib/api';
 import ReviewModal from '../../components/ReviewModal';
 
 export default function PatientAppointments() {
@@ -108,23 +108,27 @@ export default function PatientAppointments() {
 
   const handleJoinQueue = async (apt: any) => {
     try {
-      await addToQueue({
-        patientId: apt.patientId?._id || apt.patientId,
-        patientName: apt.patientName,
-        doctorId: apt.doctorId?._id || apt.doctorId,
-        hospitalId: apt.hospitalId
-      });
-      await updateAppointmentStatus(apt._id, { status: 'Pending' });
+      await checkInAppointment(apt._id || apt.id);
+      setSuccessMsg('Checked in successfully. You have joined the queue.');
+      setTimeout(() => setSuccessMsg(''), 3000);
+      fetchAppointments();
+      navigate(`/patient/queue-status/${apt._id || apt.id}`);
     } catch (e) {
       console.error(e);
+      setSuccessMsg('Check-in failed. Refresh the appointment and try again.');
+      setTimeout(() => setSuccessMsg(''), 3000);
     }
-    navigate(`/patient/queue-status/${apt._id}`);
   };
 
   // Helper to determine Check-In Window (Opens 10m before slot, closes 20m post slot)
   const getCheckInInfo = (apt: any) => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const isToday = apt.date === todayStr;
+
+    if (['Pending', 'In_Progress'].includes(apt.status)) {
+      return { canCheckIn: false, status: 'in_queue', message: 'You have already checked in for this appointment.', buttonText: 'Already Checked In' };
+    }
 
     if (!isToday) {
       return {
@@ -136,7 +140,7 @@ export default function PatientAppointments() {
     }
 
     const timeStr = apt.time || '00:00';
-    const parts = timeStr.trim().split(' ');
+    const parts = timeStr.trim().toUpperCase().split(/\s+/);
     const [hStr, mStr] = (parts[0] || '00:00').split(':');
     let h = parseInt(hStr, 10) || 0;
     const m = parseInt(mStr, 10) || 0;
@@ -146,8 +150,7 @@ export default function PatientAppointments() {
     if (meridian === 'AM' && h === 12) h = 0;
 
     const slotMins = h * 60 + m;
-    const now = new Date();
-    const nowMins = now.getHours() * 60 + now.getMinutes();
+    const nowMins = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
 
     const checkInStartMins = slotMins - 10; // 10 minutes BEFORE booking time
     const checkInEndMins = slotMins + 20;   // 20 minutes POST booking time

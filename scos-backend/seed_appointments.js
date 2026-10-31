@@ -10,7 +10,13 @@ async function seed() {
     await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/scos');
     console.log('Connected to MongoDB');
 
-    // 1. Find or create Doctor 1
+    // Use the primary presentation doctor so seeded appointments appear
+    // when signing in with the demo doctor account.
+    let doctorProfile = await Doctor.findOne({ name: { $regex: /ananya sharma/i } });
+    if (doctorProfile) {
+      console.log(`Using primary demo doctor: ${doctorProfile.name}`);
+    } else {
+    // 1. Find or create Doctor 1 when no presentation doctor exists.
     let doctorUser = await User.findOne({ email: 'doctor1@scos.com' });
     if (!doctorUser) {
       doctorUser = await User.create({
@@ -22,7 +28,7 @@ async function seed() {
       console.log('Created Doctor 1 User');
     }
 
-    let doctorProfile = await Doctor.findOne({ userId: doctorUser._id });
+    doctorProfile = await Doctor.findOne({ userId: doctorUser._id });
     if (!doctorProfile) {
       doctorProfile = await Doctor.create({
         userId: doctorUser._id,
@@ -31,6 +37,7 @@ async function seed() {
         location: 'Main Clinic'
       });
       console.log('Created Doctor 1 Profile');
+    }
     }
 
     // 2. Find or create a few patients
